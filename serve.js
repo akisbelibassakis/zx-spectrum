@@ -5,7 +5,7 @@ const root = __dirname, port = +(process.argv[2] || 8048);
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css' };
 http.createServer((req, res) => {
   const p = path.normalize(decodeURIComponent(req.url.split('?')[0])).replace(/^([\\/]\.\.)+/, '');
-  const file = path.join(root, p === path.sep || p === '/' ? 'index.html' : p);
+  const file = path.join(root, p, /[\\/]$/.test(p) ? 'index.html' : '');
   if (!file.startsWith(root)) { res.writeHead(403); return res.end(); }
   fs.readFile(file, (err, data) => {
     if (err) { res.writeHead(404); return res.end('Not found'); }

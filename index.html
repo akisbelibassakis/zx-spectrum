@@ -83,9 +83,9 @@
         <button id="btnEject" title="Eject">&#9167;<span>EJECT</span></button>
       </div>
       <ul id="tapeBlocks" class="blocks"></ul>
-      <label><input type="checkbox" id="fastLoad" checked> Instant load of standard blocks</label>
-      <label><input type="checkbox" id="autoLoad" checked> Reset and type LOAD "" on insert</label>
-      <label><input type="checkbox" id="tapeTurbo" checked> Full speed while the tape plays</label>
+      <label title="Load standard tape blocks instantly instead of in real time"><input type="checkbox" id="fastLoad" checked> Instant load</label>
+      <label title="Reset and type LOAD &quot;&quot; when a tape is inserted"><input type="checkbox" id="autoLoad" checked> Auto LOAD ""</label>
+      <label title="Run at full speed while the tape plays"><input type="checkbox" id="tapeTurbo" checked> Fast while loading</label>
     </div>
   </div>
 
@@ -98,8 +98,8 @@
     <button class="btn" id="btnSave" title="Download a .SNA snapshot of the current state">Save .SNA</button>
     <button class="btn" id="btnFull">Full screen</button>
     <select class="btn" id="joystick" title="What the arrow keys do">
-      <option value="cursor">Arrows: cursor keys</option>
-      <option value="kempston">Arrows: Kempston (Left Alt = fire)</option>
+      <option value="cursor">Arrows: cursor</option>
+      <option value="kempston" title="Left Alt = fire">Arrows: Kempston</option>
     </select>
     <span id="fileName"></span>
   </div>

@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZX Spectrum 48K</title>
+<link rel="stylesheet" href="css/retro.css">
+</head>
+<body>
+<div class="room">
+
+  <!-- ===== 80s colour television ===== -->
+  <div id="tv" class="tv">
+    <div class="cabinet">
+      <div class="bezel">
+        <div id="crt" class="crt">
+          <div class="picture">
+            <canvas id="screen" title="Click to enable sound"></canvas>
+            <canvas id="noise" width="160" height="120"></canvas>
+          </div>
+          <div class="scanlines"></div>
+          <div class="glass"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="brand">Spectrovision<small>Colour 14</small></div>
+        <div class="grille"></div>
+        <div class="channels">
+          <button class="chan" data-ch="1">1</button><button class="chan" data-ch="2">2</button>
+          <button class="chan" data-ch="3">3</button><button class="chan" data-ch="4">4</button>
+          <button class="chan" data-ch="5">5</button><button class="chan" data-ch="6">6</button>
+        </div>
+        <div class="knobs">
+          <div class="knobwrap"><div id="knobVolume" class="knob" tabindex="0" role="slider" aria-label="Volume" title="Volume: drag or scroll"></div><span>VOLUME</span></div>
+          <div class="knobwrap"><div id="knobColour" class="knob" tabindex="0" role="slider" aria-label="Colour" title="Colour: drag or scroll"></div><span>COLOUR</span></div>
+        </div>
+        <div class="power">
+          <span id="powerLed" class="led"></span>
+          <button id="btnPower" title="Power">POWER</button>
+        </div>
+      </div>
+    </div>
+    <div class="feet"><span></span><span></span></div>
+  </div>
+
+  <!-- ===== the desk: Spectrum + cassette recorder ===== -->
+  <div class="desk">
+    <div class="spectrum">
+      <div class="heatsink">
+        <svg class="logo" viewBox="0 0 276 84" preserveAspectRatio="none" role="img" aria-label="sinclair">
+          <defs><linearGradient id="logoFace" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="84"><stop offset="0" stop-color="#6a6a6a"/><stop offset=".45" stop-color="#4a4a4a"/><stop offset="1" stop-color="#353535"/></linearGradient></defs>
+          <g fill="none" stroke="url(#logoFace)" stroke-width="12" stroke-linecap="square" stroke-linejoin="miter">
+            <path transform="translate(4.5 0)" d="M29,30 H0 V53 H29 V76 H0"/>
+            <path transform="translate(50.5 0)" d="M0,30 V76"/>
+            <path transform="translate(67.5 0)" d="M0,76 V30 H30 V76"/>
+            <path transform="translate(114.5 0)" d="M30,30 H0 V76 H30"/>
+            <path transform="translate(161.5 0)" d="M0,6 V76"/>
+            <path transform="translate(178.5 0)" d="M0,30 H30 V76 H0 V53 H30"/>
+            <path transform="translate(225.5 0)" d="M0,30 V76"/>
+            <path transform="translate(242.5 0)" d="M0,76 V30 H25"/>
+          </g>
+          <g fill="url(#logoFace)"><rect x="44.5" y="6" width="12" height="12"/><rect x="219.5" y="6" width="12" height="12"/></g>
+        </svg>
+        <div class="model">ZX Spectrum</div>
+      </div>
+      <div class="kbd">
+        <div class="rainbow"><i></i><i></i><i></i><i></i></div>
+        <div id="keys" class="keys"></div>
+      </div>
+    </div>
+
+    <div id="deck" class="deck">
+      <div class="deck-top">
+        <div class="cassette">
+          <div class="label" id="tapeState">No tape</div>
+          <div class="reels"><div class="reel"></div><div class="window"></div><div class="reel"></div></div>
+        </div>
+      </div>
+      <div class="deck-keys">
+        <button id="btnRewind" title="Rewind">&#9664;&#9664;<span>REW</span></button>
+        <button id="btnPlay" title="Play">&#9654;<span>PLAY</span></button>
+        <button id="btnStop" title="Stop">&#9632;<span>STOP</span></button>
+        <button id="btnEject" title="Eject">&#9167;<span>EJECT</span></button>
+      </div>
+      <ul id="tapeBlocks" class="blocks"></ul>
+      <label><input type="checkbox" id="fastLoad" checked> Instant load of standard blocks</label>
+      <label><input type="checkbox" id="autoLoad" checked> Reset and type LOAD "" on insert</label>
+      <label><input type="checkbox" id="tapeTurbo" checked> Full speed while the tape plays</label>
+    </div>
+  </div>
+
+  <!-- ===== controls ===== -->
+  <div class="strip">
+    <label class="btn file">Open file&hellip;<input type="file" id="fileInput" multiple accept=".rom,.tap,.tzx,.sna,.z80"></label>
+    <button class="btn" id="btnReset">Reset</button>
+    <button class="btn" id="btnPause">Pause</button>
+    <button class="btn" id="btnTurbo" title="Run as fast as possible">Turbo</button>
+    <button class="btn" id="btnSave" title="Download a .SNA snapshot of the current state">Save .SNA</button>
+    <button class="btn" id="btnFull">Full screen</button>
+    <select class="btn" id="joystick" title="What the arrow keys do">
+      <option value="cursor">Arrows: cursor keys</option>
+      <option value="kempston">Arrows: Kempston (Left Alt = fire)</option>
+    </select>
+    <span id="fileName"></span>
+  </div>
+  <div id="status"></div>
+
+  <section id="romNote" class="note" hidden>
+    <h2>ROM needed</h2>
+    The emulator needs the original Spectrum 48K ROM (<code>48.rom</code>, 16,384 bytes).
+    Open or drop it here once; it is remembered in this browser.
+  </section>
+
+  <details class="note">
+    <summary>PC keyboard mapping</summary>
+    <table>
+      <tr><td>Left Shift</td><td>CAPS SHIFT</td></tr>
+      <tr><td>Right Shift / Ctrl</td><td>SYMBOL SHIFT</td></tr>
+      <tr><td>Backspace</td><td>DELETE (CAPS+0)</td></tr>
+      <tr><td>Esc</td><td>BREAK (CAPS+SPACE)</td></tr>
+      <tr><td>Tab</td><td>Extended mode (CAPS+SYM)</td></tr>
+      <tr><td>, . ; ' - = /</td><td>SYM+N M O P J L V</td></tr>
+      <tr><td>On-screen keys</td><td>Click or tap. A click on CAPS/SYMBOL SHIFT holds it for the next key.</td></tr>
+    </table>
+  </details>
+</div>
+<script src="js/z80.js"></script>
+<script src="js/tape.js"></script>
+<script src="js/spectrum.js"></script>
+<script src="js/main.js"></script>
+<script src="js/retro.js"></script>
+</body>
+</html>

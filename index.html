@@ -69,27 +69,28 @@
       </div>
     </div>
 
-    <!-- the Spectrum 128 (the 1986 "toastrack"): Spectrum+ keyboard, heatsink on the right -->
-    <div id="spectrum128" class="spectrum128" hidden>
+    <!-- the Spectrum+ (1984) and the Spectrum 128 (1986 "toastrack", with the heatsink): same keyboard, two cases -->
+    <div id="spectrumPlus" class="spectrumplus" hidden>
       <div class="vents"></div>
-      <svg class="logo128" viewBox="0 0 276 84" preserveAspectRatio="none" role="img" aria-label="sinclair">
-          <g fill="none" stroke="#c8231c" stroke-width="12" stroke-linecap="square" stroke-linejoin="miter">
-            <path transform="translate(4.5 0)" d="M29,30 H0 V53 H29 V76 H0"/>
-            <path transform="translate(50.5 0)" d="M0,30 V76"/>
-            <path transform="translate(67.5 0)" d="M0,76 V30 H30 V76"/>
-            <path transform="translate(114.5 0)" d="M30,30 H0 V76 H30"/>
-            <path transform="translate(161.5 0)" d="M0,6 V76"/>
-            <path transform="translate(178.5 0)" d="M0,30 H30 V76 H0 V53 H30"/>
-            <path transform="translate(225.5 0)" d="M0,30 V76"/>
-            <path transform="translate(242.5 0)" d="M0,76 V30 H25"/>
-          </g>
-          <g fill="#c8231c"><rect x="44.5" y="6" width="12" height="12"/><rect x="219.5" y="6" width="12" height="12"/></g>
-        </svg>
-      <div class="model128">ZX Spectrum +</div>
+      <svg class="logoplus" viewBox="0 0 276 84" preserveAspectRatio="none" role="img" aria-label="sinclair">
+        <g fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="square" stroke-linejoin="miter">
+          <path transform="translate(4.5 0)" d="M29,30 H0 V53 H29 V76 H0"/>
+          <path transform="translate(50.5 0)" d="M0,30 V76"/>
+          <path transform="translate(67.5 0)" d="M0,76 V30 H30 V76"/>
+          <path transform="translate(114.5 0)" d="M30,30 H0 V76 H30"/>
+          <path transform="translate(161.5 0)" d="M0,6 V76"/>
+          <path transform="translate(178.5 0)" d="M0,30 H30 V76 H0 V53 H30"/>
+          <path transform="translate(225.5 0)" d="M0,30 V76"/>
+          <path transform="translate(242.5 0)" d="M0,76 V30 H25"/>
+        </g>
+        <g fill="currentColor"><rect x="44.5" y="6" width="12" height="12"/><rect x="219.5" y="6" width="12" height="12"/></g>
+      </svg>
+      <div class="modelplus">ZX Spectrum +</div>
       <div class="grooves"></div>
       <div class="keybed"></div>
-      <div id="keys128" class="keys128"></div>
+      <div id="keysPlus" class="keysplus"></div>
       <div class="badge128"><span>128K</span><div class="stripes"><i></i><i></i><i></i><i></i></div></div>
+      <div class="badgeplus"><div class="stripes"><i></i><i></i><i></i><i></i></div></div>
       <div class="ribs"></div>
     </div>
 
@@ -117,6 +118,7 @@
   <div class="strip">
     <select class="btn" id="machine" title="Which Spectrum to emulate (resets it)">
       <option value="48">ZX Spectrum 48K</option>
+      <option value="plus">ZX Spectrum+</option>
       <option value="128">ZX Spectrum 128K</option>
     </select>
     <label class="btn file">Open file&hellip;<input type="file" id="fileInput" multiple accept=".rom,.tap,.tzx,.sna,.z80"></label>
@@ -125,6 +127,7 @@
     <button class="btn" id="btnTurbo" title="Run as fast as possible">Turbo</button>
     <button class="btn" id="btnSave" title="Download a .SNA snapshot of the current state">Save .SNA</button>
     <button class="btn" id="btnFull">Full screen</button>
+    <button class="btn" id="btnKeys" title="Which PC keys do what, and the tape options">Help</button>
     <select class="btn" id="joystick" title="What the arrow keys do">
       <option value="cursor">Arrows: cursor</option>
       <option value="kempston" title="Left Alt = fire">Arrows: Kempston</option>
@@ -139,19 +142,30 @@
     <code>128.rom</code> (32,768 bytes) for the 128K. Open or drop it here once; it is remembered in this browser.
   </section>
 
-  <details class="note">
-    <summary>PC keyboard mapping</summary>
+  <dialog id="keysHelp" class="help">
+    <h2>PC keyboard</h2>
     <table>
       <tr><td>Left Shift</td><td>CAPS SHIFT</td></tr>
       <tr><td>Right Shift / Ctrl</td><td>SYMBOL SHIFT</td></tr>
       <tr><td>Backspace</td><td>DELETE (CAPS+0)</td></tr>
       <tr><td>Esc</td><td>BREAK (CAPS+SPACE)</td></tr>
       <tr><td>Tab</td><td>Extended mode (CAPS+SYM)</td></tr>
+      <tr><td>Arrows</td><td>Cursor keys, or a Kempston joystick (Left Alt = fire)</td></tr>
       <tr><td>, . ; ' - = /</td><td>SYM+N M O P J L V</td></tr>
-      <tr><td>128K keys</td><td>The 128's extra keys (DELETE, EDIT, arrows, ; " , . and so on) press the two 48K keys they stand for.</td></tr>
-      <tr><td>On-screen keys</td><td>Click or tap. A click on CAPS/SYMBOL SHIFT holds it for the next key.</td></tr>
+      <tr><td>On-screen keys</td><td>Click or tap. A click on CAPS or SYMBOL SHIFT holds it for the next key.
+        The Spectrum+ and 128 keys such as DELETE, EDIT, the arrows and ; " , . press the two keys they stand for.</td></tr>
     </table>
-  </details>
+    <h2>Tape options</h2>
+    <table>
+      <tr><td>Instant load</td><td>Normal tape blocks go straight into memory, so most games load in a moment.
+        Untick it to load in real time, with the border stripes and the loading sound.</td></tr>
+      <tr><td>Auto LOAD ""</td><td>Putting in a tape resets the Spectrum and starts loading it
+        (LOAD "" on the 48K and Spectrum+, Tape Loader on the 128K). Untick it to just put the tape in and type the command yourself.</td></tr>
+      <tr><td>Fast while loading</td><td>While a tape plays in real time, the emulator runs flat out, so a long load takes seconds.
+        Untick it to load at the real speed.</td></tr>
+    </table>
+    <button class="btn" id="keysClose">Close</button>
+  </dialog>
 </div>
 <script src="js/z80.js"></script>
 <script src="js/tape.js"></script>

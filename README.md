@@ -1,6 +1,6 @@
-# ZX Spectrum 48K / 128K emulator
+# ZX Spectrum 48K / + / 128K emulator
 
-A ZX Spectrum 48K and 128K emulator in plain JavaScript that runs in the browser, with no build step and no dependencies.
+A ZX Spectrum 48K, Spectrum+ and 128K emulator in plain JavaScript that runs in the browser, with no build step and no dependencies.
 
 ## Run
 
@@ -8,16 +8,16 @@ A ZX Spectrum 48K and 128K emulator in plain JavaScript that runs in the browser
 node serve.js
 ```
 
-Then open http://localhost:8048 (add `?machine=128` to start on the 128K). Opening `index.html` directly also works: the ROMs then come from `js/rom48.js` and `js/rom128.js`.
+Then open http://localhost:8048 (add `?machine=plus` or `?machine=128` to start on another model). Opening `index.html` directly also works: the ROMs then come from `js/rom48.js` and `js/rom128.js`.
 
 **ROMs:** the original ROMs are in `roms/48.rom` (16,384 bytes) and `roms/128.rom` (32,768 bytes: the 128 editor ROM followed by its 48 BASIC ROM); Amstrad allows them to be distributed with emulators. They are kept in the browser's local storage once loaded.
 
-**Model:** pick ZX Spectrum 48K or 128K in the control strip; the choice is remembered. Loading a 128K snapshot switches to the 128K by itself.
+**Model:** pick ZX Spectrum 48K, ZX Spectrum+ (a 48K in the Spectrum+ case) or 128K in the control strip; the choice is remembered. The Help button lists the PC keys and explains the tape options. Loading a 128K snapshot switches to the 128K by itself.
 
 ## Look and feel
 
 The picture runs inside an 80s wood-cabinet colour TV with a CRT look: scanlines, a curved and vignetted glass, power on/off animation, static on channels 2-6, and VOLUME and COLOUR knobs (drag or scroll; COLOUR at minimum gives a black-and-white set).
-Below it sits the original rubber-key 48K keyboard with all its legends, or, on the 128K, the Spectrum 128's black case with its Spectrum+ keyboard, heatsink and 128K badge (its extra keys such as DELETE, EDIT and the arrows press the two 48K keys they stand for). The keys can be clicked or tapped and light up when pressed from the PC keyboard; a click on CAPS SHIFT or SYMBOL SHIFT holds it for the next key.
+Below it sits the original rubber-key 48K keyboard with all its legends, or the Spectrum+ keyboard in either the black Spectrum+ case or the Spectrum 128's case with its heatsink and 128K badge (its extra keys such as DELETE, EDIT and the arrows press the two 48K keys they stand for). The keys can be clicked or tapped and light up when pressed from the PC keyboard; a click on CAPS SHIFT or SYMBOL SHIFT holds it for the next key.
 Tapes go in the cassette recorder beside it, whose reels turn while the tape plays.
 
 ## Features

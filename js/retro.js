@@ -128,7 +128,7 @@ function attachKey(el, name, isShift) {
   el.addEventListener('contextmenu', e => e.preventDefault());
 }
 
-// ---------- Spectrum 128 keyboard (the Spectrum+ layout, hard black keys) ----------
+// ---------- Spectrum+ / 128 keyboard (hard black keys) ----------
 // Positions in key pitches (--q) from the top-left of the key area, measured from photos of the 128.
 // The extra keys press two matrix keys at once (see COMBOS in main.js).
 // [name, x, y, width, face]
@@ -166,7 +166,7 @@ function keyFace128(name) {
 }
 
 function buildKeyboard128() {
-  const kb = document.getElementById('keys128');
+  const kb = document.getElementById('keysPlus');
   for (const [name, x, y, w, face] of KB128) {
     const key = document.createElement('button');
     key.className = 'key128' + (name === 'ENTER' ? ' enter' : '') + (name === 'SPACE' ? ' space' : '');
@@ -180,11 +180,14 @@ function buildKeyboard128() {
   }
 }
 
-// show the keyboard of the chosen model
-function showKeyboard(machine) {
-  document.querySelector('.desk').classList.toggle('m128', machine === 128);
-  document.getElementById('spectrum48').hidden = machine === 128;
-  document.getElementById('spectrum128').hidden = machine !== 128;
+// show the case and keyboard of the chosen model: '48', 'plus' or '128'
+function showKeyboard(model) {
+  const plusKeys = model !== '48';
+  document.querySelector('.desk').classList.toggle('mplus', plusKeys);
+  document.getElementById('spectrum48').hidden = plusKeys;
+  const caseEl = document.getElementById('spectrumPlus');
+  caseEl.hidden = !plusKeys;
+  caseEl.classList.toggle('is128', model === '128');
   latched.clear();
   document.querySelectorAll('.latched').forEach(k => k.classList.remove('latched'));
 }
@@ -268,7 +271,7 @@ function retroLoop() {
 
 buildKeyboard();
 buildKeyboard128();
-showKeyboard(zx.machine);
+showKeyboard(model);
 document.getElementById('btnPower').onclick = () => setPower(!powered);
 document.querySelectorAll('.chan').forEach(b => { b.onclick = () => setChannel(+b.dataset.ch); });
 knob(document.getElementById('knobVolume'), 0.7, v => setVolume(v));

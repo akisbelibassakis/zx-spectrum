@@ -324,13 +324,14 @@ code { font-family: 'Courier New', monospace; }
   .deck { flex-basis: 100%; }
 }
 
-/* ================= ZX Spectrum 128 ("toastrack"): --q = one key pitch ================= */
-/* the 128 is wider than the 48, so its desk uses nearly the full TV width */
-.desk { --q: calc(var(--W) * .72 / 18.25); }
-.desk.m128 { width: calc(var(--W) * .97); }
-.desk.m128 .deck { font-size: max(8.5px, calc(var(--q) * .33)); }
-.spectrum128 {
-  flex: 0 0 auto; position: relative; width: calc(var(--q) * 18.25); height: calc(var(--q) * 7.3);
+/* ================= Spectrum+ and Spectrum 128: --q = one key pitch ================= */
+/* Their keyboard is wider than the 48K's but less deep, so the desk may grow wider than the TV
+   (up to the window width) to make the keys as big as the 48K's height allows. */
+.desk { --deckw: calc(var(--W) * .27); --q: min(calc(var(--W) * .05), calc((100vw - 48px - var(--deckw)) / 18.25)); }
+.desk.mplus { width: max-content; position: relative; left: 50%; transform: translateX(-50%); }
+.desk.mplus .deck { flex: 0 0 var(--deckw); }
+.spectrumplus {
+  flex: 0 0 auto; position: relative; width: calc(var(--q) * 17); height: calc(var(--q) * 7.3);
   border-radius: calc(var(--q) * .2);
   background:
     repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 1px, transparent 1px 3px),
@@ -339,51 +340,66 @@ code { font-family: 'Courier New', monospace; }
     inset 0 calc(var(--q) * -.12) 0 rgba(0,0,0,.35);
   font-family: Arial, Helvetica, sans-serif;
 }
-.spectrum128[hidden] { display: none; }
+.spectrumplus.is128 { width: calc(var(--q) * 18.25); }
+.spectrumplus[hidden] { display: none; }
 .vents { /* ventilation slots along the top edge */
-  position: absolute; left: calc(var(--q) * 8.2); top: 0; width: calc(var(--q) * 8.2); height: calc(var(--q) * .2);
+  position: absolute; left: calc(var(--q) * 7.6); top: 0; width: calc(var(--q) * 7.6); height: calc(var(--q) * .2);
   background: repeating-linear-gradient(90deg, #070707 0 calc(var(--q) * .06), transparent calc(var(--q) * .06) calc(var(--q) * .17));
 }
-.logo128 {
+.is128 .vents { left: calc(var(--q) * 8.2); width: calc(var(--q) * 8.2); }
+.logoplus {
   position: absolute; left: calc(var(--q) * .8); top: calc(var(--q) * .32); width: calc(var(--q) * 4.1); height: calc(var(--q) * .5);
-  overflow: visible; filter: drop-shadow(0 1px 0 rgba(0,0,0,.7));
+  overflow: visible; color: #e6e6e6; filter: drop-shadow(0 1px 0 rgba(0,0,0,.7));
 }
-.model128 {
+.is128 .logoplus { color: #c8231c; }
+.modelplus {
   position: absolute; left: calc(var(--q) * .85); top: calc(var(--q) * .9);
-  font: italic calc(var(--q) * .2) Arial, Helvetica, sans-serif; color: #c8231c; letter-spacing: .3px;
+  font: bold calc(var(--q) * .24) Arial, Helvetica, sans-serif; color: #e6e6e6; letter-spacing: .3px;
 }
+.is128 .modelplus { font: italic calc(var(--q) * .2) Arial, Helvetica, sans-serif; color: #c8231c; }
 .keybed {
   position: absolute; left: calc(var(--q) * .68); top: calc(var(--q) * 1.33); width: calc(var(--q) * 13.74); height: calc(var(--q) * 5.12);
   border-radius: calc(var(--q) * .14); background: #131313;
   box-shadow: inset 0 calc(var(--q) * .05) calc(var(--q) * .1) rgba(0,0,0,.9), 0 1px 0 rgba(255,255,255,.08);
 }
-.grooves { /* the case lines that run from the keyboard to the heatsink */
-  position: absolute; left: calc(var(--q) * 14.42); top: calc(var(--q) * 1.45); width: calc(var(--q) * 2.15); height: calc(var(--q) * 5);
+.grooves { /* the case lines that run from the keyboard to the side */
+  position: absolute; left: calc(var(--q) * 14.42); top: calc(var(--q) * 1.45); width: calc(var(--q) * 2.45); height: calc(var(--q) * 5);
   background: repeating-linear-gradient(180deg, transparent 0 calc(var(--q) - 2px), rgba(0,0,0,.65) calc(var(--q) - 2px) calc(var(--q) - 1px),
     rgba(255,255,255,.07) calc(var(--q) - 1px) var(--q));
 }
+.is128 .grooves { width: calc(var(--q) * 2.15); }
 .ribs {
-  position: absolute; right: 0; top: 0; width: calc(var(--q) * 1.7); height: 100%;
+  display: none; position: absolute; right: 0; top: 0; width: calc(var(--q) * 1.7); height: 100%;
   border-radius: 0 calc(var(--q) * .2) calc(var(--q) * .2) 0;
   background: repeating-linear-gradient(180deg, #3b3b3b 0 calc(var(--q) * .07), #2a2a2a calc(var(--q) * .07) calc(var(--q) * .1),
     #070707 calc(var(--q) * .1) calc(var(--q) * .2));
   box-shadow: inset calc(var(--q) * .08) 0 calc(var(--q) * .08) rgba(0,0,0,.7);
 }
+.is128 .ribs { display: block; }
+.stripes { display: flex; transform: skewX(-32deg); }
+.stripes i:nth-child(1) { background: #d9281d; }
+.stripes i:nth-child(2) { background: #f5cf12; }
+.stripes i:nth-child(3) { background: #4dae3e; }
+.stripes i:nth-child(4) { background: #3c8ed5; }
 .badge128 {
-  position: absolute; left: calc(var(--q) * 14.55); top: calc(var(--q) * 5.6); display: flex; align-items: center; gap: calc(var(--q) * .12);
+  display: none; position: absolute; left: calc(var(--q) * 14.55); top: calc(var(--q) * 5.6); align-items: center; gap: calc(var(--q) * .12);
 }
+.is128 .badge128 { display: flex; }
 .badge128 span {
   font: calc(var(--q) * .5) Arial, Helvetica, sans-serif; letter-spacing: -.02em; color: transparent;
   -webkit-text-stroke: max(1px, calc(var(--q) * .025)) #d8261c;
 }
-.badge128 .stripes { display: flex; height: calc(var(--q) * .46); transform: skewX(-32deg); }
+.badge128 .stripes { height: calc(var(--q) * .46); }
 .badge128 .stripes i { width: calc(var(--q) * .11); }
-.badge128 .stripes i:nth-child(1) { background: #d9281d; }
-.badge128 .stripes i:nth-child(2) { background: #f5cf12; }
-.badge128 .stripes i:nth-child(3) { background: #4dae3e; }
-.badge128 .stripes i:nth-child(4) { background: #3c8ed5; }
+.badgeplus { /* the rainbow flash in the bottom-right corner of the Spectrum+ */
+  position: absolute; left: calc(var(--q) * 15.75); top: calc(var(--q) * 5.65); width: calc(var(--q) * .62); height: calc(var(--q) * .52);
+  overflow: hidden; border-radius: 2px; background: #111;
+}
+.badgeplus .stripes { height: 100%; margin-left: calc(var(--q) * .12); }
+.badgeplus .stripes i { width: calc(var(--q) * .1); }
+.is128 .badgeplus { display: none; }
 
-.keys128 { position: absolute; left: calc(var(--q) * .8); top: calc(var(--q) * 1.45); width: calc(var(--q) * 13.5); height: calc(var(--q) * 5); z-index: 1; }
+.keysplus { position: absolute; left: calc(var(--q) * .8); top: calc(var(--q) * 1.45); width: calc(var(--q) * 13.5); height: calc(var(--q) * 5); z-index: 1; }
 .key128 {
   position: absolute; left: calc(var(--x) * var(--q) + var(--q) * .05); top: calc(var(--y) * var(--q) + var(--q) * .05);
   width: calc(var(--w) * var(--q) - var(--q) * .1); height: calc(var(--q) * .88); padding: 0; border: 0;
@@ -391,22 +407,22 @@ code { font-family: 'Courier New', monospace; }
   background: radial-gradient(ellipse 80% 55% at 50% 22%, rgba(255,255,255,.1), transparent 70%), linear-gradient(180deg, #333 0%, #1d1d1d 45%, #141414 100%);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 0 0 1px #0a0a0a,
     0 calc(var(--q) * .05) 0 #050505, 0 calc(var(--q) * .08) calc(var(--q) * .1) rgba(0,0,0,.85);
-  color: #ececec; font-family: Arial, Helvetica, sans-serif;
+  color: #fff; font-family: Arial, Helvetica, sans-serif;
   touch-action: none; user-select: none; -webkit-user-select: none; transition: transform .04s, box-shadow .04s;
 }
-.key128 span { position: absolute; left: 0; right: 0; text-align: center; line-height: 1.05; }
-.key128 .small { top: calc(var(--q) * .07); font-size: calc(var(--q) * .1); white-space: nowrap; }
-.key128 .main { bottom: calc(var(--q) * .07); font: bold calc(var(--q) * .21) Arial, Helvetica, sans-serif; }
+.key128 span { position: absolute; left: 0; right: 0; text-align: center; line-height: 1.04; }
+.key128 .small { top: calc(var(--q) * .06); font-size: calc(var(--q) * .12); white-space: nowrap; letter-spacing: -.01em; }
+.key128 .main { bottom: calc(var(--q) * .05); font: bold calc(var(--q) * .25) Arial, Helvetica, sans-serif; }
 .key128 .gfx {
   position: relative; display: inline-grid; grid-template: 1fr 1fr / 1fr 1fr; vertical-align: -.1em;
-  width: calc(var(--q) * .11); height: calc(var(--q) * .11); box-shadow: 0 0 0 1px rgba(236,236,236,.85);
+  width: calc(var(--q) * .12); height: calc(var(--q) * .12); box-shadow: 0 0 0 1px rgba(255,255,255,.85);
 }
-.key128 .gfx i.on { background: #ececec; }
+.key128 .gfx i.on { background: #fff; }
 .key128 .label {
   top: 0; bottom: 0; display: flex; align-items: center; justify-content: center;
-  font: bold calc(var(--q) * .13) Arial, Helvetica, sans-serif;
+  font: bold calc(var(--q) * .15) Arial, Helvetica, sans-serif;
 }
-.key128 .label b { font-size: calc(var(--q) * .3); }
+.key128 .label b { font-size: calc(var(--q) * .34); }
 .key128.enter::before { /* the top of the L-shaped ENTER key, beside P */
   content: ''; position: absolute; left: calc(var(--q) * .75); bottom: calc(var(--q) * .6); width: calc(var(--q) * .9); height: calc(var(--q) * 1.3);
   border-radius: calc(var(--q) * .15) calc(var(--q) * .15) 0 0;
@@ -419,6 +435,20 @@ code { font-family: 'Courier New', monospace; }
 }
 .key128.latched { outline: 2px solid var(--accent); outline-offset: 2px; }
 .key128:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ================= help pop-up ================= */
+.help {
+  max-width: min(640px, calc(100vw - 32px)); padding: 16px 20px; border-radius: 8px;
+  background: #2f2620; color: var(--text); border: 1px solid #5a4b40; box-shadow: 0 20px 60px rgba(0,0,0,.6);
+}
+.help::backdrop { background: rgba(0,0,0,.55); }
+.help h2 { margin: 0 0 6px; font: bold 16px Georgia, serif; color: var(--accent); }
+.help table { border-collapse: collapse; font-size: 13px; margin-bottom: 14px; }
+.help td { padding: 3px 10px 3px 0; vertical-align: top; }
+.help td:first-child { white-space: nowrap; font-family: 'Courier New', monospace; color: var(--accent); }
+
 @media (max-width: 700px) {
   .desk { --q: calc(var(--W) / 18.25); }
+  .desk.mplus { width: auto; left: 0; transform: none; }
+  .desk.mplus .deck { flex-basis: 100%; }
 }

@@ -8,15 +8,23 @@ const image = ctx2d.createImageData(SCREEN_W, SCREEN_H);
 const imageU32 = new Uint32Array(image.data.buffer);
 
 let audioCtx = null, nextAudioTime = 0, soundOn = true;
-const zx = new Spectrum(44100, savedMachine());
+// Models: the Spectrum+ is a 48K in the Spectrum+ case, with the 128's keyboard layout
+const MODELS = { 48: { name: 'ZX Spectrum 48K', hw: 48 }, plus: { name: 'ZX Spectrum+', hw: 48 }, 128: { name: 'ZX Spectrum 128K', hw: 128 } };
+let model = savedModel();
+const zx = new Spectrum(44100, MODELS[model].hw);
 let paused = false, turbo = false, lastTime = 0, frameDebt = 0;
 
-// the model from the address (?machine=128) or the one used last time
-function savedMachine() {
+// the model from the address (?machine=48, plus or 128) or the one used last time
+function savedModel() {
   const asked = new URLSearchParams(location.search).get('machine');
-  if (asked === '48' || asked === '128') return +asked;
-  try { return localStorage.getItem('zxMachine') === '128' ? 128 : 48; } catch (e) { return 48; }
+  if (MODELS[asked]) return asked;
+  try {
+    const m = localStorage.getItem('zxModel') || localStorage.getItem('zxMachine');
+    if (MODELS[m]) return m;
+  } catch (e) { /* storage unavailable */ }
+  return '48';
 }
+const modelName = () => MODELS[model].name;
 
 // ---------- keyboard ----------
 const K = {
@@ -182,19 +190,25 @@ function bootFast() {
   for (let i = 0; i < (zx.is128 ? 150 : 120); i++) zx.runFrame();
 }
 
-// switch between the 48K and the 128K: resets the machine and shows its keyboard
-function setMachine(m) {
-  m = +m;
-  if (zx.machine !== m) zx.setMachine(m);
+// switch model: resets the machine and shows its case and keyboard
+function setModel(m) {
+  model = MODELS[m] ? String(m) : '48';
+  if (zx.machine !== MODELS[model].hw) zx.setMachine(MODELS[model].hw); else zx.reset();
   showMachine();
-  try { localStorage.setItem('zxMachine', String(m)); } catch (e) { /* storage unavailable */ }
+  try { localStorage.setItem('zxModel', model); } catch (e) { /* storage unavailable */ }
+}
+// after a ROM or snapshot changed the hardware: the model follows it (a Spectrum+ stays a Spectrum+ on 48K hardware)
+function followHardware() {
+  if (MODELS[model].hw === zx.machine) return;
+  model = zx.machine === 128 ? '128' : '48';
+  try { localStorage.setItem('zxModel', model); } catch (e) { /* storage unavailable */ }
 }
 function showMachine() {
-  $('machine').value = String(zx.machine);
-  document.title = zx.name;
-  if (typeof showKeyboard === 'function') showKeyboard(zx.machine);
+  $('machine').value = model;
+  document.title = modelName();
+  if (typeof showKeyboard === 'function') showKeyboard(model);
   if (!zx.romLoaded) { $('romNote').hidden = false; status('No ' + zx.name + ' ROM yet - open or drop it.', true); }
-  else { $('romNote').hidden = true; status(zx.name + ' ready.'); }
+  else { $('romNote').hidden = true; status(modelName() + ' ready.'); }
 }
 
 function loadFile(name, bytes) {
@@ -203,7 +217,7 @@ function loadFile(name, bytes) {
     if (ext === 'rom' || ((bytes.length === 16384 || bytes.length === 32768) && !['tap', 'tzx', 'sna', 'z80'].includes(ext))) {
       const m = zx.loadROM(bytes);
       saveROM(m, bytes);
-      if (zx.machine !== m) setMachine(m); else zx.reset();
+      if (zx.machine !== m) { zx.setMachine(m); followHardware(); } else zx.reset();
       showMachine();
       status('ROM loaded: ' + name);
       return;
@@ -223,8 +237,8 @@ function loadFile(name, bytes) {
     } else if (ext === 'sna' || ext === 'z80') {
       const before = zx.machine;
       if (ext === 'sna') zx.loadSNA(bytes); else zx.loadZ80(bytes);
-      if (zx.machine !== before) setMachine(zx.machine);
-      status('Snapshot loaded: ' + name + (zx.machine !== before ? ' (switched to the ' + zx.name + ')' : ''));
+      if (zx.machine !== before) { followHardware(); showMachine(); }
+      status('Snapshot loaded: ' + name + (zx.machine !== before ? ' (switched to the ' + modelName() + ')' : ''));
     } else {
       status('Unknown file type: ' + name, true);
       return;
@@ -302,7 +316,10 @@ $('btnSave').onclick = () => {
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 };
-$('machine').onchange = e => { setMachine(e.target.value); renderTapeBlocks(); startAudio(); };
+$('machine').onchange = e => { setModel(e.target.value); renderTapeBlocks(); startAudio(); };
+$('btnKeys').onclick = () => $('keysHelp').showModal();
+$('keysClose').onclick = () => $('keysHelp').close();
+$('keysHelp').addEventListener('click', e => { if (e.target === $('keysHelp')) $('keysHelp').close(); });
 $('btnFull').onclick = () => { const s = $('crt'); s.requestFullscreen && s.requestFullscreen(); };
 $('fastLoad').onchange = e => { zx.fastLoad = e.target.checked; };
 

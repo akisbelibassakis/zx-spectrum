@@ -241,6 +241,12 @@ function restoreROM() {
 }
 async function initROM() {
   if (restoreROM()) { status('ROM restored from browser storage.'); return; }
+  if (window.ZX48_ROM) { // installed copy: the ROM ships as js/rom48.js because fetch() is blocked on file://
+    const bytes = Uint8Array.from(atob(window.ZX48_ROM), c => c.charCodeAt(0));
+    zx.loadROM(bytes); zx.reset(); saveROM(bytes);
+    status('ROM loaded.');
+    return;
+  }
   try {
     const r = await fetch('roms/48.rom');
     if (r.ok) {

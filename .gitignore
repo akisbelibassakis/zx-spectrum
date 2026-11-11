@@ -1,3 +1,5 @@
 test/zex/*.log
 # third-party games: kept locally only, never published
 games/
+installer/build/
+installer/dist/

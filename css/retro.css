@@ -327,9 +327,9 @@ code { font-family: 'Courier New', monospace; }
 /* ================= Spectrum+ and Spectrum 128: --q = one key pitch ================= */
 /* Their keyboard is wider than the 48K's but less deep, so the desk may grow wider than the TV
    (up to the window width) to make the keys as big as the 48K's height allows. */
-.desk { --deckw: calc(var(--W) * .27); --q: min(calc(var(--W) * .05), calc((100vw - 48px - var(--deckw)) / 18.25)); }
-/* every model stands the same height: the 48K (7.06 pitches deep) is scaled from the Spectrum+/128 (7.3) */
-.desk { --p: calc(var(--q) * 7.3 / 7.06); }
+/* The 48K keeps its size; the Spectrum+/128 (7.3 pitches deep) are made as tall as it (7.06 pitches),
+   unless the window is too narrow for that, when they get as big as the width allows. */
+.desk { --deckw: calc(var(--W) * .27); --q: min(calc(var(--p) * 7.06 / 7.3), calc((100vw - 48px - var(--deckw)) / 18.25)); }
 .desk.mplus { width: max-content; position: relative; left: 50%; transform: translateX(-50%); }
 .desk.mplus .deck { flex: 0 0 var(--deckw); }
 .spectrumplus {
@@ -351,14 +351,15 @@ code { font-family: 'Courier New', monospace; }
 .is128 .vents { left: calc(var(--q) * 8.2); width: calc(var(--q) * 8.2); }
 .logoplus {
   position: absolute; left: calc(var(--q) * .8); top: calc(var(--q) * .32); width: calc(var(--q) * 4.1); height: calc(var(--q) * .5);
-  overflow: visible; color: #e6e6e6; filter: drop-shadow(0 1px 0 rgba(0,0,0,.7));
+  overflow: visible; color: #0d0d0d; /* black on black, picked out by its lit top edge */
+  filter: drop-shadow(0 -1px 0 rgba(255,255,255,.22)) drop-shadow(0 1px 0 rgba(0,0,0,.8));
 }
-.is128 .logoplus { color: #c8231c; }
+.is128 .logoplus { color: #c8231c; filter: drop-shadow(0 1px 0 rgba(0,0,0,.7)); }
 .modelplus {
   position: absolute; left: calc(var(--q) * .85); top: calc(var(--q) * .9);
-  font: bold calc(var(--q) * .24) Arial, Helvetica, sans-serif; color: #e6e6e6; letter-spacing: .3px;
+  font: calc(var(--q) * .22) Arial, Helvetica, sans-serif; color: #c8231c; letter-spacing: .3px;
 }
-.is128 .modelplus { font: italic calc(var(--q) * .2) Arial, Helvetica, sans-serif; color: #c8231c; }
+.is128 .modelplus { font: italic calc(var(--q) * .2) Arial, Helvetica, sans-serif; }
 .keybed {
   position: absolute; left: calc(var(--q) * .68); top: calc(var(--q) * 1.33); width: calc(var(--q) * 13.74); height: calc(var(--q) * 5.12);
   border-radius: calc(var(--q) * .14); background: #131313;
@@ -413,18 +414,18 @@ code { font-family: 'Courier New', monospace; }
   touch-action: none; user-select: none; -webkit-user-select: none; transition: transform .04s, box-shadow .04s;
 }
 .key128 span { position: absolute; left: 0; right: 0; text-align: center; line-height: 1.04; }
-.key128 .small { top: calc(var(--q) * .06); font-size: calc(var(--q) * .12); white-space: nowrap; letter-spacing: -.01em; }
-.key128 .main { bottom: calc(var(--q) * .05); font: bold calc(var(--q) * .25) Arial, Helvetica, sans-serif; }
+.key128 .small { top: calc(var(--q) * .05); font-size: calc(var(--q) * .14); line-height: 1; white-space: nowrap; letter-spacing: -.03em; }
+.key128 .main { bottom: calc(var(--q) * .04); font: bold calc(var(--q) * .28) Arial, Helvetica, sans-serif; }
 .key128 .gfx {
   position: relative; display: inline-grid; grid-template: 1fr 1fr / 1fr 1fr; vertical-align: -.1em;
-  width: calc(var(--q) * .12); height: calc(var(--q) * .12); box-shadow: 0 0 0 1px rgba(255,255,255,.85);
+  width: calc(var(--q) * .13); height: calc(var(--q) * .13); margin-right: calc(var(--q) * .05); box-shadow: 0 0 0 1px rgba(255,255,255,.85);
 }
 .key128 .gfx i.on { background: #fff; }
 .key128 .label {
   top: 0; bottom: 0; display: flex; align-items: center; justify-content: center;
-  font: bold calc(var(--q) * .15) Arial, Helvetica, sans-serif;
+  font: bold calc(var(--q) * .18) Arial, Helvetica, sans-serif; line-height: 1.05;
 }
-.key128 .label b { font-size: calc(var(--q) * .34); }
+.key128 .label b { font-size: calc(var(--q) * .38); }
 .key128.enter::before { /* the top of the L-shaped ENTER key, beside P */
   content: ''; position: absolute; left: calc(var(--q) * .75); bottom: calc(var(--q) * .6); width: calc(var(--q) * .9); height: calc(var(--q) * 1.3);
   border-radius: calc(var(--q) * .15) calc(var(--q) * .15) 0 0;
@@ -450,7 +451,7 @@ code { font-family: 'Courier New', monospace; }
 .help td:first-child { white-space: nowrap; font-family: 'Courier New', monospace; color: var(--accent); }
 
 @media (max-width: 700px) {
-  .desk { --q: calc(var(--W) / 18.25); --p: calc(var(--W) / 11.3); }
+  .desk { --q: calc(var(--W) / 18.25); }
   .desk.mplus { width: auto; left: 0; transform: none; }
   .desk.mplus .deck { flex-basis: 100%; }
 }

@@ -328,6 +328,8 @@ code { font-family: 'Courier New', monospace; }
 /* Their keyboard is wider than the 48K's but less deep, so the desk may grow wider than the TV
    (up to the window width) to make the keys as big as the 48K's height allows. */
 .desk { --deckw: calc(var(--W) * .27); --q: min(calc(var(--W) * .05), calc((100vw - 48px - var(--deckw)) / 18.25)); }
+/* every model stands the same height: the 48K (7.06 pitches deep) is scaled from the Spectrum+/128 (7.3) */
+.desk { --p: calc(var(--q) * 7.3 / 7.06); }
 .desk.mplus { width: max-content; position: relative; left: 50%; transform: translateX(-50%); }
 .desk.mplus .deck { flex: 0 0 var(--deckw); }
 .spectrumplus {
@@ -448,7 +450,7 @@ code { font-family: 'Courier New', monospace; }
 .help td:first-child { white-space: nowrap; font-family: 'Courier New', monospace; color: var(--accent); }
 
 @media (max-width: 700px) {
-  .desk { --q: calc(var(--W) / 18.25); }
+  .desk { --q: calc(var(--W) / 18.25); --p: calc(var(--W) / 11.3); }
   .desk.mplus { width: auto; left: 0; transform: none; }
   .desk.mplus .deck { flex-basis: 100%; }
 }

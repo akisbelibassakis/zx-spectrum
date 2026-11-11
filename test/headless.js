@@ -1,4 +1,5 @@
-// Headless runner: node test/headless.js <file.z80|.sna|.tap|.tzx> [frames] [rom] [out.bmp]
+// Headless runner: node test/headless.js <file.z80|.sna|.tap|.tzx|-> [frames] [rom] [out.bmp]
+// A 32K ROM (roms/128.rom) runs the 128K; '-' as the file just boots the machine.
 // Runs the emulator without a browser and writes the final screen as a BMP.
 'use strict';
 const fs = require('fs');
@@ -10,10 +11,10 @@ const [file, framesArg, romArg, outArg] = process.argv.slice(2);
 const frames = +(framesArg || 100);
 const zx = new Spectrum(44100);
 const rom = romArg || path.join(__dirname, '..', 'roms', '48.rom');
-if (fs.existsSync(rom)) { zx.loadROM(new Uint8Array(fs.readFileSync(rom))); zx.reset(); }
+if (fs.existsSync(rom)) zx.setMachine(zx.loadROM(new Uint8Array(fs.readFileSync(rom))));
 else console.log('No ROM found - running with empty ROM area');
 
-if (file) {
+if (file && file !== '-') {
   const data = new Uint8Array(fs.readFileSync(file));
   const ext = path.extname(file).toLowerCase();
   if (ext === '.z80') zx.loadZ80(data);
@@ -21,7 +22,9 @@ if (file) {
   else if (ext === '.tap' || ext === '.tzx') {
     zx.insertTape(ext === '.tap' ? Tape.fromTAP(data) : Tape.fromTZX(data));
     for (let i = 0; i < 120; i++) zx.runFrame();
-    zx.typeKeys([{ keys: [[6, 3]] }, { keys: [[7, 1], [5, 0]] }, { keys: [[7, 1], [5, 0]] }, { keys: [[6, 0]] }]);
+    // 48K: LOAD "" ENTER; 128K: ENTER on the menu's Tape Loader
+    if (zx.is128) zx.typeKeys([{ keys: [[6, 0]] }]);
+    else zx.typeKeys([{ keys: [[6, 3]] }, { keys: [[7, 1], [5, 0]] }, { keys: [[7, 1], [5, 0]] }, { keys: [[6, 0]] }]);
     console.log('Tape blocks:', zx.tape.blocks.map(b => b.desc).join(' | '));
   }
 }

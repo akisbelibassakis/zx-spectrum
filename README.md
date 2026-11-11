@@ -1,6 +1,6 @@
-# ZX Spectrum 48K emulator
+# ZX Spectrum 48K / 128K emulator
 
-A ZX Spectrum 48K emulator in plain JavaScript that runs in the browser, with no build step and no dependencies.
+A ZX Spectrum 48K and 128K emulator in plain JavaScript that runs in the browser, with no build step and no dependencies.
 
 ## Run
 
@@ -8,26 +8,29 @@ A ZX Spectrum 48K emulator in plain JavaScript that runs in the browser, with no
 node serve.js
 ```
 
-Then open http://localhost:8048. Opening `index.html` directly also works, but then the ROM can't be fetched from `roms/`.
+Then open http://localhost:8048 (add `?machine=128` to start on the 128K). Opening `index.html` directly also works: the ROMs then come from `js/rom48.js` and `js/rom128.js`.
 
-**ROM:** the original 48K ROM is in `roms/48.rom` (16,384 bytes; Amstrad allows it to be distributed with emulators) and is fetched when the folder is served over HTTP. When `index.html` is opened directly, open/drop the ROM once; it is kept in the browser's local storage after that.
+**ROMs:** the original ROMs are in `roms/48.rom` (16,384 bytes) and `roms/128.rom` (32,768 bytes: the 128 editor ROM followed by its 48 BASIC ROM); Amstrad allows them to be distributed with emulators. They are kept in the browser's local storage once loaded.
+
+**Model:** pick ZX Spectrum 48K or 128K in the control strip; the choice is remembered. Loading a 128K snapshot switches to the 128K by itself.
 
 ## Look and feel
 
 The picture runs inside an 80s wood-cabinet colour TV with a CRT look: scanlines, a curved and vignetted glass, power on/off animation, static on channels 2-6, and VOLUME and COLOUR knobs (drag or scroll; COLOUR at minimum gives a black-and-white set).
-Below it sits the original rubber-key 48K keyboard with all its legends. The keys can be clicked or tapped and light up when pressed from the PC keyboard; a click on CAPS SHIFT or SYMBOL SHIFT holds it for the next key.
+Below it sits the original rubber-key 48K keyboard with all its legends, or, on the 128K, the Spectrum 128's black case with its Spectrum+ keyboard, heatsink and 128K badge (its extra keys such as DELETE, EDIT and the arrows press the two 48K keys they stand for). The keys can be clicked or tapped and light up when pressed from the PC keyboard; a click on CAPS SHIFT or SYMBOL SHIFT holds it for the next key.
 Tapes go in the cassette recorder beside it, whose reels turn while the tape plays.
 
 ## Features
 
 - Z80 core: all documented and undocumented opcodes (IXh/IXl, SLL, DDCB register copies), undocumented flag bits 3/5, IM 0/1/2, HALT, EI delay, per-instruction T-state counts.
-- ULA: 69,888 T-states per frame, 50 Hz interrupt, border changes drawn at their T-state (loading stripes), FLASH, BRIGHT.
+- 128K: memory paging through port 0x7FFD (eight RAM banks, two ROMs, shadow screen, paging lock), 70,908 T-states per frame, AY-3-8912 sound chip (three tones, noise, envelopes).
+- ULA: 69,888 T-states per frame (48K), 50 Hz interrupt, border changes drawn at their T-state (loading stripes), FLASH, BRIGHT.
 - Keyboard with PC mappings (see the Controls panel), cursor keys or Kempston joystick on the arrows.
 - Beeper sound through Web Audio, plus tape noise while loading.
 - Tapes: `.TAP` and `.TZX` (standard, turbo, pure tone, pulses, pure data, direct recording, pauses, loops).
   Standard blocks load instantly through a ROM trap at `LD-BYTES`; turbo and custom loaders play the tape in real time, run at full speed by default.
-  On insert, the machine resets and types `LOAD ""`.
-- Snapshots: load `.SNA` and `.Z80` (v1/v2/v3, 48K), save `.SNA`.
+  On insert, the machine resets and types `LOAD ""` (on the 128K it picks Tape Loader from the start-up menu).
+- Snapshots: load `.SNA` and `.Z80` (v1/v2/v3) for the 48K and 128K, save `.SNA` of either.
 
 Not yet: 128K models and AY sound, memory/IO contention (some timing-critical demos and multicolour effects are off), and beam-racing paper rendering (the paper is drawn once per frame).
 

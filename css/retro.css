@@ -323,3 +323,102 @@ code { font-family: 'Courier New', monospace; }
   #btnPower { font-size: 9px; padding: 7px 10px; }
   .deck { flex-basis: 100%; }
 }
+
+/* ================= ZX Spectrum 128 ("toastrack"): --q = one key pitch ================= */
+/* the 128 is wider than the 48, so its desk uses nearly the full TV width */
+.desk { --q: calc(var(--W) * .72 / 18.25); }
+.desk.m128 { width: calc(var(--W) * .97); }
+.desk.m128 .deck { font-size: max(8.5px, calc(var(--q) * .33)); }
+.spectrum128 {
+  flex: 0 0 auto; position: relative; width: calc(var(--q) * 18.25); height: calc(var(--q) * 7.3);
+  border-radius: calc(var(--q) * .2);
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #353535 0%, #2a2a2a 18%, #232323 70%, #1c1c1c 100%);
+  box-shadow: 0 calc(var(--q) * .3) calc(var(--q) * .45) rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.18),
+    inset 0 calc(var(--q) * -.12) 0 rgba(0,0,0,.35);
+  font-family: Arial, Helvetica, sans-serif;
+}
+.spectrum128[hidden] { display: none; }
+.vents { /* ventilation slots along the top edge */
+  position: absolute; left: calc(var(--q) * 8.2); top: 0; width: calc(var(--q) * 8.2); height: calc(var(--q) * .2);
+  background: repeating-linear-gradient(90deg, #070707 0 calc(var(--q) * .06), transparent calc(var(--q) * .06) calc(var(--q) * .17));
+}
+.logo128 {
+  position: absolute; left: calc(var(--q) * .8); top: calc(var(--q) * .32); width: calc(var(--q) * 4.1); height: calc(var(--q) * .5);
+  overflow: visible; filter: drop-shadow(0 1px 0 rgba(0,0,0,.7));
+}
+.model128 {
+  position: absolute; left: calc(var(--q) * .85); top: calc(var(--q) * .9);
+  font: italic calc(var(--q) * .2) Arial, Helvetica, sans-serif; color: #c8231c; letter-spacing: .3px;
+}
+.keybed {
+  position: absolute; left: calc(var(--q) * .68); top: calc(var(--q) * 1.33); width: calc(var(--q) * 13.74); height: calc(var(--q) * 5.12);
+  border-radius: calc(var(--q) * .14); background: #131313;
+  box-shadow: inset 0 calc(var(--q) * .05) calc(var(--q) * .1) rgba(0,0,0,.9), 0 1px 0 rgba(255,255,255,.08);
+}
+.grooves { /* the case lines that run from the keyboard to the heatsink */
+  position: absolute; left: calc(var(--q) * 14.42); top: calc(var(--q) * 1.45); width: calc(var(--q) * 2.15); height: calc(var(--q) * 5);
+  background: repeating-linear-gradient(180deg, transparent 0 calc(var(--q) - 2px), rgba(0,0,0,.65) calc(var(--q) - 2px) calc(var(--q) - 1px),
+    rgba(255,255,255,.07) calc(var(--q) - 1px) var(--q));
+}
+.ribs {
+  position: absolute; right: 0; top: 0; width: calc(var(--q) * 1.7); height: 100%;
+  border-radius: 0 calc(var(--q) * .2) calc(var(--q) * .2) 0;
+  background: repeating-linear-gradient(180deg, #3b3b3b 0 calc(var(--q) * .07), #2a2a2a calc(var(--q) * .07) calc(var(--q) * .1),
+    #070707 calc(var(--q) * .1) calc(var(--q) * .2));
+  box-shadow: inset calc(var(--q) * .08) 0 calc(var(--q) * .08) rgba(0,0,0,.7);
+}
+.badge128 {
+  position: absolute; left: calc(var(--q) * 14.55); top: calc(var(--q) * 5.6); display: flex; align-items: center; gap: calc(var(--q) * .12);
+}
+.badge128 span {
+  font: calc(var(--q) * .5) Arial, Helvetica, sans-serif; letter-spacing: -.02em; color: transparent;
+  -webkit-text-stroke: max(1px, calc(var(--q) * .025)) #d8261c;
+}
+.badge128 .stripes { display: flex; height: calc(var(--q) * .46); transform: skewX(-32deg); }
+.badge128 .stripes i { width: calc(var(--q) * .11); }
+.badge128 .stripes i:nth-child(1) { background: #d9281d; }
+.badge128 .stripes i:nth-child(2) { background: #f5cf12; }
+.badge128 .stripes i:nth-child(3) { background: #4dae3e; }
+.badge128 .stripes i:nth-child(4) { background: #3c8ed5; }
+
+.keys128 { position: absolute; left: calc(var(--q) * .8); top: calc(var(--q) * 1.45); width: calc(var(--q) * 13.5); height: calc(var(--q) * 5); z-index: 1; }
+.key128 {
+  position: absolute; left: calc(var(--x) * var(--q) + var(--q) * .05); top: calc(var(--y) * var(--q) + var(--q) * .05);
+  width: calc(var(--w) * var(--q) - var(--q) * .1); height: calc(var(--q) * .88); padding: 0; border: 0;
+  border-radius: calc(var(--q) * .15);
+  background: radial-gradient(ellipse 80% 55% at 50% 22%, rgba(255,255,255,.1), transparent 70%), linear-gradient(180deg, #333 0%, #1d1d1d 45%, #141414 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 0 0 1px #0a0a0a,
+    0 calc(var(--q) * .05) 0 #050505, 0 calc(var(--q) * .08) calc(var(--q) * .1) rgba(0,0,0,.85);
+  color: #ececec; font-family: Arial, Helvetica, sans-serif;
+  touch-action: none; user-select: none; -webkit-user-select: none; transition: transform .04s, box-shadow .04s;
+}
+.key128 span { position: absolute; left: 0; right: 0; text-align: center; line-height: 1.05; }
+.key128 .small { top: calc(var(--q) * .07); font-size: calc(var(--q) * .1); white-space: nowrap; }
+.key128 .main { bottom: calc(var(--q) * .07); font: bold calc(var(--q) * .21) Arial, Helvetica, sans-serif; }
+.key128 .gfx {
+  position: relative; display: inline-grid; grid-template: 1fr 1fr / 1fr 1fr; vertical-align: -.1em;
+  width: calc(var(--q) * .11); height: calc(var(--q) * .11); box-shadow: 0 0 0 1px rgba(236,236,236,.85);
+}
+.key128 .gfx i.on { background: #ececec; }
+.key128 .label {
+  top: 0; bottom: 0; display: flex; align-items: center; justify-content: center;
+  font: bold calc(var(--q) * .13) Arial, Helvetica, sans-serif;
+}
+.key128 .label b { font-size: calc(var(--q) * .3); }
+.key128.enter::before { /* the top of the L-shaped ENTER key, beside P */
+  content: ''; position: absolute; left: calc(var(--q) * .75); bottom: calc(var(--q) * .6); width: calc(var(--q) * .9); height: calc(var(--q) * 1.3);
+  border-radius: calc(var(--q) * .15) calc(var(--q) * .15) 0 0;
+  background: linear-gradient(180deg, #333 0%, #262626 30%, #262626 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 1px 0 0 #0a0a0a, inset -1px 0 0 #0a0a0a;
+}
+.key128.down, .key128:active {
+  transform: translateY(calc(var(--q) * .04));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), inset 0 0 0 1px #0a0a0a, 0 calc(var(--q) * .01) 0 #050505, 0 calc(var(--q) * .02) calc(var(--q) * .03) rgba(0,0,0,.85);
+}
+.key128.latched { outline: 2px solid var(--accent); outline-offset: 2px; }
+.key128:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 700px) {
+  .desk { --q: calc(var(--W) / 18.25); }
+}

@@ -8,9 +8,15 @@ const image = ctx2d.createImageData(SCREEN_W, SCREEN_H);
 const imageU32 = new Uint32Array(image.data.buffer);
 
 let audioCtx = null, nextAudioTime = 0, soundOn = true;
-const zx = new Spectrum(44100);
+const zx = new Spectrum(44100, savedMachine());
 let paused = false, turbo = false, lastTime = 0, frameDebt = 0;
-const FPS = CPU_HZ / FRAME_T;
+
+// the model from the address (?machine=128) or the one used last time
+function savedMachine() {
+  const asked = new URLSearchParams(location.search).get('machine');
+  if (asked === '48' || asked === '128') return +asked;
+  try { return localStorage.getItem('zxMachine') === '128' ? 128 : 48; } catch (e) { return 48; }
+}
 
 // ---------- keyboard ----------
 const K = {
@@ -32,6 +38,13 @@ const keyMap = {
   Minus: [K.SYM, K.J], Equal: [K.SYM, K.L], Slash: [K.SYM, K.V],
 };
 for (const ch of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') keyMap['Key' + ch] = [K[ch]];
+// the 128's extra keys: each presses two keys of the 48K matrix
+const COMBOS = {
+  TRUEVID: ['CAPS', 3], INVVID: ['CAPS', 4], BREAK: ['CAPS', 'SPACE'], DELETE: ['CAPS', 0], GRAPH: ['CAPS', 9],
+  EXTEND: ['CAPS', 'SYM'], EDIT: ['CAPS', 1], CAPSLOCK: ['CAPS', 2],
+  LEFT: ['CAPS', 5], DOWN: ['CAPS', 6], UP: ['CAPS', 7], RIGHT: ['CAPS', 8],
+  SEMI: ['SYM', 'O'], QUOTE: ['SYM', 'P'], DOT: ['SYM', 'M'], COMMA: ['SYM', 'N'],
+};
 for (const d of '0123456789') { keyMap['Digit' + d] = [K[d]]; keyMap['Numpad' + d] = [K[d]]; }
 
 const kempstonMap = { ArrowRight: 1, ArrowLeft: 2, ArrowDown: 4, ArrowUp: 8, AltLeft: 16 };
@@ -71,10 +84,10 @@ function processKeyEvents() {
   if (changed) applyMatrix();
 }
 
-// on-screen keyboard: name is a key of K, e.g. 'J' or 'CAPS'
+// on-screen keyboard: name is a key of K, e.g. 'J' or 'CAPS', or of COMBOS, e.g. 'DELETE'
 function virtualKey(name, down) {
   const code = 'vk:' + name;
-  keyMap[code] = [K[name]];
+  keyMap[code] = COMBOS[name] ? COMBOS[name].map(n => K[n]) : [K[name]];
   keyEvents.push({ code, down, blocked: false });
   processKeyEvents();
   if (down) startAudio();
@@ -135,6 +148,7 @@ function frame(now) {
   const dt = Math.min(now - lastTime, 100);
   lastTime = now;
   if (paused || !zx.romLoaded) return;
+  const FPS = zx.cpuHz / zx.frameT;
 
   const fast = turbo || ($('tapeTurbo').checked && zx.tape && zx.tape.playing);
   if (fast) {
@@ -165,37 +179,52 @@ function status(msg, isError) {
 function bootFast() {
   // run the ROM start-up instantly so the auto-typed command is not lost
   zx.reset();
-  for (let i = 0; i < 120; i++) zx.runFrame();
+  for (let i = 0; i < (zx.is128 ? 150 : 120); i++) zx.runFrame();
+}
+
+// switch between the 48K and the 128K: resets the machine and shows its keyboard
+function setMachine(m) {
+  m = +m;
+  if (zx.machine !== m) zx.setMachine(m);
+  showMachine();
+  try { localStorage.setItem('zxMachine', String(m)); } catch (e) { /* storage unavailable */ }
+}
+function showMachine() {
+  $('machine').value = String(zx.machine);
+  document.title = zx.name;
+  if (typeof showKeyboard === 'function') showKeyboard(zx.machine);
+  if (!zx.romLoaded) { $('romNote').hidden = false; status('No ' + zx.name + ' ROM yet - open or drop it.', true); }
+  else { $('romNote').hidden = true; status(zx.name + ' ready.'); }
 }
 
 function loadFile(name, bytes) {
   const ext = extOf(name);
   try {
-    if (ext === 'rom' || (bytes.length === 16384 && !['tap', 'tzx', 'sna', 'z80'].includes(ext))) {
-      zx.loadROM(bytes);
-      saveROM(bytes);
-      zx.reset();
-      $('romNote').hidden = true;
+    if (ext === 'rom' || ((bytes.length === 16384 || bytes.length === 32768) && !['tap', 'tzx', 'sna', 'z80'].includes(ext))) {
+      const m = zx.loadROM(bytes);
+      saveROM(m, bytes);
+      if (zx.machine !== m) setMachine(m); else zx.reset();
+      showMachine();
       status('ROM loaded: ' + name);
       return;
     }
-    if (!zx.romLoaded) { status('Load the 48K ROM first (48.rom, 16384 bytes).', true); return; }
+    if (!zx.romLoaded) { status('Load the ' + zx.name + ' ROM first.', true); return; }
     if (ext === 'tap' || ext === 'tzx') {
       const tape = ext === 'tap' ? Tape.fromTAP(bytes, name) : Tape.fromTZX(bytes, name);
       zx.insertTape(tape);
       renderTapeBlocks();
       if ($('autoLoad').checked) {
         bootFast();
-        // LOAD "" ENTER  (J in K mode, then SYMBOL SHIFT+P twice)
-        zx.typeKeys([{ keys: [K.J] }, { keys: [K.SYM, K.P] }, { keys: [K.SYM, K.P] }, { keys: [K.ENTER] }]);
+        // 128K: ENTER picks "Tape Loader" on the start-up menu; 48K: LOAD "" ENTER (J, then SYMBOL SHIFT+P twice)
+        if (zx.is128) zx.typeKeys([{ keys: [K.ENTER] }]);
+        else zx.typeKeys([{ keys: [K.J] }, { keys: [K.SYM, K.P] }, { keys: [K.SYM, K.P] }, { keys: [K.ENTER] }]);
       }
       status('Tape inserted: ' + name + ' (' + tape.blocks.length + ' blocks)');
-    } else if (ext === 'sna') {
-      zx.loadSNA(bytes);
-      status('Snapshot loaded: ' + name);
-    } else if (ext === 'z80') {
-      zx.loadZ80(bytes);
-      status('Snapshot loaded: ' + name);
+    } else if (ext === 'sna' || ext === 'z80') {
+      const before = zx.machine;
+      if (ext === 'sna') zx.loadSNA(bytes); else zx.loadZ80(bytes);
+      if (zx.machine !== before) setMachine(zx.machine);
+      status('Snapshot loaded: ' + name + (zx.machine !== before ? ' (switched to the ' + zx.name + ')' : ''));
     } else {
       status('Unknown file type: ' + name, true);
       return;
@@ -224,42 +253,35 @@ document.addEventListener('drop', e => {
   for (const f of files) readFile(f);
 });
 
-// ROM persistence (per browser)
-function saveROM(bytes) {
-  try { localStorage.setItem('zx48rom', btoa(String.fromCharCode.apply(null, bytes))); } catch (e) { /* storage unavailable */ }
+// ROMs: remembered in this browser; otherwise from js/rom48.js / rom128.js (pages opened from disk can't fetch())
+// or from roms/48.rom / roms/128.rom
+const ROM_SOURCES = { 48: { key: 'zx48rom', script: 'ZX48_ROM', file: 'roms/48.rom' },
+  128: { key: 'zx128rom', script: 'ZX128_ROM', file: 'roms/128.rom' } };
+const fromBase64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+function saveROM(m, bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 8192) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+  try { localStorage.setItem(ROM_SOURCES[m].key, btoa(s)); } catch (e) { /* storage unavailable */ }
 }
-function restoreROM() {
+async function findROM(m) {
+  const src = ROM_SOURCES[m];
+  try { const s = localStorage.getItem(src.key); if (s) return fromBase64(s); } catch (e) { /* ignore */ }
+  if (window[src.script]) return fromBase64(window[src.script]);
   try {
-    const s = localStorage.getItem('zx48rom');
-    if (s) {
-      const bytes = Uint8Array.from(atob(s), c => c.charCodeAt(0));
-      zx.loadROM(bytes); zx.reset();
-      return true;
-    }
-  } catch (e) { /* ignore */ }
-  return false;
-}
-async function initROM() {
-  if (restoreROM()) { status('ROM restored from browser storage.'); return; }
-  if (window.ZX48_ROM) { // installed copy: the ROM ships as js/rom48.js because fetch() is blocked on file://
-    const bytes = Uint8Array.from(atob(window.ZX48_ROM), c => c.charCodeAt(0));
-    zx.loadROM(bytes); zx.reset(); saveROM(bytes);
-    status('ROM loaded.');
-    return;
-  }
-  try {
-    const r = await fetch('roms/48.rom');
-    if (r.ok) {
-      const bytes = new Uint8Array(await r.arrayBuffer());
-      zx.loadROM(bytes); zx.reset(); saveROM(bytes);
-      status('ROM loaded from roms/48.rom');
-      return;
-    }
+    const r = await fetch(src.file);
+    if (r.ok) return new Uint8Array(await r.arrayBuffer());
   } catch (e) { /* file:// or missing */ }
-  $('romNote').hidden = false;
-  status('No ROM yet - load or drop 48.rom.', true);
+  return null;
 }
-initROM();
+async function initROMs() {
+  for (const m of [48, 128]) {
+    const bytes = await findROM(m);
+    if (bytes) { zx.loadROM(bytes); saveROM(m, bytes); }
+  }
+  zx.reset();
+  showMachine();
+}
+initROMs();
 
 // ---------- controls ----------
 $('btnReset').onclick = () => { zx.reset(); renderTapeBlocks(); startAudio(); };
@@ -280,6 +302,7 @@ $('btnSave').onclick = () => {
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 };
+$('machine').onchange = e => { setMachine(e.target.value); renderTapeBlocks(); startAudio(); };
 $('btnFull').onclick = () => { const s = $('crt'); s.requestFullscreen && s.requestFullscreen(); };
 $('fastLoad').onchange = e => { zx.fastLoad = e.target.checked; };
 

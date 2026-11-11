@@ -1,4 +1,4 @@
-// The 80s television (power, channels, knobs, CRT static) and the rubber-key 48K keyboard.
+// The 80s television (power, channels, knobs, CRT static), the rubber-key 48K keyboard and the 128's keyboard.
 'use strict';
 
 // ---------- keyboard ----------
@@ -48,7 +48,7 @@ const KEY_COLOURS = { 1: ['BLUE', '#4a78d8'], 2: ['RED', '#e2442f'], 3: ['MAGENT
 // block graphic on keys 1-8 (CHR$ 129-135, and the solid block on 8): bit 1 = top right, 2 = top left, 4 = bottom right
 const KEY_GRAPHICS = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 15 };
 
-const keyEls = []; // { el, row, bit }
+const keyEls = []; // { el, keys: [[row, bit], ...] }: lit while all its matrix keys are down
 const latched = new Set(); // CAPS / SYM clicked once: held for the next key, like a sticky shift
 
 function keyFace(name, legend, word, sym) {
@@ -89,8 +89,7 @@ function buildKeyboard() {
         `<button class="key${isShift ? ' shift' : ''}" aria-label="${esc(legend)}">${keyFace(name, legend, word, sym)}</button>` +
         `<div class="below">${esc(below)}</div>`;
       const key = cell.querySelector('.key');
-      const [r, b] = K[name];
-      keyEls.push({ el: key, row: r, bit: b });
+      keyEls.push({ el: key, keys: [K[name]] });
       attachKey(key, name, isShift);
       kb.appendChild(cell);
     });
@@ -120,13 +119,74 @@ function attachKey(el, name, isShift) {
     if (!isShift && latched.size) {
       for (const s of latched) virtualKey(s, false);
       latched.clear();
-      document.querySelectorAll('.key.latched').forEach(k => k.classList.remove('latched'));
+      document.querySelectorAll('.latched').forEach(k => k.classList.remove('latched'));
     }
   };
   el.addEventListener('pointerdown', press);
   el.addEventListener('pointerup', release);
   el.addEventListener('pointercancel', release);
   el.addEventListener('contextmenu', e => e.preventDefault());
+}
+
+// ---------- Spectrum 128 keyboard (the Spectrum+ layout, hard black keys) ----------
+// Positions in key pitches (--q) from the top-left of the key area, measured from photos of the 128.
+// The extra keys press two matrix keys at once (see COMBOS in main.js).
+// [name, x, y, width, face]
+const KB128 = [
+  ['TRUEVID', 0, 0, 1, 'TRUE<br>VIDEO'], ['INVVID', 1, 0, 1, 'INV.<br>VIDEO'],
+  ...'1234567890'.split('').map((k, i) => [k, 2 + i, 0, 1]), ['BREAK', 12, 0, 1.5, 'BREAK'],
+  ['DELETE', 0, 1, 1.5, 'DELETE'], ['GRAPH', 1.5, 1, 1, 'GRAPH'],
+  ...'QWERTYUIOP'.split('').map((k, i) => [k, 2.5 + i, 1, 1]),
+  ['EXTEND', 0, 2, 1.75, 'EXTEND<br>MODE'], ['EDIT', 1.75, 2, 1, 'EDIT'],
+  ...'ASDFGHJKL'.split('').map((k, i) => [k, 2.75 + i, 2, 1]), ['ENTER', 11.75, 2, 1.75, 'ENTER'],
+  ['CAPS', 0, 3, 2.25, 'CAPS SHIFT'], ['CAPSLOCK', 2.25, 3, 1, 'CAPS<br>LOCK'],
+  ...'ZXCVBNM'.split('').map((k, i) => [k, 3.25 + i, 3, 1]), ['DOT', 10.25, 3, 1, '<b>.</b>'], ['CAPS', 11.25, 3, 2.25, 'CAPS SHIFT'],
+  ['SYM', 0, 4, 1, 'SYMBOL<br>SHIFT'], ['SEMI', 1, 4, 1, '<b>;</b>'], ['QUOTE', 2, 4, 1, '<b>"</b>'],
+  ['LEFT', 3, 4, 1, '<b>⇦</b>'], ['RIGHT', 4, 4, 1, '<b>⇨</b>'], ['SPACE', 5, 4, 4.5, ''],
+  ['UP', 9.5, 4, 1, '<b>⇧</b>'], ['DOWN', 10.5, 4, 1, '<b>⇩</b>'], ['COMMA', 11.5, 4, 1, '<b>,</b>'], ['SYM', 12.5, 4, 1, 'SYMBOL<br>SHIFT'],
+];
+// colour names printed on the 128's digit keys (8 and 9 have none)
+const COLOUR_NAMES = { 1: 'BLUE', 2: 'RED', 3: 'MAGENTA', 4: 'GREEN', 5: 'CYAN', 6: 'YELLOW', 7: 'WHITE', 0: 'BLACK' };
+
+// all the legends of a 48K key, stacked on one 128 key: E mode, E + shift, keyword and symbol, then the key itself
+function keyFace128(name) {
+  const k = KB_ROWS.flatMap(r => r.keys).find(key => key[0] === name);
+  const [, legend, word, sym, above, below] = k;
+  let lines;
+  if (KEY_GRAPHICS[name] !== undefined) {
+    const g = KEY_GRAPHICS[name];
+    const gfx = `<span class="gfx">${[2, 1, 8, 4].map(bit => `<i${g & bit ? ' class="on"' : ''}></i>`).join('')}</span>`;
+    lines = [esc(COLOUR_NAMES[name] || ''), esc(below), gfx + ' ' + esc(sym)];
+  } else if (/^\d$/.test(name)) {
+    lines = [esc(COLOUR_NAMES[name] || ''), esc(below), esc(sym)];
+  } else {
+    lines = [esc(above), esc(below), esc(word) + ' ' + esc(sym)];
+  }
+  return `<span class="small">${lines.map(l => l || '&nbsp;').join('<br>')}</span><span class="main">${esc(legend)}</span>`;
+}
+
+function buildKeyboard128() {
+  const kb = document.getElementById('keys128');
+  for (const [name, x, y, w, face] of KB128) {
+    const key = document.createElement('button');
+    key.className = 'key128' + (name === 'ENTER' ? ' enter' : '') + (name === 'SPACE' ? ' space' : '');
+    key.style.cssText = `--x:${x};--y:${y};--w:${w}`;
+    key.setAttribute('aria-label', name);
+    key.innerHTML = face !== undefined ? `<span class="label">${face}</span>` : keyFace128(name);
+    const combo = COMBOS[name] || [name];
+    keyEls.push({ el: key, keys: combo.map(n => K[n]) });
+    attachKey(key, name, name === 'CAPS' || name === 'SYM');
+    kb.appendChild(key);
+  }
+}
+
+// show the keyboard of the chosen model
+function showKeyboard(machine) {
+  document.querySelector('.desk').classList.toggle('m128', machine === 128);
+  document.getElementById('spectrum48').hidden = machine === 128;
+  document.getElementById('spectrum128').hidden = machine !== 128;
+  latched.clear();
+  document.querySelectorAll('.latched').forEach(k => k.classList.remove('latched'));
 }
 
 function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -138,7 +198,7 @@ function syncKeyboard() {
   for (let i = 0; i < 8; i++) if (shownKeys[i] !== zx.keys[i]) { same = false; break; }
   if (same) return;
   shownKeys.set(zx.keys);
-  for (const k of keyEls) k.el.classList.toggle('down', !(zx.keys[k.row] & (1 << k.bit)));
+  for (const k of keyEls) k.el.classList.toggle('down', k.keys.every(([r, b]) => !(zx.keys[r] & (1 << b))));
 }
 
 // ---------- television ----------
@@ -207,6 +267,8 @@ function retroLoop() {
 }
 
 buildKeyboard();
+buildKeyboard128();
+showKeyboard(zx.machine);
 document.getElementById('btnPower').onclick = () => setPower(!powered);
 document.querySelectorAll('.chan').forEach(b => { b.onclick = () => setChannel(+b.dataset.ch); });
 knob(document.getElementById('knobVolume'), 0.7, v => setVolume(v));

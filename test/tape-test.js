@@ -39,7 +39,7 @@ for (const fast of [true, false]) {
     if (zx.border === 2 && !zx.tape.playing && zx.tape.atEnd) { for (let k = 0; k < 25; k++) zx.runFrame(); break; }
   }
   // the text is on the third line (row 2), under "Program: hello": read the character cells back from screen memory
-  const rom8 = zx.mem;
+  const rom8 = { length: 65536 }; for (let a = 0; a < 65536; a++) rom8[a] = zx.read(a);
   let text = '';
   for (let col = 0; col < 15; col++) {
     let best = '?';

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ZX Spectrum 48K</title>
+<title>ZX Spectrum</title>
 <link rel="stylesheet" href="css/retro.css">
 </head>
 <body>
@@ -45,7 +45,7 @@
 
   <!-- ===== the desk: Spectrum + cassette recorder ===== -->
   <div class="desk">
-    <div class="spectrum">
+    <div id="spectrum48" class="spectrum">
       <div class="heatsink">
         <svg class="logo" viewBox="0 0 276 84" preserveAspectRatio="none" role="img" aria-label="sinclair">
           <defs><linearGradient id="logoFace" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="84"><stop offset="0" stop-color="#6a6a6a"/><stop offset=".45" stop-color="#4a4a4a"/><stop offset="1" stop-color="#353535"/></linearGradient></defs>
@@ -67,6 +67,30 @@
         <div class="rainbow"><i></i><i></i><i></i><i></i></div>
         <div id="keys" class="keys"></div>
       </div>
+    </div>
+
+    <!-- the Spectrum 128 (the 1986 "toastrack"): Spectrum+ keyboard, heatsink on the right -->
+    <div id="spectrum128" class="spectrum128" hidden>
+      <div class="vents"></div>
+      <svg class="logo128" viewBox="0 0 276 84" preserveAspectRatio="none" role="img" aria-label="sinclair">
+          <g fill="none" stroke="#c8231c" stroke-width="12" stroke-linecap="square" stroke-linejoin="miter">
+            <path transform="translate(4.5 0)" d="M29,30 H0 V53 H29 V76 H0"/>
+            <path transform="translate(50.5 0)" d="M0,30 V76"/>
+            <path transform="translate(67.5 0)" d="M0,76 V30 H30 V76"/>
+            <path transform="translate(114.5 0)" d="M30,30 H0 V76 H30"/>
+            <path transform="translate(161.5 0)" d="M0,6 V76"/>
+            <path transform="translate(178.5 0)" d="M0,30 H30 V76 H0 V53 H30"/>
+            <path transform="translate(225.5 0)" d="M0,30 V76"/>
+            <path transform="translate(242.5 0)" d="M0,76 V30 H25"/>
+          </g>
+          <g fill="#c8231c"><rect x="44.5" y="6" width="12" height="12"/><rect x="219.5" y="6" width="12" height="12"/></g>
+        </svg>
+      <div class="model128">ZX Spectrum +</div>
+      <div class="grooves"></div>
+      <div class="keybed"></div>
+      <div id="keys128" class="keys128"></div>
+      <div class="badge128"><span>128K</span><div class="stripes"><i></i><i></i><i></i><i></i></div></div>
+      <div class="ribs"></div>
     </div>
 
     <div id="deck" class="deck">
@@ -91,6 +115,10 @@
 
   <!-- ===== controls ===== -->
   <div class="strip">
+    <select class="btn" id="machine" title="Which Spectrum to emulate (resets it)">
+      <option value="48">ZX Spectrum 48K</option>
+      <option value="128">ZX Spectrum 128K</option>
+    </select>
     <label class="btn file">Open file&hellip;<input type="file" id="fileInput" multiple accept=".rom,.tap,.tzx,.sna,.z80"></label>
     <button class="btn" id="btnReset">Reset</button>
     <button class="btn" id="btnPause">Pause</button>
@@ -107,8 +135,8 @@
 
   <section id="romNote" class="note" hidden>
     <h2>ROM needed</h2>
-    The emulator needs the original Spectrum 48K ROM (<code>48.rom</code>, 16,384 bytes).
-    Open or drop it here once; it is remembered in this browser.
+    The emulator needs the original ROM: <code>48.rom</code> (16,384 bytes) for the 48K,
+    <code>128.rom</code> (32,768 bytes) for the 128K. Open or drop it here once; it is remembered in this browser.
   </section>
 
   <details class="note">
@@ -120,14 +148,17 @@
       <tr><td>Esc</td><td>BREAK (CAPS+SPACE)</td></tr>
       <tr><td>Tab</td><td>Extended mode (CAPS+SYM)</td></tr>
       <tr><td>, . ; ' - = /</td><td>SYM+N M O P J L V</td></tr>
+      <tr><td>128K keys</td><td>The 128's extra keys (DELETE, EDIT, arrows, ; " , . and so on) press the two 48K keys they stand for.</td></tr>
       <tr><td>On-screen keys</td><td>Click or tap. A click on CAPS/SYMBOL SHIFT holds it for the next key.</td></tr>
     </table>
   </details>
 </div>
 <script src="js/z80.js"></script>
 <script src="js/tape.js"></script>
+<script src="js/ay.js"></script>
 <script src="js/spectrum.js"></script>
 <script src="js/rom48.js"></script>
+<script src="js/rom128.js"></script>
 <script src="js/main.js"></script>
 <script src="js/retro.js"></script>
 </body>

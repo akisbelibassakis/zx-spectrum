@@ -230,68 +230,7 @@ button { font-family: Tahoma, sans-serif; cursor: pointer; }
 .key.latched { outline: 2px solid var(--accent); outline-offset: 2px; }
 .key:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* ----- cassette recorder: sized in em from the keyboard pitch so it always matches the keyboard's height ----- */
-.deck {
-  flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; padding: .8em; border-radius: .9em;
-  background: linear-gradient(180deg, #4a4a4c, #2f2f31);
-  box-shadow: 0 1.5em 2em rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.2), inset 0 0 0 1px #1c1c1d;
-  font-size: max(8.5px, calc(var(--p) * .3));
-}
-.deck-top { padding: .6em; border-radius: .6em; background: #121214; box-shadow: inset 0 .25em .6em rgba(0,0,0,.9); }
-.cassette {
-  border-radius: .5em; padding: .5em .7em .6em; opacity: .25; transition: opacity .3s;
-  background: linear-gradient(180deg, #ddd6c6, #c7bea9);
-}
-.deck.loaded .cassette { opacity: 1; }
-.cassette .label {
-  font: bold .9em 'Courier New', monospace; color: #1e1e1e; background: #f6f1e4; border-radius: .25em;
-  padding: .3em .5em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  border-top: .3em solid #d70000; box-shadow: inset 0 -.25em 0 #00a7d6;
-}
-.reels { display: flex; align-items: center; justify-content: space-between; margin-top: .5em; padding: 0 .6em; }
-.reel {
-  width: 2.4em; height: 2.4em; border-radius: 50%;
-  background: radial-gradient(circle, #222 0 .4em, transparent .45em), repeating-conic-gradient(#f2efe7 0 20deg, #3b3b3b 20deg 60deg);
-  box-shadow: 0 0 0 .3em #2a2a2a;
-}
-.deck.playing .reel { animation: spin 1.1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.window { flex: 1; height: 1.2em; margin: 0 .8em; border-radius: .25em; background: linear-gradient(#3a2618, #22160d); box-shadow: inset 0 0 0 1px #000; }
-.deck-keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: .4em; margin: .7em 0 .7em; }
-.deck-keys button {
-  height: 3em; padding: 0; border: 0; border-radius: .3em; color: #eee; font-size: 1em;
-  background: linear-gradient(#9a9a9d, #6c6c70); box-shadow: 0 .35em 0 #1b1b1c, inset 0 1px 0 rgba(255,255,255,.4);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-}
-.deck-keys button span { font-size: .62em; letter-spacing: .08em; }
-.deck-keys button:active, .deck-keys button.on { transform: translateY(.3em); box-shadow: 0 1px 0 #1b1b1c, inset 0 1px 0 rgba(255,255,255,.2); }
-.deck-keys button.on { color: #7dff8a; }
-.blocks {
-  list-style: none; margin: 0 0 .5em; padding: .3em; flex: 1 1 auto; min-height: 0; overflow-y: auto; border-radius: .3em;
-  background: #0e1a10; color: #6fe07e; font: .9em 'Courier New', monospace; box-shadow: inset 0 2px 5px #000;
-}
-.blocks:empty { display: none; }
-.blocks li { padding: 1px .4em; cursor: pointer; border-radius: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.blocks li:hover { background: #1d3320; }
-.blocks li.current { background: #6fe07e; color: #0e1a10; }
-.deck label { display: block; margin: .2em 0; color: #d4d4d6; white-space: nowrap; }
-
 /* ================= controls ================= */
-/* the control strip may use the whole window width, not just the TV width */
-.strip {
-  display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center;
-  width: calc(100vw - 48px); margin: 12px 0 0 calc((var(--W) - 100vw + 48px) / 2);
-}
-.btn {
-  font: 12px Tahoma, sans-serif; color: var(--text); background: #3a302a; border: 1px solid #5a4b40;
-  border-radius: 4px; padding: 5px 9px; cursor: pointer;
-}
-.btn:hover { border-color: var(--accent); }
-.btn.on { background: var(--accent); color: #000; }
-.file input { display: none; }
-#fileName { color: var(--muted); font-family: 'Courier New', monospace; }
-#status { text-align: center; color: var(--muted); min-height: 1.3em; margin-top: 8px; }
-#status.error { color: var(--error); }
 .note { margin-top: 14px; padding: 10px 14px; border-radius: 6px; background: rgba(0,0,0,.25); border: 1px solid #4a3d33; }
 .note h2 { margin: 0 0 6px; font: bold 15px Georgia, serif; color: var(--accent); }
 .note summary { cursor: pointer; font-family: Georgia, serif; color: var(--accent); }
@@ -304,9 +243,6 @@ code { font-family: 'Courier New', monospace; }
 @media (max-width: 700px) {
   :root { --W: calc(100vw - 32px); --tvw: var(--W); }
   .room { padding-top: 16px; }
-  .desk { flex-wrap: wrap; width: auto; }
-  .desk { --p: calc(var(--W) / 11.3); }
-  .blocks { max-height: 120px; }
   .cabinet { flex-direction: column; border-radius: 14px; }
   .panel { flex-direction: row; flex-wrap: wrap; justify-content: space-between; padding: 8px 10px; gap: 10px; }
   .grille { display: none; }
@@ -321,7 +257,6 @@ code { font-family: 'Courier New', monospace; }
   .power { gap: 8px; }
   .led { width: 8px; height: 8px; }
   #btnPower { font-size: 9px; padding: 7px 10px; }
-  .deck { flex-basis: 100%; }
 }
 
 /* ================= Spectrum+ and Spectrum 128: --q = one key pitch ================= */
@@ -329,9 +264,6 @@ code { font-family: 'Courier New', monospace; }
    (up to the window width) to make the keys as big as the 48K's height allows. */
 /* The 48K keeps its size; the Spectrum+/128 (7.3 pitches deep) are made as tall as it (7.06 pitches),
    unless the window is too narrow for that, when they get as big as the width allows. */
-.desk { --deckw: calc(var(--W) * .27); --q: min(calc(var(--p) * 7.06 / 7.3), calc((100vw - 48px - var(--deckw)) / 18.25)); }
-.desk.mplus { width: max-content; position: relative; left: 50%; transform: translateX(-50%); }
-.desk.mplus .deck { flex: 0 0 var(--deckw); }
 .spectrumplus {
   flex: 0 0 auto; position: relative; width: calc(var(--q) * 17); height: calc(var(--q) * 7.3);
   border-radius: calc(var(--q) * .2);
@@ -439,19 +371,3 @@ code { font-family: 'Courier New', monospace; }
 .key128.latched { outline: 2px solid var(--accent); outline-offset: 2px; }
 .key128:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* ================= help pop-up ================= */
-.help {
-  max-width: min(640px, calc(100vw - 32px)); padding: 16px 20px; border-radius: 8px;
-  background: #2f2620; color: var(--text); border: 1px solid #5a4b40; box-shadow: 0 20px 60px rgba(0,0,0,.6);
-}
-.help::backdrop { background: rgba(0,0,0,.55); }
-.help h2 { margin: 0 0 6px; font: bold 16px Georgia, serif; color: var(--accent); }
-.help table { border-collapse: collapse; font-size: 13px; margin-bottom: 14px; }
-.help td { padding: 3px 10px 3px 0; vertical-align: top; }
-.help td:first-child { white-space: nowrap; font-family: 'Courier New', monospace; color: var(--accent); }
-
-@media (max-width: 700px) {
-  .desk { --q: calc(var(--W) / 18.25); }
-  .desk.mplus { width: auto; left: 0; transform: none; }
-  .desk.mplus .deck { flex-basis: 100%; }
-}

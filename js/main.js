@@ -12,7 +12,12 @@ let audioCtx = null, nextAudioTime = 0, soundOn = true;
 const MODELS = { 48: { name: 'ZX Spectrum 48K', hw: 48 }, plus: { name: 'ZX Spectrum+', hw: 48 }, 128: { name: 'ZX Spectrum 128K', hw: 128 } };
 let model = savedModel();
 const zx = new Spectrum(44100, MODELS[model].hw);
-let paused = false, turbo = false, lastTime = 0, frameDebt = 0;
+let paused = false, turbo = false, lastTime = 0, frameDebt = 0, lastName = '';
+// recorder and joystick settings, remembered in this browser
+const settings = Object.assign({ speed: 2, autoLoad: true, joy: false }, (() => {
+  try { return JSON.parse(localStorage.getItem('zxSettings')) || {}; } catch (e) { return {}; }
+})());
+function saveSettings() { try { localStorage.setItem('zxSettings', JSON.stringify(settings)); } catch (e) { /* storage unavailable */ } }
 
 // the model from the address (?machine=48, plus or 128) or the one used last time
 function savedModel() {
@@ -25,6 +30,7 @@ function savedModel() {
   return '48';
 }
 const modelName = () => MODELS[model].name;
+const MODEL_CHANNELS = ['48', 'plus', '128']; // TV channels 1-3
 
 // ---------- keyboard ----------
 const K = {
@@ -103,7 +109,8 @@ function virtualKey(name, down) {
 
 function onKey(e, down) {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-  if ($('joystick').value === 'kempston' && kempstonMap[e.code] !== undefined) {
+  if (typeof overlayKey === 'function' && overlayKey(e, down)) return; // the manual or the Multiface menu is open
+  if (settings.joy && kempstonMap[e.code] !== undefined) {
     if (down) zx.kempston |= kempstonMap[e.code]; else zx.kempston &= ~kempstonMap[e.code];
     e.preventDefault();
     return;
@@ -155,10 +162,11 @@ function frame(now) {
   if (!lastTime) lastTime = now;
   const dt = Math.min(now - lastTime, 100);
   lastTime = now;
-  if (paused || !zx.romLoaded) return;
+  updateTapeStatus();
+  if (paused || frozen || !zx.romLoaded) return;
   const FPS = zx.cpuHz / zx.frameT;
 
-  const fast = turbo || ($('tapeTurbo').checked && zx.tape && zx.tape.playing);
+  const fast = turbo || (settings.speed >= 1 && zx.tape && zx.tape.playing);
   if (fast) {
     const end = performance.now() + 12;
     do { processKeyEvents(); zx.runFrame(); } while (performance.now() < end);
@@ -171,17 +179,21 @@ function frame(now) {
   }
   imageU32.set(zx.screen);
   ctx2d.putImageData(image, 0, 0);
-  updateTapeStatus();
 }
 requestAnimationFrame(frame);
 
 // ---------- files ----------
 function extOf(name) { const m = /\.([^.]+)$/.exec(name); return m ? m[1].toLowerCase() : ''; }
 
+// messages appear briefly on the TV picture
+let osdTimer = 0;
 function status(msg, isError) {
-  const el = $('status');
-  el.textContent = msg;
-  el.className = isError ? 'error' : '';
+  const el = $('osd');
+  el.textContent = msg.toUpperCase();
+  el.classList.toggle('error', !!isError);
+  el.classList.add('show');
+  clearTimeout(osdTimer);
+  osdTimer = setTimeout(() => el.classList.remove('show'), isError ? 5000 : 2500);
 }
 
 function bootFast() {
@@ -204,11 +216,11 @@ function followHardware() {
   try { localStorage.setItem('zxModel', model); } catch (e) { /* storage unavailable */ }
 }
 function showMachine() {
-  $('machine').value = model;
   document.title = modelName();
   if (typeof showKeyboard === 'function') showKeyboard(model);
+  if (typeof tuneTo === 'function') tuneTo(MODEL_CHANNELS.indexOf(model) + 1);
   if (!zx.romLoaded) { $('romNote').hidden = false; status('No ' + zx.name + ' ROM yet - open or drop it.', true); }
-  else { $('romNote').hidden = true; status(modelName() + ' ready.'); }
+  else { $('romNote').hidden = true; status(modelName()); }
 }
 
 function loadFile(name, bytes) {
@@ -227,13 +239,13 @@ function loadFile(name, bytes) {
       const tape = ext === 'tap' ? Tape.fromTAP(bytes, name) : Tape.fromTZX(bytes, name);
       zx.insertTape(tape);
       renderTapeBlocks();
-      if ($('autoLoad').checked) {
+      if (settings.autoLoad) {
         bootFast();
         // 128K: ENTER picks "Tape Loader" on the start-up menu; 48K: LOAD "" ENTER (J, then SYMBOL SHIFT+P twice)
         if (zx.is128) zx.typeKeys([{ keys: [K.ENTER] }]);
         else zx.typeKeys([{ keys: [K.J] }, { keys: [K.SYM, K.P] }, { keys: [K.SYM, K.P] }, { keys: [K.ENTER] }]);
       }
-      status('Tape inserted: ' + name + ' (' + tape.blocks.length + ' blocks)');
+      status('Tape inserted');
     } else if (ext === 'sna' || ext === 'z80') {
       const before = zx.machine;
       if (ext === 'sna') zx.loadSNA(bytes); else zx.loadZ80(bytes);
@@ -243,7 +255,7 @@ function loadFile(name, bytes) {
       status('Unknown file type: ' + name, true);
       return;
     }
-    $('fileName').textContent = name;
+    lastName = name;
   } catch (e) {
     status(e.message, true);
   }
@@ -297,53 +309,92 @@ async function initROMs() {
 }
 initROMs();
 
-// ---------- controls ----------
-$('btnReset').onclick = () => { zx.reset(); renderTapeBlocks(); startAudio(); };
-$('btnPause').onclick = () => {
-  paused = !paused;
-  $('btnPause').classList.toggle('on', paused);
-};
-$('btnTurbo').onclick = () => {
-  turbo = !turbo;
-  $('btnTurbo').classList.toggle('on', turbo);
-};
-$('btnSave').onclick = () => {
+// ---------- controls: everything is a piece of hardware on the desk ----------
+function reset() { frozen && freeze(false); zx.reset(); renderTapeBlocks(); startAudio(); }
+$('btnReset').onclick = reset;
+function saveSnapshot() {
   if (!zx.romLoaded) return;
   const blob = new Blob([zx.saveSNA()], { type: 'application/octet-stream' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = ($('fileName').textContent.replace(/\.[^.]+$/, '') || 'snapshot') + '.sna';
+  a.download = (lastName.replace(/\.[^.]+$/, '') || 'snapshot') + '.sna';
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-};
-$('machine').onchange = e => { setModel(e.target.value); renderTapeBlocks(); startAudio(); };
-$('btnKeys').onclick = () => $('keysHelp').showModal();
-$('keysClose').onclick = () => $('keysHelp').close();
-$('keysHelp').addEventListener('click', e => { if (e.target === $('keysHelp')) $('keysHelp').close(); });
-$('btnFull').onclick = () => { const s = $('crt'); s.requestFullscreen && s.requestFullscreen(); };
-$('fastLoad').onchange = e => { zx.fastLoad = e.target.checked; };
+}
+const openFile = () => $('fileInput').click();
+function fullScreen() {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else if ($('crt').requestFullscreen) $('crt').requestFullscreen();
+}
+$('btnZoom').onclick = fullScreen;
+canvas.addEventListener('dblclick', fullScreen);
 
-$('btnPlay').onclick = () => { if (zx.tape) { zx.tape.playing = true; zx.tapeT = zx.cpu.tstates; } };
-$('btnStop').onclick = () => { if (zx.tape) zx.tape.playing = false; };
-$('btnRewind').onclick = () => { if (zx.tape) { zx.tape.rewind(); renderTapeBlocks(); } };
-$('btnEject').onclick = () => { zx.tape = null; renderTapeBlocks(); };
+// recorder: SPEED switch (normal / fast / instant) and AUTO LOAD
+function setSpeed(n) { settings.speed = n; zx.fastLoad = n === 2; $('speed').dataset.pos = n; saveSettings(); }
+$('speed').addEventListener('click', e => {
+  const mark = e.target.closest('[data-pos]');
+  if (mark) { setSpeed(+mark.dataset.pos); return; }
+  const r = $('speed').querySelector('.slot').getBoundingClientRect();
+  setSpeed(Math.max(0, Math.min(2, Math.round((e.clientX - r.left) / r.width * 2))));
+});
+function setAutoLoad(on) { settings.autoLoad = on; $('autoLoad').setAttribute('aria-pressed', on); saveSettings(); }
+$('autoLoad').onclick = () => setAutoLoad(!settings.autoLoad);
+setSpeed(settings.speed);
+setAutoLoad(settings.autoLoad);
+
+let tapePaused = false;
+function playTape() { if (zx.tape) { tapePaused = false; zx.tape.playing = true; zx.tapeT = zx.cpu.tstates; } startAudio(); }
+$('btnPlay').onclick = playTape;
+$('btnTapePause').onclick = () => {
+  if (!zx.tape) return;
+  if (zx.tape.playing) { zx.tape.playing = false; tapePaused = true; } else if (tapePaused) playTape();
+};
+$('btnFF').onclick = () => { if (zx.tape) zx.tape.skipBlock(); };
+$('btnRewind').onclick = () => { if (zx.tape) { zx.tape.rewind(); tapePaused = false; } };
+// STOP/EJECT: stops a playing tape; pressed again it ejects the tape and opens another
+$('btnEject').onclick = () => {
+  if (zx.tape && (zx.tape.playing || tapePaused)) { zx.tape.playing = false; tapePaused = false; return; }
+  if (zx.tape) { zx.tape = null; renderTapeBlocks(); }
+  openFile();
+};
+$('door').onclick = () => { if (zx.tape) $('tapeBlocks').hidden = !$('tapeBlocks').hidden; else openFile(); };
+document.addEventListener('pointerdown', e => { if (!e.target.closest('#door, #tapeBlocks')) $('tapeBlocks').hidden = true; });
+
+// tape counter and the tape packs on the reels follow the tape position
+let counterZero = 0, shownCount = -1, shownF = -1;
+const tapeFraction = () => { const t = zx.tape; return t && t.pulses.length ? Math.min(1, t.pos / t.pulses.length) : 0; };
+function updateCounter() {
+  const f = tapeFraction();
+  if (Math.abs(f - shownF) > .002) { $('deck').style.setProperty('--f', f.toFixed(3)); shownF = f; }
+  const c = zx.tape ? (Math.floor(f * 999) - counterZero + 1000) % 1000 : 0;
+  if (c === shownCount) return;
+  shownCount = c;
+  const d = String(c).padStart(3, '0');
+  [...$('counter').children].forEach((el, i) => { el.textContent = d[i]; });
+}
+$('counterReset').onclick = () => { counterZero = Math.floor(tapeFraction() * 999); };
 
 let shownBlock = -1, shownPlaying = null;
 function renderTapeBlocks() {
   const list = $('tapeBlocks');
   list.innerHTML = '';
-  shownBlock = -1; shownPlaying = null;
+  list.hidden = true;
+  shownBlock = -1; shownPlaying = null; counterZero = 0; tapePaused = false;
   if (!zx.tape) {
-    $('tapeState').textContent = 'No tape';
+    $('tapeState').textContent = '';
     $('deck').classList.remove('loaded', 'playing');
     $('btnPlay').classList.remove('on');
+    $('btnTapePause').classList.remove('on');
     return;
   }
   $('deck').classList.add('loaded');
+  const head = document.createElement('li');
+  head.className = 'head';
+  head.textContent = zx.tape.name;
+  list.appendChild(head);
   zx.tape.blocks.forEach((b, i) => {
     const li = document.createElement('li');
     li.textContent = b.desc;
-    li.title = 'Click to position the tape here';
     li.onclick = () => {
       const t = zx.tape;
       t.blockIdx = i; t.pos = b.pulseStart; t.remain = t.startPulse(t.pos);
@@ -354,16 +405,48 @@ function renderTapeBlocks() {
   updateTapeStatus();
 }
 function updateTapeStatus() {
+  updateCounter();
   const t = zx.tape;
   if (!t) return;
-  if (t.blockIdx === shownBlock && t.playing === shownPlaying) return;
-  shownBlock = t.blockIdx; shownPlaying = t.playing;
+  const state = t.playing + ':' + tapePaused;
+  if (t.blockIdx === shownBlock && state === shownPlaying) return;
+  shownBlock = t.blockIdx; shownPlaying = state;
   const items = $('tapeBlocks').children;
-  for (let i = 0; i < items.length; i++) items[i].classList.toggle('current', i === t.blockIdx);
-  $('tapeState').textContent = (t.playing ? 'PLAY' : t.atEnd ? 'END' : 'STOP') + '  ' + t.name;
-  $('btnPlay').classList.toggle('on', t.playing);
+  for (let i = 1; i < items.length; i++) items[i].classList.toggle('current', i - 1 === t.blockIdx);
+  $('tapeState').textContent = t.name.replace(/\.[^.]+$/, '').toUpperCase();
+  $('btnPlay').classList.toggle('on', t.playing || tapePaused);
+  $('btnTapePause').classList.toggle('on', tapePaused);
   $('deck').classList.toggle('playing', t.playing);
 }
+
+// Multiface One: the red button freezes the computer and shows its menu on the TV
+let frozen = false;
+function freeze(on) {
+  frozen = on;
+  $('mfMenu').hidden = !on;
+  $('mfTurbo').textContent = turbo ? 'ON' : 'OFF';
+  if (on) $('mfMenu').querySelector('button').focus();
+}
+$('mfButton').onclick = () => freeze(!frozen);
+$('mfMenu').addEventListener('click', e => { const b = e.target.closest('button'); if (b) mfAction(b.dataset.act); });
+function mfAction(act) {
+  if (act === 'turbo') { turbo = !turbo; $('mfTurbo').textContent = turbo ? 'ON' : 'OFF'; return; }
+  freeze(false);
+  if (act === 'save') saveSnapshot();
+  else if (act === 'load') openFile();
+  else if (act === 'reset') reset();
+}
+
+// joystick: plugged in, the arrow keys and Left Alt are a Kempston joystick
+function setJoy(on) {
+  settings.joy = on; zx.kempston = 0;
+  $('joystick').classList.toggle('on', on);
+  $('joystick').setAttribute('aria-pressed', on);
+  $('joystick').dataset.tip = on ? 'Joystick: unplug' : 'Joystick: plug in';
+  saveSettings();
+}
+$('joystick').onclick = () => { setJoy(!settings.joy); status(settings.joy ? 'JOYSTICK ON' : 'JOYSTICK OFF'); };
+setJoy(settings.joy);
 
 canvas.addEventListener('click', startAudio);
 document.addEventListener('pointerdown', startAudio, { once: true });

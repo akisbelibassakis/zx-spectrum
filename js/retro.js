@@ -224,14 +224,18 @@ function setPower(on) {
   tv.classList.remove('warming');
   if (on) { void tv.offsetWidth; tv.classList.add('warming'); }
   paused = !on;
-  $('btnPause').classList.remove('on');
   document.getElementById('powerLed').classList.toggle('lit', on);
 }
 
-function setChannel(n) {
+// channels 1-3 are the 48K, Spectrum+ and 128K; 4-6 only show static
+function tuneTo(n) {
   channel = n;
-  tv.classList.toggle('static', n !== 1);
+  tv.classList.toggle('static', n > 3);
   document.querySelectorAll('.chan').forEach(b => b.classList.toggle('on', +b.dataset.ch === n));
+}
+function setChannel(n) {
+  if (n <= 3 && MODEL_CHANNELS[n - 1] !== model) { setModel(MODEL_CHANNELS[n - 1]); renderTapeBlocks(); startAudio(); }
+  else tuneTo(n);
 }
 
 // rotary knob: drag up/down or use the wheel; value 0..1 maps to -135..135 degrees
@@ -266,7 +270,7 @@ function applyPicture() {
 function retroLoop() {
   requestAnimationFrame(retroLoop);
   syncKeyboard();
-  if (powered && channel !== 1) drawNoise();
+  if (powered && channel > 3) drawNoise();
 }
 
 buildKeyboard();
@@ -276,6 +280,69 @@ document.getElementById('btnPower').onclick = () => setPower(!powered);
 document.querySelectorAll('.chan').forEach(b => { b.onclick = () => setChannel(+b.dataset.ch); });
 knob(document.getElementById('knobVolume'), 0.7, v => setVolume(v));
 knob(document.getElementById('knobColour'), 0.5, v => { colourLevel = v * 2; applyPicture(); });
-setChannel(1);
+tuneTo(MODEL_CHANNELS.indexOf(model) + 1);
 setPower(true);
 retroLoop();
+
+// ---------- the manual: two pages side by side on wide screens, one on phones ----------
+const manual = document.getElementById('manual');
+const pages = [...manual.querySelectorAll('.page')];
+let pageNo = 0;
+const spreadSize = () => (matchMedia('(min-width: 900px)').matches ? 2 : 1);
+function showPage(n) {
+  const k = spreadSize();
+  pageNo = Math.max(0, Math.min(pages.length - 1, n));
+  pageNo -= pageNo % k;
+  pages.forEach((p, i) => { p.hidden = i < pageNo || i >= pageNo + k; });
+  manual.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', +b.dataset.page >= pageNo && +b.dataset.page < pageNo + k));
+  manual.querySelector('.prev').hidden = pageNo === 0;
+  manual.querySelector('.next').hidden = pageNo + k >= pages.length;
+}
+document.getElementById('manualBook').onclick = () => { showPage(pageNo); manual.showModal(); };
+manual.querySelectorAll('.tabs button').forEach(b => { b.onclick = () => showPage(+b.dataset.page); });
+manual.querySelector('.prev').onclick = () => showPage(pageNo - spreadSize());
+manual.querySelector('.next').onclick = () => showPage(pageNo + spreadSize());
+manual.querySelector('.bclose').onclick = () => manual.close();
+manual.addEventListener('click', e => { if (e.target === manual) manual.close(); });
+addEventListener('resize', () => { if (manual.open) showPage(pageNo); });
+
+// while the manual or the Multiface menu is open, keys work them instead of the Spectrum
+function overlayKey(e, down) {
+  if (manual.open) {
+    if (down && e.code === 'ArrowLeft') showPage(pageNo - spreadSize());
+    if (down && e.code === 'ArrowRight') showPage(pageNo + spreadSize());
+    return true;
+  }
+  if (frozen) {
+    if (!down) return true;
+    const items = [...document.querySelectorAll('#mfMenu button')];
+    const i = items.indexOf(document.activeElement);
+    if (e.code === 'ArrowDown' || e.code === 'ArrowUp') {
+      items[(i + (e.code === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus();
+      e.preventDefault();
+    } else if (e.code === 'Escape') mfAction('return');
+    else if (e.code !== 'Enter' && e.code !== 'Space') e.preventDefault();
+    return true;
+  }
+  return false;
+}
+
+// ---------- hover labels, embossed on Dymo tape (mouse only) ----------
+const dymo = document.getElementById('dymo');
+let dymoTimer = 0;
+if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
+  document.addEventListener('pointerover', e => {
+    const el = e.target.closest('[data-tip]');
+    clearTimeout(dymoTimer);
+    dymo.hidden = true;
+    if (!el) return;
+    dymoTimer = setTimeout(() => {
+      dymo.textContent = el.dataset.tip;
+      dymo.hidden = false;
+      const r = el.getBoundingClientRect(), w = dymo.offsetWidth;
+      dymo.style.left = Math.max(4, Math.min(innerWidth - w - 4, r.left + r.width / 2 - w / 2)) + 'px';
+      dymo.style.top = (r.bottom + 8 + dymo.offsetHeight > innerHeight ? r.top - dymo.offsetHeight - 8 : r.bottom + 8) + 'px';
+    }, 500);
+  });
+  document.addEventListener('pointerdown', () => { clearTimeout(dymoTimer); dymo.hidden = true; });
+}

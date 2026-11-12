@@ -12,7 +12,16 @@ Then open http://localhost:8048 (add `?machine=plus` or `?machine=128` to start 
 
 **ROMs:** the original ROMs are in `roms/48.rom` (16,384 bytes) and `roms/128.rom` (32,768 bytes: the 128 editor ROM followed by its 48 BASIC ROM); Amstrad allows them to be distributed with emulators. They are kept in the browser's local storage once loaded.
 
-**Model:** pick ZX Spectrum 48K, ZX Spectrum+ (a 48K in the Spectrum+ case) or 128K in the control strip; the choice is remembered. The Help button lists the PC keys and explains the tape options. Loading a 128K snapshot switches to the 128K by itself.
+**The desk:** there are no ordinary buttons; every control is a piece of 80s hardware. Hover over one for a label.
+
+- TV channels 1-3 pick the ZX Spectrum 48K, the Spectrum+ (a 48K in the Spectrum+ case) or the 128K; the choice is remembered. Loading a 128K snapshot switches to the 128K by itself. ZOOM (or a double-click on the picture) is full screen; POWER pauses.
+- The Datacorder: STOP/EJECT opens a tape, snapshot or ROM; PLAY, REW, FF (next block), PAUSE; the counter and the tape on the reels follow the tape. The SPEED switch is NORMAL (real time), FAST (full speed while the tape plays) or INSTANT (ROM trap). AUTO LOAD resets and starts the tape on insert. Click the cassette to see its blocks.
+- The reset button is on the side of the computer.
+- Multiface One: the red button freezes the machine and shows a menu on the TV: SAVE (.SNA download), LOAD, TURBO, RESET, RETURN.
+- The joystick: click it to plug in a Kempston joystick on the arrow keys (Left Alt = fire).
+- The manual: instructions, the PC keys and the settings.
+
+On a PC the TV stands on the computer with the gadgets and recorder beside it; on a phone in landscape the TV sits beside the keyboard; in portrait everything is stacked.
 
 ## Look and feel
 
@@ -25,7 +34,7 @@ Tapes go in the cassette recorder beside it, whose reels turn while the tape pla
 - Z80 core: all documented and undocumented opcodes (IXh/IXl, SLL, DDCB register copies), undocumented flag bits 3/5, IM 0/1/2, HALT, EI delay, per-instruction T-state counts.
 - 128K: memory paging through port 0x7FFD (eight RAM banks, two ROMs, shadow screen, paging lock), 70,908 T-states per frame, AY-3-8912 sound chip (three tones, noise, envelopes).
 - ULA: 69,888 T-states per frame (48K), 50 Hz interrupt, border changes drawn at their T-state (loading stripes), FLASH, BRIGHT.
-- Keyboard with PC mappings (see the Controls panel), cursor keys or Kempston joystick on the arrows.
+- Keyboard with PC mappings (see the manual), cursor keys or Kempston joystick on the arrows.
 - Beeper sound through Web Audio, plus tape noise while loading.
 - Tapes: `.TAP` and `.TZX` (standard, turbo, pure tone, pulses, pure data, direct recording, pauses, loops).
   Standard blocks load instantly through a ROM trap at `LD-BYTES`; turbo and custom loaders play the tape in real time, run at full speed by default.
@@ -47,6 +56,7 @@ Not yet: 128K models and AY sound, memory/IO contention (some timing-critical de
 | `test/sanity.js` | Quick CPU checks: `node test/sanity.js` |
 | `test/cpm.js` | CP/M harness for the ZEX exercisers: `node test/cpm.js test/zex/zexall.com` (about 5 minutes) |
 | `test/tape-test.js` | Builds `hello.tap` and loads it both instantly and in real time: `node test/tape-test.js` |
+| `test/shot.html` | Screenshot helper: shows the page with a tape in (`?state=tape`), the Multiface menu (`menu`) or the manual (`manual`); `&w=390&h=844` sets the frame size |
 | `test/headless.js` | Run a game without a browser and save the screen as BMP |
 
 ## Test status

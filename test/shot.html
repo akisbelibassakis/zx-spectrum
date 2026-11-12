@@ -1,0 +1,18 @@
+<!doctype html><meta charset="utf-8"><style>html,body{margin:0;height:100%}iframe{border:0;width:100%;height:100%}</style>
+<iframe id="f" src="../index.html"></iframe>
+<script>{ const q = new URLSearchParams(location.search); if (q.get("w")) { f.style.width = q.get("w") + "px"; f.style.height = q.get("h") + "px"; } }</script>
+<script>
+// screenshot helper: ?state=tape|menu|manual shows the page in that state
+const st = new URLSearchParams(location.search).get('state');
+f.onload = async () => {
+  const w = f.contentWindow, d = f.contentDocument;
+  await new Promise(r => setTimeout(r, 800));
+  if (st === 'tape' || st === 'menu') {
+    w.loadFile('hello.tap', new Uint8Array(await (await fetch('hello.tap')).arrayBuffer()));
+    w.eval('zx.tape.blockIdx = 1; zx.tape.pos = 4000; zx.tape.playing = true');
+    d.getElementById('door').click();
+  }
+  if (st === 'menu') w.freeze(true);
+  if (st === 'manual') d.getElementById('manualBook').click();
+};
+</script>

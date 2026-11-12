@@ -5,9 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ZX Spectrum</title>
 <link rel="stylesheet" href="css/retro.css">
+<link rel="stylesheet" href="css/room.css">
 </head>
 <body>
 <div class="room">
+
+  <!-- ===== gadgets: Multiface One, the manual, the joystick ===== -->
+  <div class="gear">
+    <div class="multiface">
+      <button id="mfButton" class="mfred" aria-label="Multiface" data-tip="Multiface: freeze"></button>
+      <div class="mflever"></div>
+      <div class="sticker"><i></i><b>multiface</b><b class="one">one</b></div>
+      <div class="mfgrooves"></div><div class="mfslot"></div>
+    </div>
+    <button id="manualBook" class="manualbook" aria-label="Emulator manual" data-tip="Emulator manual">
+      <span class="city"></span><span class="spiral"></span><span class="sinc">sinclair</span>
+      <span class="zx">ZX SPECTRUM</span><span class="emu"><b>Emulator Manual</b><br>click for info</span>
+    </button>
+    <button id="joystick" class="joystick" aria-label="Joystick" aria-pressed="false" data-tip="Joystick: plug in">
+      <span class="jbase"></span><span class="jstick"></span><span class="jfire"></span><span class="jfire2"></span><span class="jcable"></span>
+    </button>
+  </div>
 
   <!-- ===== 80s colour television ===== -->
   <div id="tv" class="tv">
@@ -20,14 +38,21 @@
           </div>
           <div class="scanlines"></div>
           <div class="glass"></div>
+          <div id="osd" class="osd"></div>
+          <div id="mfMenu" class="mfmenu" hidden>
+            <div class="mfhead">multiface one</div>
+            <button data-act="save">SAVE</button><button data-act="load">LOAD</button>
+            <button data-act="turbo">TURBO <span id="mfTurbo">OFF</span></button>
+            <button data-act="reset">RESET</button><button data-act="return">RETURN</button>
+          </div>
         </div>
       </div>
       <div class="panel">
         <div class="brand">Spectrovision<small>Colour 14</small></div>
         <div class="grille"></div>
         <div class="channels">
-          <button class="chan" data-ch="1">1</button><button class="chan" data-ch="2">2</button>
-          <button class="chan" data-ch="3">3</button><button class="chan" data-ch="4">4</button>
+          <button class="chan" data-ch="1" data-tip="ZX Spectrum 48K">48K</button><button class="chan" data-ch="2" data-tip="ZX Spectrum+">+</button>
+          <button class="chan" data-ch="3" data-tip="ZX Spectrum 128K">128</button><button class="chan" data-ch="4">4</button>
           <button class="chan" data-ch="5">5</button><button class="chan" data-ch="6">6</button>
         </div>
         <div class="knobs">
@@ -35,8 +60,9 @@
           <div class="knobwrap"><div id="knobColour" class="knob" tabindex="0" role="slider" aria-label="Colour" title="Colour: drag or scroll"></div><span>COLOUR</span></div>
         </div>
         <div class="power">
+          <button id="btnZoom" class="tvbtn" data-tip="Full screen">ZOOM</button>
           <span id="powerLed" class="led"></span>
-          <button id="btnPower" title="Power">POWER</button>
+          <button id="btnPower" class="tvbtn" data-tip="Power">POWER</button>
         </div>
       </div>
     </div>
@@ -45,6 +71,7 @@
 
   <!-- ===== the desk: Spectrum + cassette recorder ===== -->
   <div class="desk">
+    <button id="btnReset" class="resetbtn" aria-label="Reset" data-tip="Reset"></button>
     <div id="spectrum48" class="spectrum">
       <div class="heatsink">
         <svg class="logo" viewBox="0 0 276 84" preserveAspectRatio="none" role="img" aria-label="sinclair">
@@ -94,78 +121,158 @@
       <div class="ribs"></div>
     </div>
 
-    <div id="deck" class="deck">
-      <div class="deck-top">
-        <div class="cassette">
-          <div class="label" id="tapeState">No tape</div>
-          <div class="reels"><div class="reel"></div><div class="window"></div><div class="reel"></div></div>
-        </div>
-      </div>
-      <div class="deck-keys">
-        <button id="btnRewind" title="Rewind">&#9664;&#9664;<span>REW</span></button>
-        <button id="btnPlay" title="Play">&#9654;<span>PLAY</span></button>
-        <button id="btnStop" title="Stop">&#9632;<span>STOP</span></button>
-        <button id="btnEject" title="Eject">&#9167;<span>EJECT</span></button>
-      </div>
-      <ul id="tapeBlocks" class="blocks"></ul>
-      <label title="Load standard tape blocks instantly instead of in real time"><input type="checkbox" id="fastLoad" checked> Instant load</label>
-      <label title="Reset and type LOAD &quot;&quot; when a tape is inserted"><input type="checkbox" id="autoLoad" checked> Auto LOAD ""</label>
-      <label title="Run at full speed while the tape plays"><input type="checkbox" id="tapeTurbo" checked> Fast while loading</label>
-    </div>
   </div>
 
-  <!-- ===== controls ===== -->
-  <div class="strip">
-    <select class="btn" id="machine" title="Which Spectrum to emulate (resets it)">
-      <option value="48">ZX Spectrum 48K</option>
-      <option value="plus">ZX Spectrum+</option>
-      <option value="128">ZX Spectrum 128K</option>
-    </select>
-    <label class="btn file">Open file&hellip;<input type="file" id="fileInput" multiple accept=".rom,.tap,.tzx,.sna,.z80"></label>
-    <button class="btn" id="btnReset">Reset</button>
-    <button class="btn" id="btnPause">Pause</button>
-    <button class="btn" id="btnTurbo" title="Run as fast as possible">Turbo</button>
-    <button class="btn" id="btnSave" title="Download a .SNA snapshot of the current state">Save .SNA</button>
-    <button class="btn" id="btnFull">Full screen</button>
-    <button class="btn" id="btnKeys" title="Which PC keys do what, and the tape options">Help</button>
-    <select class="btn" id="joystick" title="What the arrow keys do">
-      <option value="cursor">Arrows: cursor</option>
-      <option value="kempston" title="Left Alt = fire">Arrows: Kempston</option>
-    </select>
-    <span id="fileName"></span>
+  <!-- ===== Datacorder cassette recorder ===== -->
+  <div class="recwrap">
+  <div id="deck" class="recorder">
+    <div class="rbrand">Datacorder<small>DATA RECORDER</small></div>
+    <div id="door" class="door" data-tip="Tape contents">
+      <div class="deckbed"><span class="spindle l"></span><span class="spindle r"></span><span class="guide l"></span><span class="head"></span><span class="capstan"></span><span class="roller"></span><span class="guide r"></span></div>
+      <div class="cass">
+        <div class="clabel"><b id="tapeState"></b></div>
+        <div class="cwin"><span class="pack l"></span><span class="pack r"></span><span class="hub l"></span><span class="hub r"></span></div>
+        <div class="cbottom"></div>
+      </div>
+    </div>
+    <div class="rside">
+      <div id="counter" class="counter"><i>0</i><i>0</i><i>0</i></div>
+      <button id="counterReset" class="creset" aria-label="Counter reset" data-tip="Counter reset"></button>
+      <button id="autoLoad" class="autoload" aria-pressed="true" data-tip="Auto load: start the tape by itself"><span class="aled"></span><span class="tog"></span></button>
+      <span class="cap">AUTO<br>LOAD</span>
+    </div>
+    <div class="rspeed">
+      <span class="cap">SPEED</span>
+      <div id="speed" class="slide" data-tip="Normal / fast / instant loading"><div class="slot"><span class="sknob"></span></div>
+        <div class="marks"><span data-pos="0">NORMAL</span><span data-pos="1">FAST</span><span data-pos="2">INSTANT</span></div></div>
+    </div>
+    <div class="pkeys">
+      <button class="pk rec" disabled>&#9679;<small>REC</small></button>
+      <button class="pk" id="btnRewind" data-tip="Rewind">&#9664;&#9664;<small>REW</small></button>
+      <button class="pk" id="btnPlay" data-tip="Play">&#9654;<small>PLAY</small></button>
+      <button class="pk" id="btnFF" data-tip="Next block">&#9654;&#9654;<small>FF</small></button>
+      <button class="pk" id="btnEject" data-tip="Stop / eject: open a tape or snapshot">&#9632; &#9167;<small>STOP/EJ</small></button>
+      <button class="pk" id="btnTapePause" data-tip="Pause">&#10074;&#10074;<small>PAUSE</small></button>
+    </div>
+    <input type="file" id="fileInput" multiple accept=".rom,.tap,.tzx,.sna,.z80" hidden>
   </div>
-  <div id="status"></div>
+    <ol id="tapeBlocks" class="card" hidden></ol>
+  </div>
 
   <section id="romNote" class="note" hidden>
     <h2>ROM needed</h2>
     The emulator needs the original ROM: <code>48.rom</code> (16,384 bytes) for the 48K,
-    <code>128.rom</code> (32,768 bytes) for the 128K. Open or drop it here once; it is remembered in this browser.
+    <code>128.rom</code> (32,768 bytes) for the 128K. Drop it here, or press EJECT on the recorder to open it; it is remembered in this browser.
   </section>
 
-  <dialog id="keysHelp" class="help">
-    <h2>PC keyboard</h2>
-    <table>
-      <tr><td>Left Shift</td><td>CAPS SHIFT</td></tr>
-      <tr><td>Right Shift / Ctrl</td><td>SYMBOL SHIFT</td></tr>
-      <tr><td>Backspace</td><td>DELETE (CAPS+0)</td></tr>
-      <tr><td>Esc</td><td>BREAK (CAPS+SPACE)</td></tr>
-      <tr><td>Tab</td><td>Extended mode (CAPS+SYM)</td></tr>
-      <tr><td>Arrows</td><td>Cursor keys, or a Kempston joystick (Left Alt = fire)</td></tr>
-      <tr><td>, . ; ' - = /</td><td>SYM+N M O P J L V</td></tr>
-      <tr><td>On-screen keys</td><td>Click or tap. A click on CAPS or SYMBOL SHIFT holds it for the next key.
-        The Spectrum+ and 128 keys such as DELETE, EDIT, the arrows and ; " , . press the two keys they stand for.</td></tr>
-    </table>
-    <h2>Tape options</h2>
-    <table>
-      <tr><td>Instant load</td><td>Normal tape blocks go straight into memory, so most games load in a moment.
-        Untick it to load in real time, with the border stripes and the loading sound.</td></tr>
-      <tr><td>Auto LOAD ""</td><td>Putting in a tape resets the Spectrum and starts loading it
-        (LOAD "" on the 48K and Spectrum+, Tape Loader on the 128K). Untick it to just put the tape in and type the command yourself.</td></tr>
-      <tr><td>Fast while loading</td><td>While a tape plays in real time, the emulator runs flat out, so a long load takes seconds.
-        Untick it to load at the real speed.</td></tr>
-    </table>
-    <button class="btn" id="keysClose">Close</button>
+  <!-- ===== the manual ===== -->
+  <dialog id="manual" class="book">
+    <div class="tabs">
+      <button data-page="0" style="--c:#d9281d">1 Using</button><button data-page="1" style="--c:#f5cf12;color:#111">2 The desk</button>
+      <button data-page="2" style="--c:#4dae3e">3 Keyboard</button><button data-page="3" style="--c:#3c8ed5">4 Settings</button>
+      <button data-page="4" style="--c:#2b2b2b">5 About</button>
+    </div>
+    <button class="bclose" aria-label="Close">&#10005;</button>
+    <div class="pages">
+      <article class="page">
+        <div class="stripes"><i></i><i></i><i></i><i></i></div>
+        <h1>1. Using the emulator</h1>
+        <p>This booklet is for anyone who has never used a ZX Spectrum, and for those who used one long ago and have forgotten how. Everything on the desk works: the computer, the television, the recorder and the gadgets around them.</p>
+        <ol>
+          <li><b>1</b>The computer. Choose it with the television's channel buttons: <b>48K</b>, <b>+</b> or <b>128</b>. Changing channel resets it.</li>
+          <li><b>2</b>A tape. Press <b>STOP/EJ</b> on the recorder and pick a <b>.tap</b> or <b>.tzx</b> tape, a <b>.z80</b> or <b>.sna</b> snapshot, or a ROM. You can also drop files anywhere on the page.</li>
+          <li><b>3</b>The recorder. With <b>AUTO LOAD</b> on, the tape starts by itself. Otherwise type the load command and press <b>PLAY</b>.</li>
+        </ol>
+        <h2>Loading a program by hand</h2>
+        <p>On the 48K and the Spectrum+, type</p>
+        <div class="fig">LOAD ""<br>(J, then SYMBOL SHIFT + P twice, then ENTER)</div>
+        <p>and press PLAY. The border flashes while the program loads. On the 128, choose <b>Tape Loader</b> from the menu instead.</p>
+        <p>Click the cassette to see what is on the tape; click a line to wind the tape to it.</p>
+        <h2>If something goes wrong</h2>
+        <p>Press the reset button on the side of the computer. The Multiface's red button stops a game so that you can save it and come back later.</p>
+        <div class="pn">2</div>
+      </article>
+      <article class="page">
+        <h1>2. The desk</h1>
+        <p>Everything you need is on the desk. The screen is laid out thus:</p>
+        <svg class="figure" viewBox="0 0 460 330" role="img" aria-label="The desk: Multiface One, television, joystick, manual, ZX Spectrum and Datacorder">
+          <g fill="none" stroke="#111" stroke-width="1.6" stroke-linejoin="round">
+            <rect x="12" y="104" width="62" height="40" rx="3"/><rect x="18" y="109" width="26" height="11"/><circle cx="60" cy="100" r="4" fill="#d9281d"/>
+            <rect x="96" y="8" width="248" height="164" rx="12"/><rect x="108" y="20" width="168" height="140" rx="16"/>
+            <rect x="286" y="20" width="48" height="140" rx="4"/>
+            <rect x="292" y="94" width="11" height="7"/><rect x="305" y="94" width="11" height="7"/><rect x="318" y="94" width="11" height="7"/>
+            <circle cx="298" cy="122" r="5"/><circle cx="321" cy="122" r="5"/><rect x="291" y="140" width="15" height="8"/><rect x="314" y="140" width="15" height="8"/>
+            <path d="M372 150 h44 v-12 q-22 -10 -44 0 z"/><path d="M392 140 l4 -42"/><ellipse cx="396" cy="96" rx="7" ry="4" fill="#d9281d"/>
+            <rect x="14" y="196" width="58" height="80" rx="2" transform="rotate(-6 43 236)"/>
+            <rect x="96" y="186" width="248" height="128" rx="4"/><rect x="96" y="186" width="248" height="34"/>
+            <path d="M108 232 h224 M108 252 h224 M108 272 h224 M108 292 h224" stroke-dasharray="14 5"/>
+            <rect x="88" y="240" width="8" height="18"/>
+            <rect x="364" y="206" width="88" height="86" rx="5"/><rect x="372" y="214" width="56" height="38" rx="2"/>
+            <circle cx="388" cy="233" r="6"/><circle cx="412" cy="233" r="6"/>
+            <path d="M372 262 h72 M372 276 h72" stroke-dasharray="10 2"/>
+          </g>
+          <g font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#111" text-anchor="middle">
+            <circle cx="43" cy="160" r="9" fill="#111"/><text x="43" y="164" fill="#fff">1</text>
+            <circle cx="192" cy="90" r="11" fill="#111"/><text x="192" y="94" fill="#fff">2</text>
+            <circle cx="310" cy="72" r="9" fill="#111"/><text x="310" y="76" fill="#fff">3</text>
+            <circle cx="396" cy="166" r="9" fill="#111"/><text x="396" y="170" fill="#fff">4</text>
+            <circle cx="43" cy="292" r="9" fill="#111"/><text x="43" y="296" fill="#fff">5</text>
+            <circle cx="220" cy="203" r="9" fill="#111"/><text x="220" y="207" fill="#fff">6</text>
+            <circle cx="80" cy="249" r="9" fill="#111"/><text x="80" y="253" fill="#fff">7</text>
+            <circle cx="408" cy="306" r="9" fill="#111"/><text x="408" y="310" fill="#fff">8</text>
+          </g>
+        </svg>
+        <ol class="parts">
+          <li><b>1</b><b>Multiface One.</b> The red button freezes the game and opens its menu on the television.</li>
+          <li><b>2</b><b>Television.</b> Double-click the picture for full screen.</li>
+          <li><b>3</b><b>Channel buttons</b> 48K, + and 128 choose the computer; VOLUME, COLOUR, ZOOM and POWER.</li>
+          <li><b>4</b><b>Joystick.</b> Click it to plug it in.</li>
+          <li><b>5</b><b>This manual.</b></li>
+          <li><b>6</b><b>ZX Spectrum.</b> Type on your PC keyboard or click the keys.</li>
+          <li><b>7</b><b>Reset button</b> on the side of the computer.</li>
+          <li><b>8</b><b>Datacorder.</b> STOP/EJ opens a tape; click the cassette to see what is on it.</li>
+        </ol>
+        <p>Rest the mouse on any of them to see its name. On a phone they are arranged to fit the screen.</p>
+        <div class="pn">3</div>
+      </article>
+      <article class="page">
+        <h1>3. The keyboard</h1>
+        <p>Each Spectrum key does several jobs, printed on and around it. On your PC keyboard the letters, numbers and ENTER work as you would expect; the others are:</p>
+        <table>
+          <tr><td><kbd>Left Shift</kbd></td><td><span class="skey">CAPS SHIFT</span></td></tr>
+          <tr><td><kbd>Right Shift</kbd> <kbd>Ctrl</kbd></td><td><span class="skey">SYMBOL SHIFT</span></td></tr>
+          <tr><td><kbd>Backspace</kbd></td><td>DELETE (CAPS SHIFT + 0)</td></tr>
+          <tr><td><kbd>Esc</kbd></td><td>BREAK (CAPS SHIFT + SPACE)</td></tr>
+          <tr><td><kbd>Tab</kbd></td><td>Extended mode (CAPS + SYMBOL)</td></tr>
+          <tr><td><kbd>&larr;</kbd> <kbd>&uarr;</kbd> <kbd>&rarr;</kbd> <kbd>&darr;</kbd></td><td>Cursor keys, or the joystick when it is plugged in (<kbd>Left Alt</kbd> = fire)</td></tr>
+          <tr><td><kbd>,</kbd> <kbd>.</kbd> <kbd>;</kbd> <kbd>'</kbd> <kbd>-</kbd> <kbd>=</kbd> <kbd>/</kbd></td><td>SYMBOL SHIFT + N M O P J L V</td></tr>
+        </table>
+        <p>You can also click or tap the keys on the screen. A click on CAPS SHIFT or SYMBOL SHIFT holds it down for the next key. The Spectrum+ and 128 keys such as DELETE, EDIT, the arrows and ; " , . press the two keys they stand for.</p>
+        <div class="pn">4</div>
+      </article>
+      <article class="page">
+        <h1>4. Settings</h1>
+        <table>
+          <tr><td>SPEED switch</td><td><b>NORMAL</b>: real tape speed, with the border stripes and the loading sound. <b>FAST</b>: the computer runs flat out while the tape plays. <b>INSTANT</b>: programs go straight into memory.</td></tr>
+          <tr><td>AUTO LOAD</td><td>Putting in a tape resets the computer and starts loading it (LOAD "" on the 48K and Spectrum+, Tape Loader on the 128).</td></tr>
+          <tr><td>Counter</td><td>Shows how far the tape has played; the small button sets it to 000.</td></tr>
+          <tr><td>Multiface</td><td>The red button freezes the game: SAVE downloads a snapshot, LOAD opens one, TURBO runs as fast as possible, RESET restarts, RETURN carries on.</td></tr>
+          <tr><td>Joystick</td><td>Click it to plug it in: the arrow keys and Left Alt then work a Kempston joystick.</td></tr>
+          <tr><td>Television</td><td><b>ZOOM</b> (or a double-click on the picture) fills the screen. Drag the knobs for volume and colour; POWER pauses everything.</td></tr>
+        </table>
+        <div class="pn">5</div>
+      </article>
+      <article class="page">
+        <h1>5. About</h1>
+        <p>An emulator of the Sinclair ZX Spectrum 48K (1982), Spectrum+ (1984) and Spectrum 128 (1986), written in plain JavaScript. It runs in the browser, with nothing to install.</p>
+        <p>The Spectrum ROMs are copyright Amstrad, who allow them to be distributed for use with emulators.</p>
+        <p>Source code: github.com/akisbelibassakis/zx-spectrum</p>
+        <div class="pn">6</div>
+      </article>
+    </div>
+    <button class="turn prev" aria-label="Previous page"></button><button class="turn next" aria-label="Next page"></button>
   </dialog>
+  <div id="dymo" class="dymo" hidden></div>
 </div>
 <script src="js/z80.js"></script>
 <script src="js/tape.js"></script>

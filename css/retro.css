@@ -239,8 +239,8 @@ button { font-family: Tahoma, sans-serif; cursor: pointer; }
 .note td:first-child { white-space: nowrap; font-family: 'Courier New', monospace; color: var(--accent); }
 code { font-family: 'Courier New', monospace; }
 
-/* ================= narrow screens ================= */
-@media (max-width: 700px) {
+/* ================= phones: the TV's controls go under the picture ================= */
+@media (max-width: 700px), (max-height: 520px) and (orientation: landscape) {
   :root { --W: calc(100vw - 32px); --tvw: var(--W); }
   .room { padding-top: 16px; }
   .cabinet { flex-direction: column; border-radius: 14px; }

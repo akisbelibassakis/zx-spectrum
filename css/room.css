@@ -285,27 +285,29 @@ button { font-family: Tahoma, sans-serif; }
   .room { align-items: end; column-gap: 8px; row-gap: 8px; padding: 8px; }
   .recorder { width: 330em; height: 334em; }
   .card { right: auto; left: 0; }
-  #btnZoom { font-size: 9px; padding: 7px 8px; }
   .gear .multiface { margin: 0; }
 }
 
-/* ================= phone, landscape: the TV fills the height on the left; the computer in front, the rest behind it ================= */
+/* ================= phone, landscape: the TV, with its controls at the side, fills the height on the left;
+   on the right the Multiface and joystick, then the manual and the Datacorder, then the computer in front.
+   --R is the width left of the TV, --B the height of the manual and recorder, --G of the Multiface and joystick. */
 @media (max-height: 520px) and (orientation: landscape) {
   :root {
-    --H: calc(100vh - 16px); --W: calc((var(--H) - 185px) / .655); /* the TV: picture .655W plus its controls underneath */
-    --P: min(calc((100vw - 32px - var(--W)) / 17.8), calc(var(--H) * .58 / 7.06));
-    --B: calc(var(--H) - var(--P) * 7.06 - 20px);
+    --H: calc(100vh - 20px); --W: calc(var(--H) / .646);
+    --R: calc(100vw - 24px - var(--W));
+    --B: min(calc((var(--R) - 8px) / 1.72), calc(var(--H) * .42)); --G: calc(var(--B) * .35);
+    --P: min(calc(var(--R) / 11.4), calc((var(--H) - var(--B) - var(--G) - 16px) / 7.1));
   }
   .room {
-    grid-template-columns: auto 1fr auto auto; justify-content: stretch;
-    grid-template-areas: "tv man rec mf" "tv man rec joy" "tv desk desk desk";
+    grid-template-columns: auto 1fr auto; justify-content: stretch; align-items: center;
+    grid-template-areas: "tv mf joy" "tv man rec" "tv desk desk";
   }
   .tv { align-self: start; }
-  .desk { justify-self: center; }
+  .desk { justify-self: center; --p: var(--P); --q: min(calc(var(--P) * 7.06 / 7.3), calc(var(--R) / 18.4)); }
   .gear .manualbook { --mh: var(--B); justify-self: end; }
-  .recwrap { font-size: calc(var(--B) / 334); justify-self: center; }
-  .gear .multiface { font-size: calc(var(--B) * .32 / 80); justify-self: center; align-self: end; }
-  .gear .joystick { font-size: calc(var(--B) * .55 / 140); justify-self: center; align-self: start; }
+  .recwrap { font-size: calc(var(--B) / 334); justify-self: start; }
+  .gear .multiface { font-size: calc(var(--G) * .8 / 80); justify-self: end; align-self: end; }
+  .gear .joystick { font-size: calc(var(--G) / 140); justify-self: center; align-self: end; }
 }
 
 /* ================= phone, portrait: TV, computer, then the manual beside the turned recorder ================= */
@@ -316,6 +318,7 @@ button { font-family: Tahoma, sans-serif; }
     grid-template-areas: "tv tv tv" "desk desk desk" "man rec rec" "man mf joy";
   }
   .tv { justify-self: center; }
+  #btnZoom { font-size: 9px; padding: 7px 8px; }
   .desk { --p: calc(var(--W) / 13); --q: calc(var(--W) / 18.6); }
   .gear .manualbook { --mh: calc(var(--W) * .56); justify-self: end; align-self: start; }
   .recwrap { font-size: calc(var(--W) * .37 / 330); width: 334em; height: 330em; justify-self: center; }

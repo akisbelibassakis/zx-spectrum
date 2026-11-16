@@ -3,7 +3,7 @@
    --P is one key pitch of the 48K; every object is sized from it. The TV's picture is as wide as
    the 48K (11.3 pitches = 68.6% of the TV's width); the Spectrum+ and 128 may be a little wider. */
 :root {
-  --P: min(calc((100vh - 44px) / 18.3), calc((100vw - 40px) / 27.6), 64px);
+  --P: min(calc((100vh - 44px) / 18.3), calc((100vw - 40px) / 29.2), 64px);
   --W: calc(var(--P) * 16.5);
   --tvw: var(--W);
 }
@@ -88,42 +88,27 @@ button { font-family: Tahoma, sans-serif; }
 .mfred:active { top: -9em; height: 7em; }
 .mflever { position: absolute; right: -8em; top: 34em; width: 9em; height: 3em; background: #6a6a6a; transform: rotate(8deg); }
 
-.manualbook {
-  position: relative; flex: 0 0 auto; font-size: calc(var(--P) * 3.3 / 104); width: 104em; height: 144em; padding: 0; border: 0;
-  transform: rotate(-6deg); border-radius: 2em; overflow: hidden; box-shadow: 5em 7em 12em rgba(0,0,0,.55);
-  background: radial-gradient(circle at 22% 88%, #fff8d8 0 9em, #ffd77a 11em, transparent 26em),
-    repeating-linear-gradient(172deg, transparent 0 14em, rgba(255,240,200,.35) 14em 15em, transparent 15em 27em),
-    linear-gradient(180deg, #e9894f 0%, #f39a3d 35%, #f7b24a 60%, #f08a2c 80%, #d9601c 100%);
-  transition: transform .15s;
+.manualbook { /* the cover of the 1982 Introduction booklet, as tall as the computer */
+  --mh: calc(var(--P) * 7.06);
+  position: relative; flex: 0 0 auto; width: calc(var(--mh) * .706); height: var(--mh); padding: 0; border: 0; border-radius: 3px; overflow: hidden;
+  background: #e5843a; box-shadow: 6px 9px 16px rgba(0,0,0,.55), inset 0 0 0 1px rgba(0,0,0,.25); transition: transform .15s;
 }
-.manualbook:hover { transform: rotate(-3deg) translateY(-3em); }
-.manualbook span { position: absolute; }
-.manualbook .city {
-  left: 14em; top: 8em; width: 50em; height: 62em; opacity: .3;
-  background: repeating-linear-gradient(90deg, #7a4a3a 0 3em, #d9a07a 3em 5em);
-  clip-path: polygon(10% 30%, 40% 0, 80% 10%, 100% 45%, 85% 100%, 20% 90%, 0 60%);
-}
-.manualbook .spiral { left: 0; top: 0; bottom: 0; width: 9em; background: repeating-linear-gradient(180deg, transparent 0 2em, #111 2em 5em, transparent 5em 7em), #f4efe3; }
-.manualbook .sinc { right: .6em; top: .7em; font: bold 10em Arial, sans-serif; color: #111; letter-spacing: -.03em; }
-.manualbook .zx {
-  left: 4.64em; top: 2.08em; transform-origin: 0 0; transform: rotate(90deg) translateY(-100%); white-space: nowrap;
-  font: 11em/1 Arial, sans-serif; letter-spacing: .04em; color: transparent; -webkit-text-stroke: max(.6px, .08em) #2a1a10;
-}
-.manualbook .emu { left: 1.75em; bottom: 1em; text-align: left; font: 8em/1.2 Arial, sans-serif; color: #c8170e; }
-
+.manualbook:hover { transform: translateY(-4px) rotate(-1deg); }
+.manualbook .cover { display: block; width: 100%; height: 100%; }
 .joystick {
-  position: relative; flex: 0 0 auto; font-size: calc(var(--P) * 2 / 130); width: 130em; height: 140em; padding: 0; border: 0; background: none;
+  position: relative; flex: 0 0 auto; font-size: calc(var(--P) * 4.3 / 130); width: 130em; height: 140em; padding: 0; border: 0; background: none;
   filter: grayscale(.6) brightness(.75); transition: filter .2s;
 }
 .joystick.on { filter: none; }
 .joystick span { position: absolute; }
 .jbase { left: 10em; bottom: 20em; width: 110em; height: 44em; border-radius: 20em 20em 10em 10em; background: linear-gradient(#333, #111); box-shadow: 0 8em 12em rgba(0,0,0,.6); }
 .jstick { left: 57em; bottom: 50em; width: 16em; height: 70em; border-radius: 8em 8em 4em 4em; background: linear-gradient(90deg, #222, #555, #222); transform: rotate(8deg); transform-origin: bottom; }
-.jfire { left: 54em; bottom: 116em; width: 26em; height: 14em; border-radius: 7em; background: #d71e10; transform: rotate(8deg); }
+/* the fire button sits on top of the stick and tilts with it, about the same pivot */
+.jfire { left: 52em; bottom: 116em; width: 26em; height: 14em; border-radius: 7em 7em 4em 4em; background: radial-gradient(ellipse at 40% 30%, #ff5a48, #c3160b 70%); transform: rotate(8deg); transform-origin: 13em 80em; }
 .jfire2 { left: 22em; bottom: 46em; width: 18em; height: 12em; border-radius: 50%; background: #d71e10; }
 .jcable { left: 65em; bottom: 0; width: 70em; height: 22em; border-bottom: 4em solid #111; border-left: 4em solid #111; border-radius: 0 0 0 30em; opacity: 0; }
 .joystick.on .jcable { opacity: 1; }
-.joystick:active .jstick { transform: rotate(-10deg); }
+.joystick:active .jstick, .joystick:active .jfire { transform: rotate(-10deg); }
 
 /* ----- Datacorder: 1em = 1/330 of its width (full size) or 1/520 (strip) ----- */
 .recwrap { grid-area: rec; position: relative; justify-self: start; font-size: calc(var(--P) * 5.5 / 330); }
@@ -306,7 +291,7 @@ button { font-family: Tahoma, sans-serif; }
   .card { right: auto; left: 0; bottom: auto; top: calc(100% + 6px); }
   .gear { grid-area: gear; display: flex; align-items: flex-end; }
   .gear .multiface, .gear .joystick, .gear .manualbook { grid-area: auto; margin: 0; }
-  .manualbook { font-size: calc(var(--P) * 1.45 / 104); }
+  .manualbook { --mh: calc(var(--P) * 2); }
   .joystick { font-size: calc(var(--P) * 1.45 / 130); }
 }
 

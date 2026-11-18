@@ -1,0 +1,16 @@
+{
+  "name": "ZX Spectrum",
+  "short_name": "ZX Spectrum",
+  "description": "The ZX Spectrum 48K, Spectrum+ and 128 on an 80s desk: TV, Datacorder, Multiface and thousands of games.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#5a4434",
+  "theme_color": "#141414",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

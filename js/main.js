@@ -491,3 +491,6 @@ for (const [id, key] of [['manualBook', 'F1'], ['rack', 'F2'], ['mfButton', 'F4'
   const el = $(id);
   if (el && el.dataset.tip) el.dataset.tip += ' (' + key + ')';
 }
+
+// the installed app (and offline use): register the cache when served over http(s), not from disk
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});

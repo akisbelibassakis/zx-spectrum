@@ -66,3 +66,11 @@ Not yet: 128K models and AY sound, memory/IO contention (some timing-critical de
 - ZEXDOC and ZEXALL: all 67 groups pass (documented and undocumented flags).
 - ROM boots to the copyright screen; BASIC accepts typed input.
 - `hello.tap` loads and auto-runs both through the instant ROM trap and through real-time pulse loading (about 10 s emulated, with loading stripes).
+
+## Install it
+
+On https://akisbelibassakis.github.io/zx-spectrum/ Edge and Chrome offer **Install** (the icon at the end of the address bar, or the menu); phones offer **Add to Home screen**. The installed app has its own window and icon, works offline (except the catalogue), and updates itself.
+
+## Disclaimer
+
+A fan project, not made, endorsed or supported by Sky, Sinclair Research or Amstrad; ZX Spectrum and Sinclair are trademarks of their owners. The ROMs are copyright Amstrad, who allow them to be distributed for use with emulators. Games come from the World of Spectrum archive and only titles whose makers allow distribution are offered. Catalogue searches go to [ZXInfo](https://zxinfo.dk); there is no tracking.

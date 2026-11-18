@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- black, with the Spectrum's rainbow running up to the right and "ZX" in its blocky lettering -->
+  <rect width="512" height="512" fill="#141414"/>
+  <g transform="translate(250 512) skewX(-35)">
+    <rect x="0" y="-300" width="46" height="300" fill="#d9281d"/>
+    <rect x="46" y="-300" width="46" height="300" fill="#f5cf12"/>
+    <rect x="92" y="-300" width="46" height="300" fill="#4dae3e"/>
+    <rect x="138" y="-300" width="46" height="300" fill="#3c8ed5"/>
+  </g>
+  <g fill="none" stroke="#f2f2f2" stroke-width="30" stroke-linecap="square" stroke-linejoin="miter">
+    <path d="M86 112 H196 L86 236 H196"/>
+    <path d="M232 112 L322 236 M322 112 L232 236"/>
+  </g>
+</svg>

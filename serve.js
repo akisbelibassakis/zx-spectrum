@@ -2,7 +2,8 @@
 'use strict';
 const http = require('http'), fs = require('fs'), path = require('path');
 const root = __dirname, port = +(process.argv[2] || 8048);
-const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css' };
+const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css',
+  '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.svg': 'image/svg+xml' };
 http.createServer((req, res) => {
   const p = path.normalize(decodeURIComponent(req.url.split('?')[0])).replace(/^([\\/]\.\.)+/, '');
   const file = path.join(root, p, /[\\/]$/.test(p) ? 'index.html' : '');

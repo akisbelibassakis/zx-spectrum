@@ -1,5 +1,7 @@
 /* 80s living room: wood-cabinet colour TV and a rubber-key ZX Spectrum 48K */
 :root {
+  /* the height you can actually see: on phones 100vh also counts the area behind the browser's bars, svh does not */
+  --vh100: 100vh;
   --wall: #5a4434;
   --text: #e9e2d6;
   --muted: #a99f92;
@@ -7,18 +9,18 @@
   --error: #ff8a78;
   /* everything is sized from --W so the TV, keyboard and tape deck fit the window height */
   /* TV height = .65W, keyboard height = .58W * .625; the rest is margins and the control strip */
-  --W: min(1100px, calc(100vw - 32px), calc((100vh - 116px) / 1.0125));
+  --W: min(1100px, calc(100vw - 32px), calc((var(--vh100) - 116px) / 1.0125));
   --tvw: var(--W);
 }
 * { box-sizing: border-box; }
-html { background: var(--wall); }
+html { background: var(--wall); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; } /* no "font boosting" in phone and in-app browsers: our labels are sized to fit their keys */
 body {
   margin: 0; color: var(--text); font: 14px Tahoma, Verdana, sans-serif;
   background:
     radial-gradient(ellipse 70% 50% at 50% 20%, rgba(255, 200, 120, .12), transparent 70%),
     repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 2px, transparent 2px 46px),
     var(--wall);
-  min-height: 100vh;
+  min-height: var(--vh100);
 }
 body.drag::after {
   content: 'Drop ROM, TAP, TZX, SNA or Z80 files'; position: fixed; inset: 0; display: grid; place-items: center;
@@ -26,6 +28,8 @@ body.drag::after {
 }
 .room { width: var(--W); margin: 0 auto; padding: 12px 0 16px; }
 button { font-family: Tahoma, sans-serif; cursor: pointer; }
+
+@supports (height: 100svh) { :root { --vh100: 100svh; } }
 
 /* ================= TV ================= */
 .tv { position: relative; width: var(--tvw); margin: 0 auto; }

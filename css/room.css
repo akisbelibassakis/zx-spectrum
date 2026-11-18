@@ -3,7 +3,7 @@
    --P is one key pitch of the 48K; every object is sized from it. The TV's picture is as wide as
    the 48K (11.3 pitches = 68.6% of the TV's width); the Spectrum+ and 128 may be a little wider. */
 :root {
-  --P: min(calc((100vh - 44px) / 18.3), calc((100vw - 40px) / 29.2), 64px);
+  --P: min(calc((var(--vh100) - 44px) / 18.3), calc((100vw - 40px) / 29.2), 64px);
   --W: calc(var(--P) * 16.5);
   --tvw: var(--W);
 }
@@ -208,12 +208,12 @@ button { font-family: Tahoma, sans-serif; }
 
 /* ----- the manual, opened ----- */
 .book {
-  width: min(1100px, calc(100vw - 150px)); max-height: calc(100vh - 40px); padding: 0; border: 0; background: none; overflow: visible; color: #111;
+  width: min(1100px, calc(100vw - 150px)); max-height: calc(var(--vh100) - 40px); padding: 0; border: 0; background: none; overflow: visible; color: #111;
 }
 .book::backdrop { background: rgba(10,6,3,.7); }
 .pages { display: flex; filter: drop-shadow(0 18px 24px rgba(0,0,0,.6)); }
 .page {
-  position: relative; flex: 1 1 0; min-height: min(700px, calc(100vh - 60px)); max-height: calc(100vh - 40px); overflow-y: auto;
+  position: relative; flex: 1 1 0; min-height: min(700px, calc(var(--vh100) - 60px)); max-height: calc(var(--vh100) - 40px); overflow-y: auto;
   padding: 46px 52px 54px; background: #fbfaf6; font: 13.5px/1.4 Arial, Helvetica, sans-serif; text-align: justify;
 }
 .page[hidden] { display: none; }
@@ -282,7 +282,7 @@ button { font-family: Tahoma, sans-serif; }
    --R is the width left of the TV, --B the height of the manual and recorder, --G of the Multiface and joystick. */
 @media (max-height: 520px) and (orientation: landscape) {
   :root {
-    --H: calc(100vh - 20px); --W: calc(var(--H) / .646);
+    --H: calc(var(--vh100) - 20px); --W: calc(var(--H) / .646);
     --R: calc(100vw - 24px - var(--W));
     --B: min(calc((var(--R) - 8px) / 1.72), calc(var(--H) * .42)); --G: calc(var(--B) * .35);
     --P: min(calc(var(--R) / 11.4), calc((var(--H) - var(--B) - var(--G) - 16px) / 7.1));
@@ -302,7 +302,7 @@ button { font-family: Tahoma, sans-serif; }
 
 /* ================= phone, portrait: TV, computer, then the manual beside the turned recorder ================= */
 @media (max-width: 700px) {
-  :root { --W: min(calc(100vw - 16px), calc((100vh - 40px) / 2.2)); --P: calc(var(--W) / 13); }
+  :root { --W: min(calc(100vw - 16px), calc((var(--vh100) - 40px) / 2.2)); --P: calc(var(--W) / 13); }
   .room {
     grid-template-columns: auto auto auto; justify-content: center;
     grid-template-areas: "tv tv tv" "desk desk desk" "man rec rack" "man mf joy";
@@ -321,7 +321,7 @@ button { font-family: Tahoma, sans-serif; }
   .tabs button.on { opacity: 1; }
   .bclose { left: auto; right: 0; top: -40px; }
   .book { margin-top: 48px; }
-  .page { padding: 24px 20px 44px; min-height: 0; max-height: calc(100vh - 120px); }
+  .page { padding: 24px 20px 44px; min-height: 0; max-height: calc(var(--vh100) - 120px); }
   .page .pn { left: auto !important; right: 20px !important; }
   .pages::after { display: none; }
 }

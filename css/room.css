@@ -217,14 +217,15 @@ button { font-family: Tahoma, sans-serif; }
   padding: 46px 52px 54px; background: #fbfaf6; font: 13.5px/1.4 Arial, Helvetica, sans-serif; text-align: justify;
 }
 .page[hidden] { display: none; }
-.page:nth-child(odd) { border-radius: 4px 0 0 4px; }
-.page:last-child:nth-child(odd) { border-radius: 4px; }
-.pages:has(.page:nth-child(2):not([hidden])) .page:first-child,
-.pages:has(.page:nth-child(4):not([hidden])) .page:nth-child(3) { background: linear-gradient(90deg, #fbfaf6 85%, #e9e6dd); }
-.page:nth-child(2):not([hidden]), .page:nth-child(4):not([hidden]) { border-radius: 0 4px 4px 0; }
-.pages:has(.page:nth-child(1):not([hidden])) .page:nth-child(2), .pages:has(.page:nth-child(3):not([hidden])) .page:nth-child(4) {
-  background: linear-gradient(90deg, #e9e6dd, #fbfaf6 15%);
-}
+/* in a spread the odd pages are on the left, the even ones on the right, shaded towards the binding */
+.book:not(.single) .page:nth-child(odd) { border-radius: 4px 0 0 4px; background: linear-gradient(90deg, #fbfaf6 85%, #e9e6dd); }
+.book:not(.single) .page:nth-child(even) { border-radius: 0 4px 4px 0; background: linear-gradient(90deg, #e9e6dd, #fbfaf6 15%); }
+.page.contents h1 { margin-bottom: 24px; }
+.toc { list-style: none; margin: 0 0 28px; padding: 0; }
+.toc button { display: flex; align-items: baseline; gap: 6px; width: 100%; padding: 9px 0; border: 0; background: none; cursor: pointer; font: bold 16px Arial, sans-serif; color: #111; text-align: left; }
+.toc button i { flex: 1; border-bottom: 2px dotted #555; }
+.toc button:hover span { text-decoration: underline; }
+.tocnote { color: #444; }
 .page h1 { font: bold 25px/1.1 Arial, sans-serif; margin: 0 0 10px; text-align: left; }
 .page h2 { font: bold 15px Arial, sans-serif; margin: 16px 0 4px; }
 .page p { margin: 0 0 8px; }
@@ -325,11 +326,7 @@ button { font-family: Tahoma, sans-serif; }
   .pages::after { display: none; }
 }
 
-/* the manual's last page has no facing page: keep it page-sized and without the binding across it */
-@media (min-width: 900px) {
-  .page:nth-child(5) { flex: 0 0 50%; }
-  .pages:has(.page:nth-child(5):not([hidden]))::after { display: none; }
-}
+
 
 /* ================= the cassette rack and the software catalogue ================= */
 .rack {
@@ -360,4 +357,17 @@ button { font-family: Tahoma, sans-serif; }
 .page table.keys2 tbody { display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; }
 .page table.keys2 tr { display: flex; align-items: baseline; border-bottom: 1px solid #ccc; }
 .page table.keys2 td { padding: 3px 4px; border: 0; }
-.page table.keys2 td:first-child { flex: 0 0 52px; width: auto; }
+.page table.keys2 td:first-child { flex: 0 0 auto; min-width: 52px; width: auto; white-space: nowrap; } /* "Num +" stays on one line */
+/* volume and picture: one row per action, every-keyboard key then number-pad key */
+.page table.keys2.tv tbody { display: table-row-group; }
+.page table.keys2.tv tr { display: table-row; }
+.page table.keys2.tv td { border-bottom: 1px solid #ccc; padding: 3px 8px 3px 4px; white-space: nowrap; }
+.page table.keys2.tv td:last-child { white-space: normal; width: 100%; }
+
+/* the author's note on the About page */
+.page .memoir { font-style: italic; }
+.page .sign { text-align: right; font: italic bold 15px Georgia, serif; margin-top: 4px; }
+
+/* the knob labels can be clicked: VOLUME mutes, COLOUR changes the picture */
+.knobwrap span { cursor: pointer; user-select: none; }
+.knobwrap span:hover { color: #e0d6c4; }

@@ -247,6 +247,7 @@ function knob(el, value, onChange) {
     onChange(value);
   };
   let startY = 0, startV = 0;
+  el.knob = { set, get: () => value };
   el.addEventListener('pointerdown', e => {
     startY = e.clientY; startV = value;
     el.setPointerCapture(e.pointerId);
@@ -263,8 +264,13 @@ function knob(el, value, onChange) {
   set(value);
 }
 
+// the picture: colour (its strength from the COLOUR knob), black and white, or a green-screen monitor
+const PICTURES = { colour: 'Colour', mono: 'Black & white', green: 'Green screen' };
 function applyPicture() {
-  canvas.style.filter = `saturate(${colourLevel * 1.15}) contrast(1.08) brightness(1.06)`;
+  const mode = settings.picture;
+  canvas.style.filter = mode === 'mono' ? 'grayscale(1) contrast(1.15) brightness(1.08)'
+    : mode === 'green' ? 'grayscale(1) sepia(1) hue-rotate(65deg) saturate(5) contrast(1.1) brightness(.95)'
+    : `saturate(${colourLevel * 1.15}) contrast(1.08) brightness(1.06)`;
 }
 
 function retroLoop() {
@@ -278,34 +284,43 @@ buildKeyboard128();
 showKeyboard(model);
 document.getElementById('btnPower').onclick = () => setPower(!powered);
 document.querySelectorAll('.chan').forEach(b => { b.onclick = () => setChannel(+b.dataset.ch); });
-knob(document.getElementById('knobVolume'), 0.7, v => setVolume(v));
-knob(document.getElementById('knobColour'), 0.5, v => { colourLevel = v * 2; applyPicture(); });
+const volKnob = document.getElementById('knobVolume'), colKnob = document.getElementById('knobColour');
+knob(volKnob, settings.volume, v => { setVolume(v); settings.volume = v; saveSettings(); });
+knob(colKnob, settings.colour, v => { colourLevel = v * 2; settings.colour = v; saveSettings(); applyPicture(); });
 tuneTo(MODEL_CHANNELS.indexOf(model) + 1);
 setPower(true);
 retroLoop();
 
 // ---------- the manual: two pages side by side on wide screens, one on phones ----------
 const manual = document.getElementById('manual');
-const pages = [...manual.querySelectorAll('.page')];
-let pageNo = 0;
+const allPages = [...manual.querySelectorAll('.page')];
+let pageNo = 0, shownPage = document.getElementById('ch-contents');
 const spreadSize = () => (matchMedia('(min-width: 900px)').matches ? 2 : 1);
-function showPage(n) {
-  const k = spreadSize();
-  pageNo = Math.max(0, Math.min(pages.length - 1, n));
-  pageNo -= pageNo % k;
-  pages.forEach((p, i) => { p.hidden = i < pageNo || i >= pageNo + k; });
+// two pages side by side include the blank insides of the covers; one at a time skips them
+const bookPages = () => (spreadSize() === 2 ? allPages : allPages.filter(p => !p.classList.contains('blank')));
+// show a page (an element, or a number in the current list) with its facing page
+function showPage(target) {
+  const list = bookPages(), k = spreadSize();
+  let i = typeof target === 'number' ? target : Math.max(0, list.indexOf(target));
+  i = Math.max(0, Math.min(list.length - 1, i));
+  i -= i % k;
+  pageNo = i;
+  const shown = list.slice(i, i + k);
+  shownPage = shown.find(p => !p.classList.contains('blank')) || shown[0];
+  allPages.forEach(p => { p.hidden = !shown.includes(p); });
   manual.classList.toggle('single', k === 1); // one page at a time: no binding down the middle
-  manual.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', +b.dataset.page >= pageNo && +b.dataset.page < pageNo + k));
-  manual.querySelector('.prev').hidden = pageNo === 0;
-  manual.querySelector('.next').hidden = pageNo + k >= pages.length;
+  manual.querySelectorAll('.tabs button').forEach(t => t.classList.toggle('on', shown.some(p => p.id === 'ch-' + t.dataset.ch)));
+  manual.querySelector('.prev').hidden = i === 0;
+  manual.querySelector('.next').hidden = i + k >= list.length;
 }
-document.getElementById('manualBook').onclick = () => { showPage(pageNo); manual.showModal(); };
-manual.querySelectorAll('.tabs button').forEach(b => { b.onclick = () => showPage(+b.dataset.page); });
+const chapter = id => document.getElementById('ch-' + id);
+document.getElementById('manualBook').onclick = () => { showPage(shownPage); manual.showModal(); };
+manual.querySelectorAll('.tabs button, .toc button').forEach(b => { b.onclick = () => showPage(chapter(b.dataset.ch)); });
 manual.querySelector('.prev').onclick = () => showPage(pageNo - spreadSize());
 manual.querySelector('.next').onclick = () => showPage(pageNo + spreadSize());
 manual.querySelector('.bclose').onclick = () => manual.close();
 manual.addEventListener('click', e => { if (e.target === manual) manual.close(); });
-addEventListener('resize', () => { if (manual.open) showPage(pageNo); });
+addEventListener('resize', () => { if (manual.open) showPage(shownPage); });
 
 // while the manual or the Multiface menu is open, keys work them instead of the Spectrum
 function overlayKey(e, down) {
@@ -338,8 +353,41 @@ if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
   document.addEventListener('pointerdown', () => { clearTimeout(dymoTimer); dymo.hidden = true; });
 }
 
-// ?manual=<page> in the address opens the manual at that page (1 = the first)
+// ?manual=<n> or ?manual=<chapter> (using, desk, keys, settings, about) opens the manual there
 {
   const m = new URLSearchParams(location.search).get('manual');
-  if (m) { showPage(Math.max(0, (parseInt(m, 10) || 1) - 1)); manual.showModal(); }
+  if (m) { showPage(/^\d+$/.test(m) ? allPages[parseInt(m, 10) - 1] || allPages[1] : chapter(m)); manual.showModal(); }
 }
+
+// ---------- volume and picture: the knobs, the mouse wheel over the TV, the number pad, the knob labels ----------
+let volumeBeforeMute = settings.volume || 0.7;
+function tvVolume(step) {
+  volKnob.knob.set(volKnob.knob.get() + step);
+  status(volKnob.knob.get() ? 'Volume ' + Math.round(volKnob.knob.get() * 100) + '%' : 'Sound off');
+}
+function tvMute() {
+  if (volKnob.knob.get() > 0) { volumeBeforeMute = volKnob.knob.get(); volKnob.knob.set(0); status('Sound off'); }
+  else { volKnob.knob.set(volumeBeforeMute || 0.7); status('Sound on'); }
+}
+function tvPicture() {
+  const modes = Object.keys(PICTURES);
+  settings.picture = modes[(modes.indexOf(settings.picture) + 1) % modes.length];
+  saveSettings(); applyPicture(); status(PICTURES[settings.picture]);
+}
+// the wheel anywhere over the TV: volume; with Shift, colour (the knobs' own wheel handling comes first)
+tv.addEventListener('wheel', e => {
+  if (e.target.closest('.knob')) return;
+  e.preventDefault();
+  const step = -Math.sign(e.deltaY || e.deltaX) * 0.05;
+  if (e.shiftKey) { colKnob.knob.set(colKnob.knob.get() + step); status('Colour ' + Math.round(colKnob.knob.get() * 100) + '%'); }
+  else tvVolume(step);
+}, { passive: false });
+const [volLabel, colLabel] = document.querySelectorAll('.knobwrap span');
+volLabel.onclick = tvMute;
+colLabel.onclick = tvPicture;
+volLabel.dataset.tip = 'Sound off / on (Home or Num *)';
+colLabel.dataset.tip = 'Colour, black & white, green screen (End or Num /)';
+volKnob.dataset.tip = 'Volume: drag, or the wheel over the TV (PgUp PgDn or Num + -)';
+colKnob.dataset.tip = 'Colour: drag, or Shift + wheel over the TV';
+volKnob.removeAttribute('title'); colKnob.removeAttribute('title');
+applyPicture();

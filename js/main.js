@@ -14,7 +14,7 @@ let model = savedModel();
 const zx = new Spectrum(44100, MODELS[model].hw);
 let paused = false, turbo = false, lastTime = 0, frameDebt = 0, lastName = '';
 // recorder and joystick settings, remembered in this browser
-const settings = Object.assign({ speed: 2, autoLoad: true, joy: false }, (() => {
+const settings = Object.assign({ speed: 2, autoLoad: true, joy: false, volume: 0.7, colour: 0.5, picture: 'colour' }, (() => {
   try { return JSON.parse(localStorage.getItem('zxSettings')) || {}; } catch (e) { return {}; }
 })());
 function saveSettings() { try { localStorage.setItem('zxSettings', JSON.stringify(settings)); } catch (e) { /* storage unavailable */ } }
@@ -337,11 +337,16 @@ canvas.addEventListener('dblclick', fullScreen);
 
 // recorder: SPEED switch (normal / fast / instant) and AUTO LOAD
 function setSpeed(n) { settings.speed = n; zx.fastLoad = n === 2; $('speed').dataset.pos = n; saveSettings(); }
+// a click on a word picks that speed; on the knob it moves one step along; on the slot it jumps to the nearest position
 $('speed').addEventListener('click', e => {
-  const mark = e.target.closest('[data-pos]');
+  const mark = e.target.closest('.marks [data-pos]'); // not #speed itself, which also carries data-pos
   if (mark) { setSpeed(+mark.dataset.pos); return; }
+  if (e.target.closest('.sknob')) { setSpeed((settings.speed + 1) % 3); return; }
   const r = $('speed').querySelector('.slot').getBoundingClientRect();
-  setSpeed(Math.max(0, Math.min(2, Math.round((e.clientX - r.left) / r.width * 2))));
+  if (!r.width || !r.height) { setSpeed((settings.speed + 1) % 3); return; }
+  // the recorder may be turned 90 degrees (phones in portrait): then the slot runs downwards
+  const t = r.height > r.width ? (e.clientY - r.top) / r.height : (e.clientX - r.left) / r.width;
+  setSpeed(Math.max(0, Math.min(2, Math.round(t * 2))));
 });
 function setAutoLoad(on) { settings.autoLoad = on; $('autoLoad').setAttribute('aria-pressed', on); saveSettings(); }
 $('autoLoad').onclick = () => setAutoLoad(!settings.autoLoad);
@@ -471,6 +476,15 @@ const SHORTCUTS = {
   F10: ['Plug the joystick in or out', () => $('joystick').click()],
   F11: ['Full screen', () => fullScreen()],
   Pause: ['Pause (the POWER button)', () => $('btnPower').click()],
+  NumpadAdd: ['Volume up', () => tvVolume(0.1)],
+  NumpadSubtract: ['Volume down', () => tvVolume(-0.1)],
+  NumpadMultiply: ['Sound off / on', () => tvMute()],
+  NumpadDivide: ['Picture: colour, black & white, green screen', () => tvPicture()],
+  // the same on keys every keyboard has (laptops without a number pad); in the catalogue PgUp/PgDn page the list
+  PageUp: ['Volume up', () => (screenMenuOpen() ? menuKey('PGUP') : tvVolume(0.1))],
+  PageDown: ['Volume down', () => (screenMenuOpen() ? menuKey('PGDN') : tvVolume(-0.1))],
+  Home: ['Sound off / on', () => tvMute()],
+  End: ['Picture: colour, black & white, green screen', () => tvPicture()],
 };
 // hover labels show the key, e.g. "Software catalogue (F2)"
 for (const [id, key] of [['manualBook', 'F1'], ['rack', 'F2'], ['mfButton', 'F4'], ['btnEject', 'F3'], ['btnPlay', 'F6'], ['btnRewind', 'F7'], ['btnReset', 'F8'], ['speed', 'F9'], ['btnZoom', 'F11'], ['btnPower', 'Pause']]) {

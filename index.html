@@ -188,13 +188,26 @@
   <!-- ===== the manual ===== -->
   <dialog id="manual" class="book">
     <div class="tabs">
-      <button data-page="0" style="--c:#d9281d">1 Using</button><button data-page="1" style="--c:#f5cf12;color:#111">2 The desk</button>
-      <button data-page="2" style="--c:#4dae3e">3 Keyboard</button><button data-page="3" style="--c:#3c8ed5">4 Settings</button>
-      <button data-page="4" style="--c:#2b2b2b">5 About</button>
+      <button data-ch="using" style="--c:#d9281d">1 Using</button><button data-ch="desk" style="--c:#f5cf12;color:#111">2 The desk</button>
+      <button data-ch="keys" style="--c:#4dae3e">3 Keyboard</button><button data-ch="settings" style="--c:#3c8ed5">4 Settings</button>
+      <button data-ch="about" style="--c:#2b2b2b">5 About</button>
     </div>
     <button class="bclose" aria-label="Close">&#10005;</button>
     <div class="pages">
-      <article class="page">
+      <article class="page blank" aria-hidden="true"></article>
+      <article class="page contents" id="ch-contents">
+        <h1>Contents</h1>
+        <ol class="toc">
+          <li><button data-ch="using"><span>1. Using the emulator</span><i></i><b>2</b></button></li>
+          <li><button data-ch="desk"><span>2. The desk</span><i></i><b>3</b></button></li>
+          <li><button data-ch="keys"><span>3. The keyboard</span><i></i><b>4</b></button></li>
+          <li><button data-ch="settings"><span>4. Settings</span><i></i><b>5</b></button></li>
+          <li><button data-ch="about"><span>5. About</span><i></i><b>6</b></button></li>
+        </ol>
+        <p class="tocnote">Click a chapter, a coloured tab or the turned-up page corners; the arrow keys turn the pages and F1 closes the manual.</p>
+        <div class="pn">1</div>
+      </article>
+      <article class="page" id="ch-using">
         <div class="stripes"><i></i><i></i><i></i><i></i></div>
         <h1>1. Using the emulator</h1>
         <p>This booklet is for anyone who has never used a ZX Spectrum, and for those who used one long ago and have forgotten how. Everything on the desk works: the computer, the television, the recorder and the gadgets around them.</p>
@@ -212,7 +225,7 @@
         <p>Press the reset button on the side of the computer. The Multiface's red button stops a game so that you can save it and come back later.</p>
         <div class="pn">2</div>
       </article>
-      <article class="page">
+      <article class="page" id="ch-desk">
         <h1>2. The desk</h1>
         <p>Everything you need is on the desk. The screen is laid out thus:</p>
         <svg class="figure" viewBox="0 0 460 330" role="img" aria-label="The desk: cassette rack, Multiface One, television, joystick, manual, ZX Spectrum and Datacorder">
@@ -258,7 +271,7 @@
         <p>Rest the mouse on any of them to see its name. On a phone they are arranged to fit the screen.</p>
         <div class="pn">3</div>
       </article>
-      <article class="page">
+      <article class="page" id="ch-keys">
         <h1>3. The keyboard</h1>
         <p>Each Spectrum key does several jobs, printed on and around it. On your PC keyboard the letters, numbers and ENTER work as you would expect; the others are:</p>
         <table>
@@ -286,9 +299,15 @@
           <tr><td><kbd>F11</kbd></td><td>Full screen</td></tr>
           <tr><td><kbd>Pause</kbd></td><td>Pause (the TV&#39;s POWER)</td></tr>
         </table>
+        <p>Volume and picture: the first keys are on every keyboard, the second on the number pad.</p>
+        <table class="keys2 tv">
+          <tr><td><kbd>PgUp</kbd>&nbsp;<kbd>PgDn</kbd></td><td><kbd>Num +</kbd>&nbsp;<kbd>Num -</kbd></td><td>Volume up / down</td></tr>
+          <tr><td><kbd>Home</kbd></td><td><kbd>Num *</kbd></td><td>Sound off / on</td></tr>
+          <tr><td><kbd>End</kbd></td><td><kbd>Num /</kbd></td><td>Colour, black &amp; white, green screen</td></tr>
+        </table>
         <div class="pn">4</div>
       </article>
-      <article class="page">
+      <article class="page" id="ch-settings">
         <h1>4. Settings</h1>
         <table>
           <tr><td>SPEED switch</td><td><b>NORMAL</b>: real tape speed, with the border stripes and the loading sound. <b>FAST</b>: the computer runs flat out while the tape plays. <b>INSTANT</b>: programs go straight into memory.</td></tr>
@@ -297,18 +316,23 @@
           <tr><td>Multiface</td><td>The red button freezes the game and shows its menu on the screen: SAVE downloads a snapshot, LOAD opens one, TURBO runs as fast as possible, RESET restarts, RETURN carries on. Choose with the arrows and ENTER, or press S, L, T, X or R; BREAK returns to the game.</td></tr>
           <tr><td>Software catalogue</td><td>Type a title and press ENTER: ZXDB, the database of everything made for the Spectrum, is searched. Move with the arrows (or CAPS SHIFT + 5 to 8), press ENTER to load, DELETE to go back and BREAK to leave. Titles in red cannot be downloaded: their makers do not allow it, or they are newer than the archive. You can also click a line.</td></tr>
           <tr><td>Joystick</td><td>Click it to plug it in: the arrow keys and Left Alt then work a Kempston joystick.</td></tr>
-          <tr><td>Television</td><td><b>ZOOM</b> (or a double-click on the picture) fills the screen. Drag the knobs for volume and colour; POWER pauses everything.</td></tr>
+          <tr><td>Television</td><td><b>ZOOM</b> (or a double-click on the picture) fills the screen; POWER pauses everything. <b>Volume:</b> drag the VOLUME knob, or roll the mouse wheel anywhere over the TV; click the word VOLUME to turn the sound off and on. <b>Colour:</b> drag the COLOUR knob or hold Shift with the wheel; click the word COLOUR for black and white or a green-screen monitor. The TV remembers its settings, so if you left it silent it stays silent.</td></tr>
         </table>
         <div class="pn">5</div>
       </article>
-      <article class="page">
+      <article class="page" id="ch-about">
         <h1>5. About</h1>
         <p>An emulator of the Sinclair ZX Spectrum 48K (1982), Spectrum+ (1984) and Spectrum 128 (1986), written in plain JavaScript. It runs in the browser, with nothing to install.</p>
         <p>The Spectrum ROMs are copyright Amstrad, who allow them to be distributed for use with emulators.</p>
         <p>The software catalogue searches ZXDB through the ZXInfo service and loads the games from the World of Spectrum archive kept at archive.org. Only titles whose makers allow it can be downloaded.</p>
         <p>Source code: github.com/akisbelibassakis/zx-spectrum</p>
+        <h2>A note from the author</h2>
+        <p class="memoir">I was a teenager in the 1980s when a ZX Spectrum came into my life. Rubber keys, the family television, long hours typing in program listings from magazines, line by line, hunting for the one mistyped character, and long minutes of screeching tape, waiting to see whether this time the game would load. Those evenings taught me what a computer could be, and a little of who I would become.</p>
+        <p class="memoir">This emulator is my way of switching it on once more. I hope it brings back a few memories for you too.</p>
+        <p class="sign">Akis Belibassakis</p>
         <div class="pn">6</div>
       </article>
+      <article class="page blank" aria-hidden="true"></article>
     </div>
     <button class="turn prev" aria-label="Previous page"></button><button class="turn next" aria-label="Next page"></button>
   </dialog>

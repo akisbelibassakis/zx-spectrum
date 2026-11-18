@@ -58,10 +58,10 @@
         <text x="452" y="996" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#111">Click to view</text>
       </svg>
     </button>
-    <button id="rack" class="rack" aria-label="Software catalogue" data-tip="Software catalogue: find a game">
-      <span style="--c:#d70000">MANIC MINER</span><span style="--c:#1f5fbf">JET SET WILLY</span><span style="--c:#e8b100">HORACE</span>
-      <span style="--c:#2c8a3a">ATIC ATAC</span><span style="--c:#7b2fa8">THE HOBBIT</span><span style="--c:#d45a00">KNIGHT LORE</span>
-    </button>
+    <div id="rack" class="rack">
+      <button class="racklabel" data-tip="My tapes: load, remove, back up">MY TAPES</button>
+      <div class="slots"></div>
+    </div>
     <button id="joystick" class="joystick" aria-label="Joystick" aria-pressed="false" data-tip="Joystick: plug in">
       <span class="jbase"></span><span class="jstick"></span><span class="jfire"></span><span class="jfire2"></span><span class="jcable"></span>
     </button>
@@ -189,7 +189,8 @@
       <button class="pk" id="btnEject" data-tip="Stop / eject: open a tape or snapshot">&#9632; &#9167;<small>STOP/EJ</small></button>
       <button class="pk" id="btnTapePause" data-tip="Pause">&#10074;&#10074;<small>PAUSE</small></button>
     </div>
-    <input type="file" id="fileInput" multiple accept=".rom,.tap,.tzx,.sna,.z80" hidden>
+    <input type="file" id="fileInput" multiple accept=".rom,.tap,.tzx,.sna,.z80,.zxtapes" hidden>
+    <input type="file" id="backupInput" accept=".zxtapes" hidden>
   </div>
     <ol id="tapeBlocks" class="card" hidden></ol>
   </div>
@@ -228,7 +229,7 @@
         <p>This booklet is for anyone who has never used a ZX Spectrum, and for those who used one long ago and have forgotten how. Everything on the desk works: the computer, the television, the recorder and the gadgets around them.</p>
         <ol>
           <li><b>1</b>The computer. Choose it with the television's channel buttons: <b>48K</b>, <b>+</b> or <b>128</b>. Changing channel resets it.</li>
-          <li><b>2</b>A tape. Press <b>STOP/EJ</b> on the recorder and pick a <b>.tap</b> or <b>.tzx</b> tape, a <b>.z80</b> or <b>.sna</b> snapshot, or a ROM. You can also drop files anywhere on the page, or find a game in the <b>software catalogue</b>: click the cassette rack, or the empty cassette window.</li>
+          <li><b>2</b>A tape. Press <b>STOP/EJ</b> on the recorder and pick a <b>.tap</b> or <b>.tzx</b> tape, a <b>.z80</b> or <b>.sna</b> snapshot, or a ROM. You can also drop files anywhere on the page, or find a game in the <b>software catalogue</b> (F2, an empty place on the rack, or the empty cassette window). Every tape you load goes onto your <b>cassette rack</b>, so you can play it again later, even offline.</li>
           <li><b>3</b>The recorder. With <b>AUTO LOAD</b> on, the tape starts by itself. Otherwise type the load command and press <b>PLAY</b>.</li>
         </ol>
         <h2>Loading a program by hand</h2>
@@ -281,7 +282,7 @@
           <li><b>6</b><b>ZX Spectrum.</b> Type on your PC keyboard or click the keys.</li>
           <li><b>7</b><b>Reset button</b> on the side of the computer.</li>
           <li><b>8</b><b>Datacorder.</b> STOP/EJ opens a tape; click the cassette to see what is on it. With no tape in, the cassette window opens the catalogue.</li>
-          <li><b>9</b><b>Cassette rack.</b> The software catalogue: thousands of games to load.</li>
+          <li><b>9</b><b>Cassette rack.</b> Your tapes: click one to load it, an empty place to find a game, MY TAPES for the list.</li>
         </ol>
         <p>Rest the mouse on any of them to see its name. On a phone they are arranged to fit the screen.</p>
         <div class="pn">3</div>
@@ -330,6 +331,7 @@
           <tr><td>Counter</td><td>Shows how far the tape has played; the small button sets it to 000.</td></tr>
           <tr><td>Multiface</td><td>The red button freezes the game and shows its menu on the screen: SAVE downloads a snapshot, LOAD opens one, TURBO runs as fast as possible, RESET restarts, RETURN carries on. Choose with the arrows and ENTER, or press S, L, T, X or R; BREAK returns to the game.</td></tr>
           <tr><td>Software catalogue</td><td>Type a title and press ENTER: ZXDB, the database of everything made for the Spectrum, is searched. Move with the arrows (or CAPS SHIFT + 5 to 8), press ENTER to load, DELETE to go back and BREAK to leave. Titles in red cannot be downloaded: their makers do not allow it, or they are newer than the archive. You can also click a line.</td></tr>
+          <tr><td>My tapes</td><td>The rack keeps 6 tapes on this device, and they work offline: games from the catalogue, files you open and Multiface saves go onto it. When it is full the screen asks which tape makes room. Click <b>MY TAPES</b> on the rack for the list: ENTER loads, DELETE twice removes, S saves a backup file of the whole rack and L loads one, on this or another device.</td></tr>
           <tr><td>Joystick</td><td>Click it to plug it in: the arrow keys and Left Alt then work a Kempston joystick.</td></tr>
           <tr><td>Television</td><td><b>ZOOM</b> (or a double-click on the picture) fills the screen; POWER pauses everything. <b>Volume:</b> drag the VOLUME knob, or roll the mouse wheel anywhere over the TV; click the word VOLUME to turn the sound off and on. <b>Colour:</b> drag the COLOUR knob or hold Shift with the wheel; click the word COLOUR for black and white or a green-screen monitor. The TV remembers its settings, so if you left it silent it stays silent.</td></tr>
         </table>
@@ -365,5 +367,6 @@
 <script src="js/retro.js"></script>
 <script src="js/screenmenu.js"></script>
 <script src="js/catalogue.js"></script>
+<script src="js/tapes.js"></script>
 </body>
 </html>

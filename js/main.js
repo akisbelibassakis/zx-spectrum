@@ -240,6 +240,7 @@ function loadFile(name, bytes) {
       status('ROM loaded: ' + name);
       return;
     }
+    if (ext === 'zxtapes') { const msg = loadBackup(bytes); status(msg.replace(/^!/, ''), msg.startsWith('!')); return false; } // a backup of the rack
     if (!zx.romLoaded) { status('Load the ' + zx.name + ' ROM first.', true); return; }
     if (ext === 'tap' || ext === 'tzx') {
       const tape = ext === 'tap' ? Tape.fromTAP(bytes, name) : Tape.fromTZX(bytes, name);
@@ -264,13 +265,18 @@ function loadFile(name, bytes) {
     lastName = name;
   } catch (e) {
     status(e.message, true);
+    return false;
   }
   startAudio();
+  return true;
 }
 
 function readFile(file) {
   const fr = new FileReader();
-  fr.onload = () => loadFile(file.name, new Uint8Array(fr.result));
+  fr.onload = () => {
+    const bytes = new Uint8Array(fr.result);
+    if (loadFile(file.name, bytes) && /\.(tap|tzx|sna|z80)$/i.test(file.name)) rackOffer({ name: file.name, bytes, source: 'file' });
+  };
   fr.readAsArrayBuffer(file);
 }
 
@@ -440,7 +446,10 @@ $('mfButton').onclick = () => { if (!frozen || screenMenu === multifaceMenu) fre
 function mfAction(act) {
   if (act === 'turbo') { turbo = !turbo; return; }
   freeze(false);
-  if (act === 'save') saveSnapshot();
+  if (act === 'save') {
+    saveSnapshot();
+    if (zx.romLoaded) rackOffer({ title: (lastTitle || 'Snapshot') + ' (saved)', name: (lastName.replace(/\.[^.]+$/, '') || 'snapshot') + '-save.sna', bytes: zx.saveSNA(), source: 'multiface' });
+  }
   else if (act === 'load') openFile();
   else if (act === 'reset') reset();
 }

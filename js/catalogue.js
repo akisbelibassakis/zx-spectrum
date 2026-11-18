@@ -215,9 +215,10 @@ const catalogue = {
     this.busy = true; this.status = 'Loading from the archive...'; redrawScreen();
     try {
       const { name, bytes } = await downloadGame(f);
+      const g = this.games[this.sel];
       this.busy = false;
       closeCatalogue();
-      loadFile(name, bytes);
+      if (loadFile(name, bytes)) rackOffer({ title: g.title, name, bytes, source: 'archive' }); // and onto the rack
     } catch (err) {
       this.busy = false; this.status = '!' + err.message; redrawScreen();
     }
@@ -232,7 +233,6 @@ function openCatalogue(text) {
   if (text) catalogue.search();
 }
 function closeCatalogue() { if (screenMenu === catalogue) closeScreenMenu(); }
-document.getElementById('rack').onclick = () => openCatalogue();
 
 // ?find=<title> in the address opens the catalogue with that search (?find alone just opens it)
 {

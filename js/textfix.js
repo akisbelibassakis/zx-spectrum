@@ -23,6 +23,40 @@
   document.documentElement.dataset.textScale = factor.toFixed(2);
 })();
 
+// A minimum font size (Android WebViews such as Messenger's draw no text below about 8px) also enlarges the
+// labels, and does not show in the computed style either: measure how tall a 1px letter is really drawn.
+// If it is drawn bigger, lay the desk out k times larger and shrink it back (room.css: html.upscale).
+const minFontSize = (() => {
+  const probe = document.createElement('span');
+  probe.textContent = 'H';
+  probe.style.cssText = 'position:absolute;visibility:hidden;font:1px/1 Arial,sans-serif;white-space:nowrap';
+  document.body.appendChild(probe);
+  const h = probe.getBoundingClientRect().height;
+  probe.remove();
+  return h;
+})();
+if (minFontSize >= 3 || /[?&]upscale\b/.test(location.search)) { // ?upscale forces it, for testing
+  const k = Math.min(4, Math.max(2, Math.ceil(Math.max(minFontSize, 8) / 3.5)));
+  document.documentElement.style.setProperty('--k', k);
+  document.documentElement.classList.add('upscale');
+  document.documentElement.dataset.minFont = minFontSize.toFixed(1);
+}
+
+// Messenger, Facebook and Instagram open links in their own small browser: offer the phone's browser
+const inappShown = () => { try { return sessionStorage.getItem('zxInappShown'); } catch (e) { return null; } };
+if (/FBAN|FBAV|FB_IAB|Messenger|Instagram/i.test(navigator.userAgent) && !inappShown()) {
+  try { sessionStorage.setItem('zxInappShown', '1'); } catch (e) { /* storage blocked */ }
+  const android = /Android/i.test(navigator.userAgent);
+  const box = document.createElement('div');
+  box.className = 'inapp';
+  box.innerHTML = android
+    ? '<p>For the best picture, open the emulator in your phone\'s browser.</p><a>Open in browser</a><button aria-label="Close">&#10005;</button>'
+    : '<p>For the best picture, tap <b>&middot;&middot;&middot;</b> and choose <b>Open in browser</b>.</p><button aria-label="Close">&#10005;</button>';
+  if (android) box.querySelector('a').href = 'intent://' + location.host + location.pathname + '#Intent;scheme=https;action=android.intent.action.VIEW;end';
+  box.querySelector('button').onclick = () => box.remove();
+  document.body.appendChild(box);
+}
+
 // ?debug in the address: a report of how this browser sizes text, to diagnose in-app browsers
 if (/[?&]debug\b/.test(location.search)) {
   addEventListener('load', () => setTimeout(() => {
@@ -38,7 +72,7 @@ if (/[?&]debug\b/.test(location.search)) {
     document.body.appendChild(panel);
     const v = window.visualViewport;
     panel.append('\n' + [
-      'textScale(measured)=' + (document.documentElement.dataset.textScale || 'none'),
+      'textScale(measured)=' + (document.documentElement.dataset.textScale || 'none') + ' minFont=' + minFontSize.toFixed(1) + ' upscale=' + (document.documentElement.style.getPropertyValue('--k') || 'no'),
       'probe 20px in keys: css=' + css(p) + ' box=' + box(p),
       'probe 20px in panel: css=' + css(q) + ' box=' + box(q),
       'key legend: css=' + css(legend) + ' box=' + box(legend),

@@ -2,6 +2,8 @@
 :root {
   /* the height you can actually see: on phones 100vh also counts the area behind the browser's bars, svh does not */
   --vh100: 100vh;
+  --vhreal: 100vh; /* the real visible height, never multiplied (the manual) */
+  --vw100: 100vw; /* both are multiplied when the desk is drawn larger (textfix.js) */
   --wall: #5a4434;
   --text: #e9e2d6;
   --muted: #a99f92;
@@ -9,7 +11,7 @@
   --error: #ff8a78;
   /* everything is sized from --W so the TV, keyboard and tape deck fit the window height */
   /* TV height = .65W, keyboard height = .58W * .625; the rest is margins and the control strip */
-  --W: min(1100px, calc(100vw - 32px), calc((var(--vh100) - 116px) / 1.0125));
+  --W: min(1100px, calc(var(--vw100) - 32px), calc((var(--vh100) - 116px) / 1.0125));
   --tvw: var(--W);
 }
 * { box-sizing: border-box; }
@@ -20,7 +22,7 @@ body {
     radial-gradient(ellipse 70% 50% at 50% 20%, rgba(255, 200, 120, .12), transparent 70%),
     repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 2px, transparent 2px 46px),
     var(--wall);
-  min-height: var(--vh100);
+  min-height: 100vh;
 }
 body.drag::after {
   content: 'Drop ROM, TAP, TZX, SNA or Z80 files'; position: fixed; inset: 0; display: grid; place-items: center;
@@ -29,7 +31,7 @@ body.drag::after {
 .room { width: var(--W); margin: 0 auto; padding: 12px 0 16px; }
 button { font-family: Tahoma, sans-serif; cursor: pointer; }
 
-@supports (height: 100svh) { :root { --vh100: 100svh; } }
+@supports (height: 100svh) { :root { --vh100: 100svh; --vhreal: 100svh; } }
 
 /* ================= TV ================= */
 .tv { position: relative; width: var(--tvw); margin: 0 auto; }
@@ -245,22 +247,23 @@ code { font-family: 'Courier New', monospace; }
 
 /* ================= phones in portrait: the TV's controls go under the picture ================= */
 @media (max-width: 700px) {
-  :root { --W: calc(100vw - 32px); --tvw: var(--W); }
+  :root { --W: calc(var(--vw100) - 32px); --tvw: var(--W); }
   .room { padding-top: 16px; }
-  .cabinet { flex-direction: column; border-radius: 14px; }
-  .panel { flex-direction: row; flex-wrap: wrap; justify-content: space-between; padding: 8px 10px; gap: 10px; }
+  /* sizes in parts of the TV's width (--W, about 360px on a phone), so they also scale when the desk is drawn larger */
+  .cabinet { flex-direction: column; border-radius: calc(var(--W) * .039); }
+  .panel { flex-direction: row; flex-wrap: wrap; justify-content: space-between; padding: calc(var(--W) * .022) calc(var(--W) * .028); gap: calc(var(--W) * .028); }
   .grille { display: none; }
   .brand { text-align: left; }
-  .channels { width: auto; grid-template-columns: repeat(6, 26px); gap: 5px; }
-  .chan { height: 24px; font-size: 11px; }
-  .brand { font-size: 15px; }
-  .brand small { font-size: 9px; letter-spacing: 2px; }
-  .knobs { gap: 10px; }
-  .knobwrap { font-size: 8px; gap: 4px; }
-  .knob { width: 32px; }
-  .power { gap: 8px; }
-  .led { width: 8px; height: 8px; }
-  #btnPower { font-size: 9px; padding: 7px 10px; }
+  .channels { width: auto; grid-template-columns: repeat(6, calc(var(--W) * .072)); gap: calc(var(--W) * .014); }
+  .chan { height: calc(var(--W) * .067); font-size: calc(var(--W) * .031); }
+  .brand { font-size: calc(var(--W) * .042); }
+  .brand small { font-size: calc(var(--W) * .025); letter-spacing: calc(var(--W) * .0056); }
+  .knobs { gap: calc(var(--W) * .028); }
+  .knobwrap { font-size: calc(var(--W) * .022); gap: calc(var(--W) * .011); }
+  .knob { width: calc(var(--W) * .089); }
+  .power { gap: calc(var(--W) * .022); }
+  .led { width: calc(var(--W) * .022); height: calc(var(--W) * .022); }
+  #btnPower { font-size: calc(var(--W) * .025); padding: calc(var(--W) * .0195) calc(var(--W) * .028); }
 }
 
 /* ================= Spectrum+ and Spectrum 128: --q = one key pitch ================= */

@@ -37,18 +37,6 @@ button { font-family: Tahoma, sans-serif; }
 .osd.show { opacity: 1; }
 .osd.error { color: #ff6a50; text-shadow: 0 0 .6cqw #f30, .2cqw .2cqw 0 #000; }
 
-/* Multiface menu, drawn on the TV */
-.mfmenu {
-  position: absolute; left: 50%; top: 50%; z-index: 3; transform: translate(-50%, -50%); min-width: 34%;
-  padding: 1.2cqw 0; background: #000; border: .4cqw solid #e2231a; display: flex; flex-direction: column;
-}
-.mfmenu[hidden] { display: none; }
-.mfhead { font: 900 italic 2.6cqw 'Arial Black', Arial, sans-serif; color: #e2231a; text-align: center; margin-bottom: .8cqw; }
-.mfmenu button {
-  border: 0; background: none; color: #fff; text-align: left; padding: .3cqw 2.4cqw; cursor: pointer;
-  font: bold 2.6cqw 'Courier New', monospace;
-}
-.mfmenu button:hover, .mfmenu button:focus { background: #e2231a; outline: none; }
 
 /* ----- reset button on the side of the computer ----- */
 .resetbtn {
@@ -299,8 +287,8 @@ button { font-family: Tahoma, sans-serif; }
     --P: min(calc(var(--R) / 11.4), calc((var(--H) - var(--B) - var(--G) - 16px) / 7.1));
   }
   .room {
-    grid-template-columns: auto 1fr auto; justify-content: stretch; align-items: center;
-    grid-template-areas: "tv mf joy" "tv man rec" "tv desk desk";
+    grid-template-columns: auto 1fr auto auto; justify-content: stretch; align-items: center;
+    grid-template-areas: "tv mf joy rack" "tv man rec rec" "tv desk desk desk";
   }
   .tv { align-self: start; }
   .desk { justify-self: center; --p: var(--P); --q: min(calc(var(--P) * 7.06 / 7.3), calc(var(--R) / 18.4)); }
@@ -308,6 +296,7 @@ button { font-family: Tahoma, sans-serif; }
   .recwrap { font-size: calc(var(--B) / 334); justify-self: start; }
   .gear .multiface { font-size: calc(var(--G) * .8 / 80); justify-self: end; align-self: end; }
   .gear .joystick { font-size: calc(var(--G) / 140); justify-self: center; align-self: end; }
+  .gear .rack { --P: calc(var(--G) / 2.9); align-self: end; } /* as tall as the Multiface-and-joystick row */
 }
 
 /* ================= phone, portrait: TV, computer, then the manual beside the turned recorder ================= */
@@ -315,7 +304,7 @@ button { font-family: Tahoma, sans-serif; }
   :root { --W: min(calc(100vw - 16px), calc((100vh - 40px) / 2.2)); --P: calc(var(--W) / 13); }
   .room {
     grid-template-columns: auto auto auto; justify-content: center;
-    grid-template-areas: "tv tv tv" "desk desk desk" "man rec rec" "man mf joy";
+    grid-template-areas: "tv tv tv" "desk desk desk" "man rec rack" "man mf joy";
   }
   .tv { justify-self: center; }
   #btnZoom { font-size: 9px; padding: 7px 8px; }
@@ -341,3 +330,34 @@ button { font-family: Tahoma, sans-serif; }
   .page:nth-child(5) { flex: 0 0 50%; }
   .pages:has(.page:nth-child(5):not([hidden]))::after { display: none; }
 }
+
+/* ================= the cassette rack and the software catalogue ================= */
+.rack {
+  position: relative; display: flex; flex-direction: column; gap: 2px; padding: 4px 4px 6px; border: 0; cursor: pointer;
+  width: calc(var(--P) * 2.6); border-radius: 3px; background: linear-gradient(90deg, #2b2b2b, #3c3c3c 50%, #262626);
+  box-shadow: 4px 6px 10px rgba(0,0,0,.5), inset 0 0 0 2px #1a1a1a; transition: transform .15s;
+}
+.rack:hover { transform: translateY(-3px); }
+.rack span { /* cassette boxes seen from the spine */
+  display: block; height: calc(var(--P) * .36); border-radius: 1px; background: linear-gradient(#f4f1ea, #dcd6c8);
+  border-left: calc(var(--P) * .3) solid var(--c); box-shadow: 0 1px 0 rgba(0,0,0,.5);
+  font: bold calc(var(--P) * .15)/calc(var(--P) * .36) Arial, sans-serif; color: #222; text-align: left; padding-left: 4px; white-space: nowrap; overflow: hidden;
+}
+.gear .rack { grid-area: mf; justify-self: end; align-self: start; margin-top: calc(var(--P) * 1.5); }
+/* phones: the rack has its own place (portrait: beside the recorder; landscape: beside the joystick) */
+@media (max-height: 520px), (max-width: 700px) { .gear .rack { grid-area: rack; justify-self: center; align-self: center; margin: 0; } }
+
+
+/* one page at a time (narrow windows): a whole page, no spiral binding across it */
+.book.single .pages::after { display: none; }
+.book.single .page { border-radius: 4px !important; background: #fbfaf6 !important; }
+
+/* menus drawn on the Spectrum's screen (screenmenu.js): over the picture, only while one is open */
+.osdscreen { display: none; position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; image-rendering: crisp-edges; z-index: 3; cursor: pointer; }
+.osdscreen.on { display: block; }
+
+/* the shortcuts in the manual: two columns of key and action */
+.page table.keys2 tbody { display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; }
+.page table.keys2 tr { display: flex; align-items: baseline; border-bottom: 1px solid #ccc; }
+.page table.keys2 td { padding: 3px 4px; border: 0; }
+.page table.keys2 td:first-child { flex: 0 0 52px; width: auto; }

@@ -17,9 +17,11 @@ Then open http://localhost:8048 (add `?machine=plus` or `?machine=128` to start 
 - TV channels 1-3 pick the ZX Spectrum 48K, the Spectrum+ (a 48K in the Spectrum+ case) or the 128K; the choice is remembered. Loading a 128K snapshot switches to the 128K by itself. ZOOM (or a double-click on the picture) is full screen; POWER pauses.
 - The Datacorder: STOP/EJECT opens a tape, snapshot or ROM; PLAY, REW, FF (next block), PAUSE; the counter and the tape on the reels follow the tape. The SPEED switch is NORMAL (real time), FAST (full speed while the tape plays) or INSTANT (ROM trap). AUTO LOAD resets and starts the tape on insert. Click the cassette to see its blocks.
 - The reset button is on the side of the computer.
-- Multiface One: the red button freezes the machine and shows a menu on the TV: SAVE (.SNA download), LOAD, TURBO, RESET, RETURN.
+- Multiface One: the red button freezes the machine and shows its menu on the TV screen, in the Spectrum's font: SAVE (.SNA download), LOAD, TURBO, RESET, RETURN.
 - The joystick: click it to plug in a Kempston joystick on the arrow keys (Left Alt = fire).
 - The manual: instructions, the PC keys and the settings.
+- Shortcuts on the function keys: F1 manual, F2 software catalogue, F3 open a file, F4 Multiface, F6 tape play/stop, F7 rewind, F8 reset, F9 tape speed, F10 joystick, F11 full screen, Pause pauses.
+- The cassette rack (or, on a phone, the empty cassette window) opens a software catalogue on the TV, drawn in the Spectrum's own font like the 128's menu (type, arrows or CAPS SHIFT+5-8, ENTER, DELETE, BREAK, or click): it searches ZXDB through the [ZXInfo API](https://api.zxinfo.dk/v5/) and loads titles whose makers allow distribution straight from the World of Spectrum mirror on archive.org. `?find=<title>` in the address opens it with a search. Titles added after 2017 are listed but cannot be downloaded from a web page yet.
 
 On a PC the TV stands on the computer with the gadgets and recorder beside it; on a phone in landscape the TV sits beside the keyboard; in portrait everything is stacked.
 

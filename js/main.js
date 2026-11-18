@@ -100,6 +100,7 @@ function processKeyEvents() {
 
 // on-screen keyboard: name is a key of K, e.g. 'J' or 'CAPS', or of COMBOS, e.g. 'DELETE'
 function virtualKey(name, down) {
+  if (typeof screenMenuSpectrumKey === 'function' && screenMenuSpectrumKey(name, down)) return; // a menu is on the screen
   const code = 'vk:' + name;
   keyMap[code] = COMBOS[name] ? COMBOS[name].map(n => K[n]) : [K[name]];
   keyEvents.push({ code, down, blocked: false });
@@ -109,7 +110,12 @@ function virtualKey(name, down) {
 
 function onKey(e, down) {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-  if (typeof overlayKey === 'function' && overlayKey(e, down)) return; // the manual or the Multiface menu is open
+  if (SHORTCUTS[e.code] && !e.ctrlKey && !e.altKey) { // emulator shortcuts on the function keys
+    e.preventDefault();
+    if (down && !e.repeat) SHORTCUTS[e.code][1]();
+    return;
+  }
+  if (typeof overlayKey === 'function' && overlayKey(e, down)) return; // the manual or a menu on the screen is open
   if (settings.joy && kempstonMap[e.code] !== undefined) {
     if (down) zx.kempston |= kempstonMap[e.code]; else zx.kempston &= ~kempstonMap[e.code];
     e.preventDefault();
@@ -357,7 +363,8 @@ $('btnEject').onclick = () => {
   if (zx.tape) { zx.tape = null; renderTapeBlocks(); }
   openFile();
 };
-$('door').onclick = () => { if (zx.tape) $('tapeBlocks').hidden = !$('tapeBlocks').hidden; else openFile(); };
+// the cassette door: shows the tape's contents, or with no tape in opens the software catalogue
+$('door').onclick = () => { if (zx.tape) $('tapeBlocks').hidden = !$('tapeBlocks').hidden; else openCatalogue(); };
 document.addEventListener('pointerdown', e => { if (!e.target.closest('#door, #tapeBlocks')) $('tapeBlocks').hidden = true; });
 
 // tape counter and the tape packs on the reels follow the tape position
@@ -419,18 +426,14 @@ function updateTapeStatus() {
   $('deck').classList.toggle('playing', t.playing);
 }
 
-// Multiface One: the red button freezes the computer and shows its menu on the TV
-let frozen = false;
+// Multiface One: the red button freezes the computer and shows its menu on the screen (screenmenu.js)
+let frozen = false; // true while any menu is on the screen
 function freeze(on) {
-  frozen = on;
-  $('mfMenu').hidden = !on;
-  $('mfTurbo').textContent = turbo ? 'ON' : 'OFF';
-  if (on) $('mfMenu').querySelector('button').focus();
+  if (on) { multifaceMenu.sel = 0; openScreenMenu(multifaceMenu); } else closeScreenMenu();
 }
-$('mfButton').onclick = () => freeze(!frozen);
-$('mfMenu').addEventListener('click', e => { const b = e.target.closest('button'); if (b) mfAction(b.dataset.act); });
+$('mfButton').onclick = () => { if (!frozen || screenMenu === multifaceMenu) freeze(!frozen); };
 function mfAction(act) {
-  if (act === 'turbo') { turbo = !turbo; $('mfTurbo').textContent = turbo ? 'ON' : 'OFF'; return; }
+  if (act === 'turbo') { turbo = !turbo; return; }
   freeze(false);
   if (act === 'save') saveSnapshot();
   else if (act === 'load') openFile();
@@ -442,7 +445,7 @@ function setJoy(on) {
   settings.joy = on; zx.kempston = 0;
   $('joystick').classList.toggle('on', on);
   $('joystick').setAttribute('aria-pressed', on);
-  $('joystick').dataset.tip = on ? 'Joystick: unplug' : 'Joystick: plug in';
+  $('joystick').dataset.tip = (on ? 'Joystick: unplug' : 'Joystick: plug in') + ' (F10)';
   saveSettings();
 }
 $('joystick').onclick = () => { setJoy(!settings.joy); status(settings.joy ? 'JOYSTICK ON' : 'JOYSTICK OFF'); };
@@ -450,3 +453,27 @@ setJoy(settings.joy);
 
 canvas.addEventListener('click', startAudio);
 document.addEventListener('pointerdown', startAudio, { once: true });
+
+// ---------- shortcuts: the function keys, which the Spectrum never had, work the desk ----------
+// [label for the manual, action]
+const SHORTCUTS = {
+  F1: ['The manual', () => { const m = document.getElementById('manual'); if (m.open) m.close(); else $('manualBook').click(); }],
+  F2: ['Software catalogue', () => { if (screenMenu === catalogue) closeCatalogue(); else openCatalogue(); }],
+  F3: ['Open a tape, snapshot or ROM', () => openFile()],
+  F4: ['Multiface menu', () => $('mfButton').click()],
+  F6: ['Tape PLAY / STOP', () => {
+    if (!zx.tape) { status('No tape', true); return; }
+    if (zx.tape.playing) { zx.tape.playing = false; tapePaused = false; status('Tape stopped'); } else { playTape(); status('Tape playing'); }
+  }],
+  F7: ['Rewind the tape', () => { $('btnRewind').click(); if (zx.tape) status('Tape rewound'); }],
+  F8: ['Reset the computer', () => { reset(); status('Reset'); }],
+  F9: ['Tape SPEED: normal, fast, instant', () => { setSpeed((settings.speed + 1) % 3); status('Speed: ' + ['normal', 'fast', 'instant'][settings.speed]); }],
+  F10: ['Plug the joystick in or out', () => $('joystick').click()],
+  F11: ['Full screen', () => fullScreen()],
+  Pause: ['Pause (the POWER button)', () => $('btnPower').click()],
+};
+// hover labels show the key, e.g. "Software catalogue (F2)"
+for (const [id, key] of [['manualBook', 'F1'], ['rack', 'F2'], ['mfButton', 'F4'], ['btnEject', 'F3'], ['btnPlay', 'F6'], ['btnRewind', 'F7'], ['btnReset', 'F8'], ['speed', 'F9'], ['btnZoom', 'F11'], ['btnPower', 'Pause']]) {
+  const el = $(id);
+  if (el && el.dataset.tip) el.dataset.tip += ' (' + key + ')';
+}

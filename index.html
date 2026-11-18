@@ -43,6 +43,10 @@
         <text x="452" y="996" font-family="Arial, Helvetica, sans-serif" font-size="27" fill="#111">Click to view</text>
       </svg>
     </button>
+    <button id="rack" class="rack" aria-label="Software catalogue" data-tip="Software catalogue: find a game">
+      <span style="--c:#d70000">MANIC MINER</span><span style="--c:#1f5fbf">JET SET WILLY</span><span style="--c:#e8b100">HORACE</span>
+      <span style="--c:#2c8a3a">ATIC ATAC</span><span style="--c:#7b2fa8">THE HOBBIT</span><span style="--c:#d45a00">KNIGHT LORE</span>
+    </button>
     <button id="joystick" class="joystick" aria-label="Joystick" aria-pressed="false" data-tip="Joystick: plug in">
       <span class="jbase"></span><span class="jstick"></span><span class="jfire"></span><span class="jfire2"></span><span class="jcable"></span>
     </button>
@@ -56,16 +60,11 @@
           <div class="picture">
             <canvas id="screen" title="Click to enable sound"></canvas>
             <canvas id="noise" width="160" height="120"></canvas>
+            <canvas id="osdScreen" class="osdscreen"></canvas>
           </div>
           <div class="scanlines"></div>
           <div class="glass"></div>
           <div id="osd" class="osd"></div>
-          <div id="mfMenu" class="mfmenu" hidden>
-            <div class="mfhead">multiface one</div>
-            <button data-act="save">SAVE</button><button data-act="load">LOAD</button>
-            <button data-act="turbo">TURBO <span id="mfTurbo">OFF</span></button>
-            <button data-act="reset">RESET</button><button data-act="return">RETURN</button>
-          </div>
         </div>
       </div>
       <div class="panel">
@@ -201,7 +200,7 @@
         <p>This booklet is for anyone who has never used a ZX Spectrum, and for those who used one long ago and have forgotten how. Everything on the desk works: the computer, the television, the recorder and the gadgets around them.</p>
         <ol>
           <li><b>1</b>The computer. Choose it with the television's channel buttons: <b>48K</b>, <b>+</b> or <b>128</b>. Changing channel resets it.</li>
-          <li><b>2</b>A tape. Press <b>STOP/EJ</b> on the recorder and pick a <b>.tap</b> or <b>.tzx</b> tape, a <b>.z80</b> or <b>.sna</b> snapshot, or a ROM. You can also drop files anywhere on the page.</li>
+          <li><b>2</b>A tape. Press <b>STOP/EJ</b> on the recorder and pick a <b>.tap</b> or <b>.tzx</b> tape, a <b>.z80</b> or <b>.sna</b> snapshot, or a ROM. You can also drop files anywhere on the page, or find a game in the <b>software catalogue</b>: click the cassette rack, or the empty cassette window.</li>
           <li><b>3</b>The recorder. With <b>AUTO LOAD</b> on, the tape starts by itself. Otherwise type the load command and press <b>PLAY</b>.</li>
         </ol>
         <h2>Loading a program by hand</h2>
@@ -216,8 +215,9 @@
       <article class="page">
         <h1>2. The desk</h1>
         <p>Everything you need is on the desk. The screen is laid out thus:</p>
-        <svg class="figure" viewBox="0 0 460 330" role="img" aria-label="The desk: Multiface One, television, joystick, manual, ZX Spectrum and Datacorder">
+        <svg class="figure" viewBox="0 0 460 330" role="img" aria-label="The desk: cassette rack, Multiface One, television, joystick, manual, ZX Spectrum and Datacorder">
           <g fill="none" stroke="#111" stroke-width="1.6" stroke-linejoin="round">
+            <rect x="16" y="22" width="52" height="58" rx="2"/><path d="M20 30 h44 M20 38 h44 M20 46 h44 M20 54 h44 M20 62 h44 M20 70 h44"/><path d="M24 26 v50" stroke-width="4"/>
             <rect x="12" y="104" width="62" height="40" rx="3"/><rect x="18" y="109" width="26" height="11"/><circle cx="60" cy="100" r="4" fill="#d9281d"/>
             <rect x="96" y="8" width="248" height="164" rx="12"/><rect x="108" y="20" width="168" height="140" rx="16"/>
             <rect x="286" y="20" width="48" height="140" rx="4"/>
@@ -241,17 +241,19 @@
             <circle cx="220" cy="203" r="9" fill="#111"/><text x="220" y="207" fill="#fff">6</text>
             <circle cx="80" cy="249" r="9" fill="#111"/><text x="80" y="253" fill="#fff">7</text>
             <circle cx="408" cy="306" r="9" fill="#111"/><text x="408" y="310" fill="#fff">8</text>
+            <circle cx="80" cy="34" r="9" fill="#111"/><text x="80" y="38" fill="#fff">9</text>
           </g>
         </svg>
         <ol class="parts">
-          <li><b>1</b><b>Multiface One.</b> The red button freezes the game and opens its menu on the television.</li>
+          <li><b>1</b><b>Multiface One.</b> The red button freezes the game and shows its menu on the screen.</li>
           <li><b>2</b><b>Television.</b> Double-click the picture for full screen.</li>
           <li><b>3</b><b>Channel buttons</b> 48K, + and 128 choose the computer; VOLUME, COLOUR, ZOOM and POWER.</li>
           <li><b>4</b><b>Joystick.</b> Click it to plug it in.</li>
           <li><b>5</b><b>This manual.</b></li>
           <li><b>6</b><b>ZX Spectrum.</b> Type on your PC keyboard or click the keys.</li>
           <li><b>7</b><b>Reset button</b> on the side of the computer.</li>
-          <li><b>8</b><b>Datacorder.</b> STOP/EJ opens a tape; click the cassette to see what is on it.</li>
+          <li><b>8</b><b>Datacorder.</b> STOP/EJ opens a tape; click the cassette to see what is on it. With no tape in, the cassette window opens the catalogue.</li>
+          <li><b>9</b><b>Cassette rack.</b> The software catalogue: thousands of games to load.</li>
         </ol>
         <p>Rest the mouse on any of them to see its name. On a phone they are arranged to fit the screen.</p>
         <div class="pn">3</div>
@@ -269,6 +271,21 @@
           <tr><td><kbd>,</kbd> <kbd>.</kbd> <kbd>;</kbd> <kbd>'</kbd> <kbd>-</kbd> <kbd>=</kbd> <kbd>/</kbd></td><td>SYMBOL SHIFT + N M O P J L V</td></tr>
         </table>
         <p>You can also click or tap the keys on the screen. A click on CAPS SHIFT or SYMBOL SHIFT holds it down for the next key. The Spectrum+ and 128 keys such as DELETE, EDIT, the arrows and ; " , . press the two keys they stand for.</p>
+        <h2>Emulator shortcuts</h2>
+        <p>The function keys, which the Spectrum never had, work the desk:</p>
+        <table class="keys2">
+          <tr><td><kbd>F1</kbd></td><td>The manual</td></tr>
+          <tr><td><kbd>F2</kbd></td><td>Software catalogue</td></tr>
+          <tr><td><kbd>F3</kbd></td><td>Open a tape, snapshot or ROM</td></tr>
+          <tr><td><kbd>F4</kbd></td><td>Multiface menu</td></tr>
+          <tr><td><kbd>F6</kbd></td><td>Tape PLAY / STOP</td></tr>
+          <tr><td><kbd>F7</kbd></td><td>Rewind the tape</td></tr>
+          <tr><td><kbd>F8</kbd></td><td>Reset the computer</td></tr>
+          <tr><td><kbd>F9</kbd></td><td>Tape SPEED: normal, fast, instant</td></tr>
+          <tr><td><kbd>F10</kbd></td><td>Plug the joystick in or out</td></tr>
+          <tr><td><kbd>F11</kbd></td><td>Full screen</td></tr>
+          <tr><td><kbd>Pause</kbd></td><td>Pause (the TV&#39;s POWER)</td></tr>
+        </table>
         <div class="pn">4</div>
       </article>
       <article class="page">
@@ -277,7 +294,8 @@
           <tr><td>SPEED switch</td><td><b>NORMAL</b>: real tape speed, with the border stripes and the loading sound. <b>FAST</b>: the computer runs flat out while the tape plays. <b>INSTANT</b>: programs go straight into memory.</td></tr>
           <tr><td>AUTO LOAD</td><td>Putting in a tape resets the computer and starts loading it (LOAD "" on the 48K and Spectrum+, Tape Loader on the 128).</td></tr>
           <tr><td>Counter</td><td>Shows how far the tape has played; the small button sets it to 000.</td></tr>
-          <tr><td>Multiface</td><td>The red button freezes the game: SAVE downloads a snapshot, LOAD opens one, TURBO runs as fast as possible, RESET restarts, RETURN carries on.</td></tr>
+          <tr><td>Multiface</td><td>The red button freezes the game and shows its menu on the screen: SAVE downloads a snapshot, LOAD opens one, TURBO runs as fast as possible, RESET restarts, RETURN carries on. Choose with the arrows and ENTER, or press S, L, T, X or R; BREAK returns to the game.</td></tr>
+          <tr><td>Software catalogue</td><td>Type a title and press ENTER: ZXDB, the database of everything made for the Spectrum, is searched. Move with the arrows (or CAPS SHIFT + 5 to 8), press ENTER to load, DELETE to go back and BREAK to leave. Titles in red cannot be downloaded: their makers do not allow it, or they are newer than the archive. You can also click a line.</td></tr>
           <tr><td>Joystick</td><td>Click it to plug it in: the arrow keys and Left Alt then work a Kempston joystick.</td></tr>
           <tr><td>Television</td><td><b>ZOOM</b> (or a double-click on the picture) fills the screen. Drag the knobs for volume and colour; POWER pauses everything.</td></tr>
         </table>
@@ -287,6 +305,7 @@
         <h1>5. About</h1>
         <p>An emulator of the Sinclair ZX Spectrum 48K (1982), Spectrum+ (1984) and Spectrum 128 (1986), written in plain JavaScript. It runs in the browser, with nothing to install.</p>
         <p>The Spectrum ROMs are copyright Amstrad, who allow them to be distributed for use with emulators.</p>
+        <p>The software catalogue searches ZXDB through the ZXInfo service and loads the games from the World of Spectrum archive kept at archive.org. Only titles whose makers allow it can be downloaded.</p>
         <p>Source code: github.com/akisbelibassakis/zx-spectrum</p>
         <div class="pn">6</div>
       </article>
@@ -303,5 +322,7 @@
 <script src="js/rom128.js"></script>
 <script src="js/main.js"></script>
 <script src="js/retro.js"></script>
+<script src="js/screenmenu.js"></script>
+<script src="js/catalogue.js"></script>
 </body>
 </html>

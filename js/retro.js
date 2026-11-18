@@ -294,6 +294,7 @@ function showPage(n) {
   pageNo = Math.max(0, Math.min(pages.length - 1, n));
   pageNo -= pageNo % k;
   pages.forEach((p, i) => { p.hidden = i < pageNo || i >= pageNo + k; });
+  manual.classList.toggle('single', k === 1); // one page at a time: no binding down the middle
   manual.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', +b.dataset.page >= pageNo && +b.dataset.page < pageNo + k));
   manual.querySelector('.prev').hidden = pageNo === 0;
   manual.querySelector('.next').hidden = pageNo + k >= pages.length;
@@ -313,17 +314,7 @@ function overlayKey(e, down) {
     if (down && e.code === 'ArrowRight') showPage(pageNo + spreadSize());
     return true;
   }
-  if (frozen) {
-    if (!down) return true;
-    const items = [...document.querySelectorAll('#mfMenu button')];
-    const i = items.indexOf(document.activeElement);
-    if (e.code === 'ArrowDown' || e.code === 'ArrowUp') {
-      items[(i + (e.code === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus();
-      e.preventDefault();
-    } else if (e.code === 'Escape') mfAction('return');
-    else if (e.code !== 'Enter' && e.code !== 'Space') e.preventDefault();
-    return true;
-  }
+  if (typeof screenMenuPCKey === 'function' && screenMenuPCKey(e, down)) return true; // Multiface menu or catalogue on the screen
   return false;
 }
 
@@ -345,4 +336,10 @@ if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
     }, 500);
   });
   document.addEventListener('pointerdown', () => { clearTimeout(dymoTimer); dymo.hidden = true; });
+}
+
+// ?manual=<page> in the address opens the manual at that page (1 = the first)
+{
+  const m = new URLSearchParams(location.search).get('manual');
+  if (m) { showPage(Math.max(0, (parseInt(m, 10) || 1) - 1)); manual.showModal(); }
 }

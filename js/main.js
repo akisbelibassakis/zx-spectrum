@@ -339,6 +339,11 @@ function fullScreen() {
   else if ($('crt').requestFullscreen) $('crt').requestFullscreen();
 }
 $('btnZoom').onclick = fullScreen;
+// full screen shows only the TV picture: the touch joystick goes in with it, and comes back out after
+document.addEventListener('fullscreenchange', () => {
+  const tj = $('touchJoy');
+  if (document.fullscreenElement === $('crt')) $('crt').appendChild(tj); else document.body.insertBefore(tj, document.body.querySelector('script'));
+});
 canvas.addEventListener('dblclick', fullScreen);
 
 // recorder: SPEED switch (normal / fast / instant) and AUTO LOAD

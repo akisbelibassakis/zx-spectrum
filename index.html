@@ -331,8 +331,8 @@
           <tr><td>Counter</td><td>Shows how far the tape has played; the small button sets it to 000.</td></tr>
           <tr><td>Multiface</td><td>The red button freezes the game and shows its menu on the screen: SAVE downloads a snapshot, LOAD opens one, TURBO runs as fast as possible, RESET restarts, RETURN carries on. Choose with the arrows and ENTER, or press S, L, T, X or R; BREAK returns to the game.</td></tr>
           <tr><td>Software catalogue</td><td>Type a title and press ENTER: ZXDB, the database of everything made for the Spectrum, is searched. Move with the arrows (or CAPS SHIFT + 5 to 8), press ENTER to load, DELETE to go back and BREAK to leave. Titles in red cannot be downloaded: their makers do not allow it, or they are newer than the archive. You can also click a line.</td></tr>
-          <tr><td>My tapes</td><td>The rack keeps 6 tapes on this device, and they work offline: games from the catalogue, files you open and Multiface saves go onto it. When it is full the screen asks which tape makes room. Click <b>MY TAPES</b> on the rack for the list: ENTER loads, DELETE twice removes, S saves a backup file of the whole rack and L loads one, on this or another device.</td></tr>
-          <tr><td>Joystick</td><td>Click it to plug it in: the arrow keys and Left Alt then work a Kempston joystick.</td></tr>
+          <tr><td>My tapes</td><td>The rack keeps 8 tapes on this device, and they work offline: games from the catalogue, files you open and Multiface saves go onto it. When it is full the screen asks which tape makes room. Click <b>MY TAPES</b> on the rack for the list: ENTER loads, DELETE twice removes, O opens a file of your own, S saves a backup file of the whole rack and L loads one, on this or another device.</td></tr>
+          <tr><td>Joystick</td><td>Click it to plug it in: the arrow keys and Left Alt then work a Kempston joystick. On a phone or tablet a stick appears under your left thumb and a FIRE button under your right.</td></tr>
           <tr><td>Television</td><td><b>ZOOM</b> (or a double-click on the picture) fills the screen; POWER pauses everything. <b>Volume:</b> drag the VOLUME knob, or roll the mouse wheel anywhere over the TV; click the word VOLUME to turn the sound off and on. <b>Colour:</b> drag the COLOUR knob or hold Shift with the wheel; click the word COLOUR for black and white or a green-screen monitor. The TV remembers its settings, so if you left it silent it stays silent.</td></tr>
         </table>
         <div class="pn">5</div>
@@ -356,6 +356,8 @@
   </dialog>
   <div id="dymo" class="dymo" hidden></div>
 </div>
+<!-- on touch screens, with the joystick plugged in: a stick under the left thumb, FIRE under the right -->
+<div id="touchJoy" hidden><div class="tjstick"><div class="tjknob"></div></div><button class="tjfire" aria-label="Fire">FIRE</button><button class="tjoff">JOYSTICK OFF</button></div>
 <script src="js/textfix.js"></script>
 <script src="js/z80.js"></script>
 <script src="js/tape.js"></script>

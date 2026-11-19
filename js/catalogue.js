@@ -86,7 +86,7 @@ const INTRO = [
   ['', 0],
   ['Titles in red cannot be downloaded.', 2],
   ['', 0],
-  ['F3 opens a file of your own.', 1],
+  ['Your own file: touch here.', 1],
   ['', 0],
   ['Data: ZXDB via ZXInfo', 1],
   ['Files: World of Spectrum archive', 1],
@@ -94,7 +94,7 @@ const INTRO = [
 const fit = (t, n) => { t = String(t == null ? '' : t); return t.length > n ? t.slice(0, n - 1) + '~' : t.padEnd(n); };
 const catalogue = {
   full: true, blinks: true,
-  mode: 'search', query: '', status: 'Type a title, then ENTER', games: [], sel: 0, top: 0, files: [], fsel: 0, busy: false,
+  ownRows: [0, 0], mode: 'search', query: '', status: 'Type a title, then ENTER', games: [], sel: 0, top: 0, files: [], fsel: 0, busy: false,
 
   draw(s, blink) {
     s.bar(0, 0); s.print(1, 0, 'Software Catalogue', 7, 0); s.stripes(27, 0);
@@ -112,7 +112,9 @@ const catalogue = {
     let row = LIST_TOP;
     for (const [text, ink] of INTRO) {
       if (!text) { row++; continue; }
+      const first = row;
       for (const line of wrap(text, 30)) s.print(1, row++, line, ink);
+      if (text.startsWith('Your own file')) this.ownRows = [first, row]; // touching it opens a file
     }
   },
   drawGames(s) {
@@ -172,6 +174,7 @@ const catalogue = {
     if (this.busy) return;
     if (row === 0 && col >= 31) { closeCatalogue(); return; }
     if (row === 2) { this.mode = 'search'; return; }
+    if (this.mode === 'search' && !this.games.length && row >= this.ownRows[0] && row < this.ownRows[1]) { closeCatalogue(); openFile(); return; }
     if (this.mode === 'files') {
       const i = row - LIST_TOP - 2;
       if (i >= 0 && i < this.files.length) { this.fsel = i; this.load(this.files[i]); } else if (row === LIST_TOP) this.mode = 'results';

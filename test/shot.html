@@ -14,6 +14,9 @@ f.onload = async () => {
   }
   if (st === 'menu') w.freeze(true);
   if (st === 'manual') d.getElementById('manualBook').click();
+  if (st === 'touchjoy') d.getElementById('touchJoy').hidden = false;
+  if (st === 'tapes') w.openTapesMenu();
+  if (st === 'intro') w.openCatalogue();
   if (st === 'catalogue') { d.getElementById('rack').click(); d.querySelector('#catalogue input').value = q.get('q') || 'manic miner'; d.querySelector('#catalogue form').requestSubmit(); }
 };
 </script>

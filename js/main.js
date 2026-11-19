@@ -460,7 +460,41 @@ function setJoy(on) {
   $('joystick').classList.toggle('on', on);
   $('joystick').setAttribute('aria-pressed', on);
   $('joystick').dataset.tip = (on ? 'Joystick: unplug' : 'Joystick: plug in') + ' (F10)';
+  showTouchJoy();
   saveSettings();
+}
+
+// the touch joystick: drag the stick (8 directions), hold FIRE; both at once with two thumbs
+const touchScreen = matchMedia('(pointer: coarse)');
+function showTouchJoy() { $('touchJoy').hidden = !(settings.joy && touchScreen.matches); }
+touchScreen.addEventListener && touchScreen.addEventListener('change', showTouchJoy);
+{
+  const stick = $('touchJoy').querySelector('.tjstick'), knob = stick.firstElementChild, fire = $('touchJoy').querySelector('.tjfire');
+  const move = e => {
+    const r = stick.getBoundingClientRect(), half = r.width / 2;
+    let dx = e.clientX - r.left - half, dy = e.clientY - r.top - half;
+    const d = Math.hypot(dx, dy);
+    let bits = 0;
+    if (d > half * .25) { // outside the dead centre: cos 67.5 degrees splits the circle into 8 directions
+      const nx = dx / d, ny = dy / d;
+      if (nx > .38) bits |= 1; if (nx < -.38) bits |= 2; if (ny > .38) bits |= 4; if (ny < -.38) bits |= 8;
+    }
+    if (d > half) { dx *= half / d; dy *= half / d; }
+    knob.style.transform = `translate(${dx}px, ${dy}px)`;
+    zx.kempston = (zx.kempston & 16) | bits;
+  };
+  let finger = null; // the touch that holds the stick
+  const release = e => { if (e.pointerId !== finger) return; finger = null; knob.style.transform = ''; zx.kempston &= 16; };
+  stick.addEventListener('pointerdown', e => { finger = e.pointerId; try { stick.setPointerCapture(e.pointerId); } catch (_) {} move(e); e.preventDefault(); });
+  stick.addEventListener('pointermove', e => { if (e.pointerId === finger) move(e); });
+  stick.addEventListener('pointerup', release);
+  stick.addEventListener('pointercancel', release);
+  const fireOff = () => { zx.kempston &= ~16; fire.classList.remove('down'); };
+  fire.addEventListener('pointerdown', e => { try { fire.setPointerCapture(e.pointerId); } catch (_) {} zx.kempston |= 16; fire.classList.add('down'); e.preventDefault(); });
+  fire.addEventListener('pointerup', fireOff);
+  fire.addEventListener('pointercancel', fireOff);
+  for (const el of [stick, fire]) el.addEventListener('contextmenu', e => e.preventDefault());
+  $('touchJoy').querySelector('.tjoff').onclick = () => { setJoy(false); status('JOYSTICK OFF'); }; // the desk's joystick may be under FIRE
 }
 $('joystick').onclick = () => { setJoy(!settings.joy); status(settings.joy ? 'JOYSTICK ON' : 'JOYSTICK OFF'); };
 setJoy(settings.joy);

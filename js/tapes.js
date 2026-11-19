@@ -1,10 +1,10 @@
-// My tapes: the cassette rack on the desk holds up to 6 tapes kept in the browser (IndexedDB), so they work offline.
+// My tapes: the cassette rack on the desk holds up to 8 tapes kept in the browser (IndexedDB), so they work offline.
 // Games downloaded from the catalogue, files opened from the device and Multiface saves go into it; when it is full
 // a page on the TV asks which tape makes room. The whole rack can be saved to a backup file and loaded elsewhere.
 'use strict';
 
-const RACK_SIZE = 6;
-const SPINE_COLOURS = ['#d70000', '#1f5fbf', '#e8b100', '#2c8a3a', '#7b2fa8', '#d45a00'];
+const RACK_SIZE = 8;
+const SPINE_COLOURS = ['#d70000', '#1f5fbf', '#e8b100', '#2c8a3a', '#7b2fa8', '#d45a00', '#0096a8', '#c2185b'];
 const SOURCES = { archive: 'downloaded', file: 'your file', multiface: 'Multiface save', backup: 'from a backup' };
 let tapes = new Array(RACK_SIZE).fill(null); // { slot, title, name, bytes, source, added, played }
 let lastTitle = '';                           // what is playing: Multiface saves are named after it
@@ -103,7 +103,7 @@ const replaceMenu = {
       s.print(1, 7 + i, (i + 1) + ' ' + fit(t.title, 28), 0, paper);
     });
     const on = this.sel === RACK_SIZE, paper = on ? 5 + 8 : 7;
-    s.bar(14, paper); s.print(1, 14, 'Keep it off the rack', 1, paper);
+    s.bar(16, paper); s.print(1, 16, 'Keep it off the rack', 1, paper);
     s.bar(23, 0); s.print(0, 23, 'ENTER replace     BREAK keep off', 7, 0);
   },
   key(k) {
@@ -111,11 +111,11 @@ const replaceMenu = {
     else if (k === 'DOWN') this.sel = (this.sel + 1) % (RACK_SIZE + 1);
     else if (k === 'ENTER') this.choose(this.sel);
     else if (k === 'BREAK') this.choose(RACK_SIZE);
-    else if (/^CHAR:[1-6]$/.test(k)) this.choose(+k.slice(5) - 1);
+    else if (/^CHAR:[1-8]$/.test(k)) this.choose(+k.slice(5) - 1);
   },
   click(col, row) {
     if (row >= 7 && row < 7 + RACK_SIZE) this.choose(row - 7);
-    else if (row === 14) this.choose(RACK_SIZE);
+    else if (row === 16) this.choose(RACK_SIZE);
   },
   choose(i) {
     closeScreenMenu();
@@ -143,17 +143,18 @@ const tapesMenu = {
       s.print(0, 20, fit(t.title, 32), 0);
       s.print(0, 21, fit(SOURCES[t.source] + ', ' + new Date(t.added).toLocaleDateString(), 32), 1);
     }
-    if (this.status) s.print(0, 18, fit(this.status.replace(/^!/, ''), 32), this.status.startsWith('!') ? 2 : 4);
+    if (this.status) s.print(0, 19, fit(this.status.replace(/^!/, ''), 32), this.status.startsWith('!') ? 2 : 4);
     s.bar(23, 0); s.print(0, 23, 'ENTER pick DELETE remove BREAK', 7, 0);
   },
-  // the six places, then the actions
+  // the eight places, then the actions
   items() {
     const list = tapes.map((t, i) => t
       ? { slot: i, row: 5 + i, label: (i + 1) + ' ' + fit(t.title, 22), ink: 0, right: t.name.split('.').pop().toUpperCase() }
       : { slot: i, row: 5 + i, label: (i + 1) + ' - empty -', ink: 1 });
-    list.push({ act: 'find', row: 12, label: 'F  Find a game (catalogue)', ink: 0 });
-    list.push({ act: 'save', row: 13, label: 'S  Save a backup file', ink: 0 });
-    list.push({ act: 'load', row: 14, label: 'L  Load a backup file', ink: 0 });
+    list.push({ act: 'find', row: 14, label: 'F  Find a game (catalogue)', ink: 0 });
+    list.push({ act: 'open', row: 15, label: 'O  Open a file of your own', ink: 0 });
+    list.push({ act: 'save', row: 16, label: 'S  Save a backup file', ink: 0 });
+    list.push({ act: 'load', row: 17, label: 'L  Load a backup file', ink: 0 });
     return list;
   },
   key(k) {
@@ -168,9 +169,9 @@ const tapesMenu = {
       else { this.confirm = it.slot; this.status = '!DELETE again to remove it'; }
     } else if (k.startsWith('CHAR:')) {
       const c = k.slice(5).toLowerCase();
-      const act = { f: 'find', s: 'save', l: 'load' }[c];
+      const act = { f: 'find', o: 'open', s: 'save', l: 'load' }[c];
       if (act) this.pick(items.find(x => x.act === act));
-      else if (/[1-6]/.test(c)) { this.sel = +c - 1; this.pick(items[this.sel]); }
+      else if (/[1-8]/.test(c)) { this.sel = +c - 1; this.pick(items[this.sel]); }
     }
   },
   click(col, row) {
@@ -182,6 +183,7 @@ const tapesMenu = {
     if (it.slot !== undefined) {
       if (tapes[it.slot]) { closeScreenMenu(); playTape(it.slot); } else { closeScreenMenu(); openCatalogue(); }
     } else if (it.act === 'find') { closeScreenMenu(); openCatalogue(); }
+    else if (it.act === 'open') { closeScreenMenu(); openFile(); }
     else if (it.act === 'save') this.status = saveBackup();
     else if (it.act === 'load') document.getElementById('backupInput').click();
   },
@@ -209,7 +211,7 @@ function saveBackup() {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   return 'Backup saved: ' + list.length + ' tape' + (list.length > 1 ? 's' : '');
 }
-// a backup replaces the rack (its first 6 tapes)
+// a backup replaces the rack (its first 8 tapes)
 function loadBackup(bytes) {
   try {
     const data = JSON.parse(new TextDecoder().decode(bytes));

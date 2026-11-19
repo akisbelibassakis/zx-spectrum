@@ -393,3 +393,34 @@ html.upscale .room { position: absolute; left: 0; top: 0; width: calc(100vw * va
 .inapp p { flex: 1; margin: 0; }
 .inapp a { flex: 0 0 auto; padding: 8px 12px; border-radius: 4px; background: #d70000; color: #fff; font-weight: bold; text-decoration: none; }
 .inapp button { flex: 0 0 auto; border: 0; background: none; font-size: 18px; color: #555; }
+
+/* touch screens: a long press on a key, a label or a gadget must not select its text or open the phone's menu */
+.room { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+.room dialog.book { -webkit-user-select: text; user-select: text; } /* the manual can still be selected */
+
+/* the touch joystick, over the bottom corners of the screen */
+#touchJoy { --fs: min(22vmin, 110px); --fb: calc(24px + env(safe-area-inset-bottom, 0px)); position: fixed; inset: 0; pointer-events: none; z-index: 40; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+#touchJoy[hidden] { display: none; }
+.tjstick, .tjfire, .tjoff { position: fixed; pointer-events: auto; touch-action: none; -webkit-tap-highlight-color: transparent; }
+.tjstick {
+  left: calc(14px + env(safe-area-inset-left, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  width: min(34vmin, 170px); aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,0,0,.15), rgba(0,0,0,.45)); border: 2px solid rgba(255,255,255,.3);
+}
+.tjknob {
+  position: absolute; left: 30%; top: 30%; width: 40%; height: 40%; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #555, #111 70%); box-shadow: 0 3px 8px rgba(0,0,0,.6); opacity: .85;
+}
+.tjfire {
+  right: calc(18px + env(safe-area-inset-right, 0px)); bottom: var(--fb);
+  width: var(--fs); aspect-ratio: 1; border-radius: 50%; border: 0; padding: 0;
+  background: radial-gradient(circle at 35% 30%, #ff5a4a, #b00000 70%); box-shadow: 0 4px 10px rgba(0,0,0,.6); opacity: .8;
+  font: bold min(4vmin, 18px) Arial, sans-serif; color: #fff; letter-spacing: .05em;
+}
+.tjfire.down { transform: scale(.92); opacity: 1; }
+.tjoff { /* unplugs it: on a phone the desk's joystick can be under FIRE */
+  right: calc(12px + env(safe-area-inset-right, 0px)); bottom: calc(var(--fb) + var(--fs) + 10px);
+  padding: 4px 8px; border: 1px solid rgba(255,255,255,.35); border-radius: 12px; background: rgba(0,0,0,.55);
+  font: bold 10px Arial, sans-serif; color: #ddd; letter-spacing: .04em;
+}
+@media (orientation: landscape) { #touchJoy { --fb: 34vh; } } /* above the keyboard's ENTER and SPACE */

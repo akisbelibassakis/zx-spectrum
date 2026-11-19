@@ -18,7 +18,7 @@ Then open http://localhost:8048 (add `?machine=plus` or `?machine=128` to start 
 - The Datacorder: STOP/EJECT opens a tape, snapshot or ROM; PLAY, REW, FF (next block), PAUSE; the counter and the tape on the reels follow the tape. The SPEED switch is NORMAL (real time), FAST (full speed while the tape plays) or INSTANT (ROM trap). AUTO LOAD resets and starts the tape on insert. Click the cassette to see its blocks.
 - The reset button is on the side of the computer.
 - Multiface One: the red button freezes the machine and shows its menu on the TV screen, in the Spectrum's font: SAVE (.SNA download), LOAD, TURBO, RESET, RETURN.
-- The joystick: click it to plug in a Kempston joystick on the arrow keys (Left Alt = fire).
+- The joystick: click it to plug it in on the arrow keys (Left Alt = fire); each click (or F10) changes the kind, shown on its base: Kempston, Sinclair (Interface 2, keys 6-0), Cursor (keys 5-8, fire 0), then unplugged.
 - The manual: instructions, the PC keys and the settings.
 - Shortcuts on the function keys: F1 manual, F2 software catalogue, F3 open a file, F4 Multiface, F6 tape play/stop, F7 rewind, F8 reset, F9 tape speed, F10 joystick, F11 full screen, Pause pauses. Volume and picture: PgUp/PgDn (or Num + -) volume, Home (or Num *) sound off/on, End (or Num /) picture: colour, black & white, green screen. The mouse wheel over the TV sets the volume (with Shift, the colour); clicking the words VOLUME and COLOUR mutes and changes the picture. The TV remembers these settings.
 - On a phone or tablet, plugging in the joystick shows a touch stick (left thumb) and FIRE (right thumb).

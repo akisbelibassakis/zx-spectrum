@@ -61,7 +61,7 @@ const COMBOS = {
 };
 for (const d of '0123456789') { keyMap['Digit' + d] = [K[d]]; keyMap['Numpad' + d] = [K[d]]; }
 
-const kempstonMap = { ArrowRight: 1, ArrowLeft: 2, ArrowDown: 4, ArrowUp: 8, AltLeft: 16 };
+const kempstonMap = { ArrowRight: 1, ArrowLeft: 2, ArrowDown: 4, ArrowUp: 8, AltLeft: 16 }; // PC key -> joystick bit (right, left, down, up, fire)
 // Key events are applied in order, at most as fast as the ROM's 50 Hz keyboard scan can see them:
 // a key stays down for at least MIN_HOLD_FRAMES, and after such a short press the next key waits
 // GAP_FRAMES, so fast typing (or pasted/automated input) is not lost or merged into a 2-key chord.
@@ -117,7 +117,7 @@ function onKey(e, down) {
   }
   if (typeof overlayKey === 'function' && overlayKey(e, down)) return; // the manual or a menu on the screen is open
   if (settings.joy && kempstonMap[e.code] !== undefined) {
-    if (down) zx.kempston |= kempstonMap[e.code]; else zx.kempston &= ~kempstonMap[e.code];
+    setJoyBits(down ? joyBits | kempstonMap[e.code] : joyBits & ~kempstonMap[e.code]);
     e.preventDefault();
     return;
   }
@@ -130,7 +130,7 @@ function onKey(e, down) {
 }
 window.addEventListener('keydown', e => onKey(e, true));
 window.addEventListener('keyup', e => onKey(e, false));
-window.addEventListener('blur', () => { pressed.clear(); keyEvents.length = 0; zx.keys.fill(0xff); zx.kempston = 0; });
+window.addEventListener('blur', () => { pressed.clear(); keyEvents.length = 0; zx.keys.fill(0xff); zx.kempston = 0; joyBits = 0; });
 
 // ---------- audio ----------
 function startAudio() {
@@ -454,14 +454,44 @@ function mfAction(act) {
   else if (act === 'reset') reset();
 }
 
-// joystick: plugged in, the arrow keys and Left Alt are a Kempston joystick
-function setJoy(on) {
-  settings.joy = on; zx.kempston = 0;
-  $('joystick').classList.toggle('on', on);
-  $('joystick').setAttribute('aria-pressed', on);
-  $('joystick').dataset.tip = (on ? 'Joystick: unplug' : 'Joystick: plug in') + ' (F10)';
+// joystick: plugged in, the arrow keys and Left Alt (or the touch stick and FIRE) work it. Three kinds, as games asked for them:
+// Kempston has its own port (31); Sinclair (Interface 2, player 1) and Cursor (Protek/AGF) press number keys
+const JOY_TYPES = ['kempston', 'sinclair', 'cursor'];
+const JOY_NAMES = { kempston: 'KEMPSTON', sinclair: 'SINCLAIR', cursor: 'CURSOR' };
+const JOY_KEYS = { // joystick bit -> Spectrum key
+  sinclair: { 1: '7', 2: '6', 4: '8', 8: '9', 16: '0' },
+  cursor:   { 1: '8', 2: '5', 4: '6', 8: '7', 16: '0' },
+};
+let joyBits = 0; // right 1, left 2, down 4, up 8, fire 16
+function setJoyBits(bits) {
+  joyBits = bits;
+  const map = JOY_KEYS[settings.joy];
+  if (!map) { zx.kempston = settings.joy ? bits : 0; return; }
+  for (const bit in map) {
+    const code = 'joy:' + bit;
+    if (bits & bit) { if (!pressed.has(code)) pressed.set(code, { keys: [K[map[bit]]], since: zx.frames }); }
+    else pressed.delete(code);
+  }
+  applyMatrix();
+}
+function setJoy(type) {
+  if (type === true) type = 'kempston'; // settings saved before there were three kinds
+  if (!JOY_TYPES.includes(type)) type = false;
+  setJoyBits(0); // let go of everything with the old kind
+  settings.joy = type;
+  const j = $('joystick'), next = JOY_TYPES[JOY_TYPES.indexOf(type) + 1];
+  j.classList.toggle('on', !!type);
+  j.setAttribute('aria-pressed', !!type);
+  j.querySelector('.jtype').textContent = type ? JOY_NAMES[type] : '';
+  j.dataset.tip = (type ? 'Joystick: ' + JOY_NAMES[type] + '. Click: ' + (next ? JOY_NAMES[next] : 'unplug') : 'Joystick: plug in (Kempston)') + ' (F10)';
   showTouchJoy();
   saveSettings();
+}
+// each click: Kempston, Sinclair, Cursor, unplugged
+function nextJoy() {
+  const next = settings.joy ? JOY_TYPES[JOY_TYPES.indexOf(settings.joy) + 1] || false : 'kempston';
+  setJoy(next);
+  status(next ? 'JOYSTICK: ' + JOY_NAMES[next] : 'JOYSTICK OFF');
 }
 
 // the touch joystick: drag the stick (8 directions), hold FIRE; both at once with two thumbs
@@ -481,22 +511,22 @@ touchScreen.addEventListener && touchScreen.addEventListener('change', showTouch
     }
     if (d > half) { dx *= half / d; dy *= half / d; }
     knob.style.transform = `translate(${dx}px, ${dy}px)`;
-    zx.kempston = (zx.kempston & 16) | bits;
+    setJoyBits((joyBits & 16) | bits);
   };
   let finger = null; // the touch that holds the stick
-  const release = e => { if (e.pointerId !== finger) return; finger = null; knob.style.transform = ''; zx.kempston &= 16; };
+  const release = e => { if (e.pointerId !== finger) return; finger = null; knob.style.transform = ''; setJoyBits(joyBits & 16); };
   stick.addEventListener('pointerdown', e => { finger = e.pointerId; try { stick.setPointerCapture(e.pointerId); } catch (_) {} move(e); e.preventDefault(); });
   stick.addEventListener('pointermove', e => { if (e.pointerId === finger) move(e); });
   stick.addEventListener('pointerup', release);
   stick.addEventListener('pointercancel', release);
-  const fireOff = () => { zx.kempston &= ~16; fire.classList.remove('down'); };
-  fire.addEventListener('pointerdown', e => { try { fire.setPointerCapture(e.pointerId); } catch (_) {} zx.kempston |= 16; fire.classList.add('down'); e.preventDefault(); });
+  const fireOff = () => { setJoyBits(joyBits & ~16); fire.classList.remove('down'); };
+  fire.addEventListener('pointerdown', e => { try { fire.setPointerCapture(e.pointerId); } catch (_) {} setJoyBits(joyBits | 16); fire.classList.add('down'); e.preventDefault(); });
   fire.addEventListener('pointerup', fireOff);
   fire.addEventListener('pointercancel', fireOff);
   for (const el of [stick, fire]) el.addEventListener('contextmenu', e => e.preventDefault());
   $('touchJoy').querySelector('.tjoff').onclick = () => { setJoy(false); status('JOYSTICK OFF'); }; // the desk's joystick may be under FIRE
 }
-$('joystick').onclick = () => { setJoy(!settings.joy); status(settings.joy ? 'JOYSTICK ON' : 'JOYSTICK OFF'); };
+$('joystick').onclick = nextJoy;
 setJoy(settings.joy);
 
 canvas.addEventListener('click', startAudio);
@@ -516,7 +546,7 @@ const SHORTCUTS = {
   F7: ['Rewind the tape', () => { $('btnRewind').click(); if (zx.tape) status('Tape rewound'); }],
   F8: ['Reset the computer', () => { reset(); status('Reset'); }],
   F9: ['Tape SPEED: normal, fast, instant', () => { setSpeed((settings.speed + 1) % 3); status('Speed: ' + ['normal', 'fast', 'instant'][settings.speed]); }],
-  F10: ['Plug the joystick in or out', () => $('joystick').click()],
+  F10: ['Joystick: Kempston, Sinclair, Cursor, unplugged', () => $('joystick').click()],
   F11: ['Full screen', () => fullScreen()],
   Pause: ['Pause (the POWER button)', () => $('btnPower').click()],
   NumpadAdd: ['Volume up', () => tvVolume(0.1)],

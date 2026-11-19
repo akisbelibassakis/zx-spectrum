@@ -467,9 +467,11 @@ const JOY_KEYS = { // joystick bit -> Spectrum key
   sinclair: { 1: '7', 2: '6', 4: '8', 8: '9', 16: '0' },
   cursor:   { 1: '8', 2: '5', 4: '6', 8: '7', 16: '0' },
 };
-let joyBits = 0; // right 1, left 2, down 4, up 8, fire 16
+let joyBits = 0; // from the PC keys or the touch stick: right 1, left 2, down 4, up 8, fire 16
+let padBits = 0; // from a real joystick or gamepad
 function setJoyBits(bits) {
   joyBits = bits;
+  bits |= padBits;
   const map = JOY_KEYS[settings.joy];
   if (!map) { zx.kempston = settings.joy ? bits : 0; return; }
   for (const bit in map) {
@@ -482,7 +484,7 @@ function setJoyBits(bits) {
 function setJoy(type) {
   if (type === true) type = 'kempston'; // settings saved before there were three kinds
   if (!JOY_TYPES.includes(type)) type = false;
-  setJoyBits(0); // let go of everything with the old kind
+  padBits = 0; setJoyBits(0); // let go of everything with the old kind
   settings.joy = type;
   const j = $('joystick'), next = JOY_TYPES[JOY_TYPES.indexOf(type) + 1];
   j.classList.toggle('on', !!type);
@@ -501,7 +503,38 @@ function nextJoy() {
 
 // the touch joystick: drag the stick (8 directions), hold FIRE; both at once with two thumbs
 const touchScreen = matchMedia('(pointer: coarse)');
-function showTouchJoy() { $('touchJoy').hidden = !(settings.joy && touchScreen.matches); }
+function showTouchJoy() { $('touchJoy').hidden = !(settings.joy && touchScreen.matches && !gamepadOn()); } // not with a real one
+
+// a real joystick or gamepad (USB or Bluetooth): d-pad or left stick, any of the main buttons fires.
+// It works as the kind chosen on the desk; the first touch of it plugs in a Kempston if none is plugged in.
+const gamepads = () => { try { return Array.from(navigator.getGamepads ? navigator.getGamepads() : []); } catch (e) { return []; } };
+const gamepadOn = () => gamepads().some(Boolean);
+let padLoop = 0;
+function pollGamepads() {
+  padLoop = 0;
+  let bits = 0;
+  for (const g of gamepads()) {
+    if (!g) continue;
+    const b = i => g.buttons[i] && g.buttons[i].pressed, x = g.axes[0] || 0, y = g.axes[1] || 0;
+    if (b(15) || x > .5) bits |= 1;
+    if (b(14) || x < -.5) bits |= 2;
+    if (b(13) || y > .5) bits |= 4;
+    if (b(12) || y < -.5) bits |= 8;
+    if ([0, 1, 2, 3, 4, 5, 6, 7].some(b)) bits |= 16;
+  }
+  if (bits && !settings.joy) { setJoy('kempston'); status('JOYSTICK: KEMPSTON'); }
+  if (bits !== padBits) { padBits = bits; setJoyBits(joyBits); }
+  if (gamepadOn()) padLoop = requestAnimationFrame(pollGamepads);
+}
+window.addEventListener('gamepadconnected', e => {
+  status('GAMEPAD: ' + (e.gamepad.id.replace(/\s*\(.*$/, '') || 'connected').slice(0, 30).toUpperCase());
+  showTouchJoy();
+  if (!padLoop) padLoop = requestAnimationFrame(pollGamepads);
+});
+window.addEventListener('gamepaddisconnected', () => {
+  if (!gamepadOn()) { padBits = 0; setJoyBits(joyBits); status('GAMEPAD UNPLUGGED'); }
+  showTouchJoy();
+});
 touchScreen.addEventListener && touchScreen.addEventListener('change', showTouchJoy);
 {
   const stick = $('touchJoy').querySelector('.tjstick'), knob = stick.firstElementChild, fire = $('touchJoy').querySelector('.tjfire');

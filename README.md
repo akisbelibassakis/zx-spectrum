@@ -51,16 +51,29 @@ Not yet: 128K models and AY sound, memory/IO contention (some timing-critical de
 
 | File | Purpose |
 |---|---|
-| `js/z80.js` | Z80 CPU |
-| `js/spectrum.js` | 48K machine: memory, ULA, video, keyboard, audio, tape trap, snapshots |
-| `js/tape.js` | TAP/TZX parsing into an EAR pulse stream |
-| `js/main.js` | Browser front end: input, audio output, file loading, tape controls |
-| `js/retro.js` | TV (power, channels, knobs) and the on-screen 48K keyboard |
+| `index.html` | The page: the desk, the TV, the gadgets, the recorder and the manual's text |
+| `js/z80.js` | Z80 CPU: all documented and undocumented opcodes and flags |
+| `js/spectrum.js` | The 48K and 128K machines: memory paging, ULA (video, keyboard, beeper, EAR), tape trap, snapshots |
+| `js/ay.js` | AY-3-8912 sound chip of the 128K: three tones, noise and envelopes |
+| `js/tape.js` | TAP/TZX parsing into an EAR pulse stream, plus the standard blocks for instant loading |
+| `js/main.js` | Browser front end: picture, PC keyboard, audio output, joysticks and gamepads, file loading, tape controls, function keys |
+| `js/retro.js` | The TV (power, channels, knobs, static), the on-screen 48K, Spectrum+ and 128 keyboards, and the manual (fixed-shape pages, one or two at a time, longer chapters flowed onto more pages) |
+| `js/screenmenu.js` | Menus drawn on the Spectrum's own screen in the ROM font: the Multiface menu and the catalogue |
+| `js/catalogue.js` | Software catalogue: searches ZXDB through the ZXInfo API and loads games from the World of Spectrum mirror on archive.org |
+| `js/tapes.js` | The cassette rack: up to 8 tapes kept in the browser (IndexedDB), recording SAVEs, `.zxtapes` backups |
+| `js/textfix.js` | Undoes the text enlargement of in-app browsers (Messenger and others) |
+| `js/rom48.js`, `js/rom128.js` | The ROMs as scripts, so `index.html` also works opened straight from disk |
+| `roms/48.rom`, `roms/128.rom` | The original ROMs |
 | `css/retro.css` | TV, keyboard and cassette recorder styling |
+| `css/room.css` | The room's layout for PC, phone in landscape and phone in portrait; the gadgets, the manual, the rack, the touch joystick |
+| `sw.js`, `manifest.webmanifest`, `icons/` | Installable app: offline cache, app details and icons |
+| `serve.js` | Tiny static file server: `node serve.js [port]` |
+| `installer/` | Windows installer: `build.ps1` makes `dist\ZX-Spectrum-Setup.exe` with IExpress; `install.ps1` / `uninstall.ps1` install for the current user without admin rights |
+| `tools/list-basic.js` | Lists the blocks of a TAP/TZX file and prints any BASIC program in it as text |
 | `test/sanity.js` | Quick CPU checks: `node test/sanity.js` |
 | `test/cpm.js` | CP/M harness for the ZEX exercisers: `node test/cpm.js test/zex/zexall.com` (about 5 minutes) |
 | `test/tape-test.js` | Builds `hello.tap` and loads it both instantly and in real time: `node test/tape-test.js` |
-| `test/shot.html` | Screenshot helper: shows the page with a tape in (`?state=tape`), the Multiface menu (`menu`) or the manual (`manual`); `&w=390&h=844` sets the frame size |
+| `test/shot.html` | Screenshot helper: shows the page with a tape in (`?state=tape`), the Multiface menu (`menu`), the manual (`manual`) or the catalogue (`catalogue`); `&w=390&h=844` sets the frame size |
 | `test/headless.js` | Run a game without a browser and save the screen as BMP |
 
 ## Test status

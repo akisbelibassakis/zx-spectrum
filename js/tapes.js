@@ -5,7 +5,7 @@
 
 const RACK_SIZE = 8;
 const SPINE_COLOURS = ['#d70000', '#1f5fbf', '#e8b100', '#2c8a3a', '#7b2fa8', '#d45a00', '#0096a8', '#c2185b'];
-const SOURCES = { archive: 'downloaded', file: 'your file', multiface: 'Multiface save', backup: 'from a backup' };
+const SOURCES = { archive: 'downloaded', file: 'your file', multiface: 'Multiface save', backup: 'from a backup', recorded: 'recorded here' };
 let tapes = new Array(RACK_SIZE).fill(null); // { slot, title, name, bytes, source, added, played }
 let lastTitle = '';                           // what is playing: Multiface saves are named after it
 
@@ -63,6 +63,7 @@ rackEl.querySelector('.racklabel').onclick = () => openTapesMenu();
 function playTape(i) {
   const t = tapes[i];
   if (!t || screenMenuOpen()) return;
+  if (t.source === 'recorded') { insertRackTape(t); return; } // your recordings go in without resetting the computer: LOAD "" (or the game) loads them
   lastTitle = t.title;
   t.played = Date.now();
   saveSlot(t);
@@ -88,6 +89,46 @@ function putTape(slot, t) {
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); // keep it when space is short
 }
 function removeTape(slot) { tapes[slot] = null; clearSlot(slot); renderRack(); }
+
+// ---------- recording: a tape of your own in the recorder ----------
+let recTape = null; // the rack entry being recorded onto (not on the rack until its first block)
+// a rack tape into the recorder, without resetting the computer: rewound, or wound on to the end to record after it
+function insertRackTape(t, atEnd) {
+  const tape = /\.tzx$/i.test(t.name) ? Tape.fromTZX(t.bytes, t.name) : Tape.fromTAP(t.bytes, t.name);
+  tape.rackTape = t;
+  if (atEnd) { tape.blockIdx = tape.blocks.length; tape.pos = tape.pulses.length; tape.remain = 0; }
+  zx.insertTape(tape);
+  renderTapeBlocks();
+  if (!atEnd) status('Tape in: ' + t.title);
+}
+// REC: record onto the tape of your own in the recorder, or this game's saves tape, or My programs
+function startRecording() {
+  let t = zx.tape && zx.tape.rackTape && zx.tape.rackTape.source === 'recorded' ? zx.tape.rackTape : null;
+  if (!t) {
+    const title = !lastTitle ? 'My programs' : / saves$/.test(lastTitle) ? lastTitle : lastTitle.replace(/ \(saved\)$/, '') + ' saves';
+    t = tapes.find(x => x && x.source === 'recorded' && x.title === title)
+      || { title, name: title + '.tap', bytes: new Uint8Array(0), source: 'recorded', added: Date.now(), played: Date.now() };
+  }
+  recTape = t;
+  insertRackTape(t, true);
+  return t.title;
+}
+// one saved block onto the end of the tape (TAP: 2 length bytes, then the block)
+function recordBlock(block) {
+  const t = recTape;
+  if (!t) return;
+  const n = new Uint8Array(t.bytes.length + 2 + block.length);
+  n.set(t.bytes);
+  n[t.bytes.length] = block.length & 0xff; n[t.bytes.length + 1] = block.length >> 8;
+  n.set(block, t.bytes.length + 2);
+  t.bytes = n; t.played = Date.now();
+  insertRackTape(t, true); // the recorder's tape grows, still at its end
+  if (t.slot !== undefined && tapes[t.slot] === t) { saveSlot(t); renderRack(); return; }
+  if (t.offRack) return;
+  const free = tapes.indexOf(null);
+  if (free >= 0) putTape(free, t);
+  else { t.offRack = true; replaceMenu.offer = t; replaceMenu.sel = 0; openScreenMenu(replaceMenu); } // asked once; kept off, it stays in the recorder
+}
 
 // ---------- on the TV: which tape makes room ----------
 const replaceMenu = {
@@ -119,7 +160,7 @@ const replaceMenu = {
   },
   choose(i) {
     closeScreenMenu();
-    if (i < RACK_SIZE) { putTape(i, this.offer); status('On the rack: ' + this.offer.title); }
+    if (i < RACK_SIZE) { delete this.offer.offRack; putTape(i, this.offer); status('On the rack: ' + this.offer.title); }
     this.offer = null;
   },
 };

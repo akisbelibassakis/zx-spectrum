@@ -186,7 +186,8 @@ button { font-family: Tahoma, sans-serif; }
 .pk small { font-size: .53em; letter-spacing: .07em; }
 .pk:active, .pk.on { transform: translateY(.33em); box-shadow: 0 .07em 0 #18181a, inset 0 1px 0 rgba(255,255,255,.3); }
 .pk.on { color: #7dff8a; }
-.pk.rec { background: linear-gradient(#c94136, #8e241c 60%, #7a1d17); opacity: .55; cursor: default; }
+.pk.rec { background: linear-gradient(#c94136, #8e241c 60%, #7a1d17); }
+.pk.rec.on { color: #ffd0c8; text-shadow: 0 0 .4em #ff3a2a; } /* recording */
 /* the insert card: the tape's blocks, folded out of the cassette box */
 .card {
   position: absolute; right: 0; bottom: calc(100% + 6px); z-index: 5; width: 21.7em; max-height: 25em; overflow-y: auto; margin: 0; padding: .67em 0 .83em;

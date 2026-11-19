@@ -172,7 +172,7 @@ function frame(now) {
   if (paused || frozen || !zx.romLoaded) return;
   const FPS = zx.cpuHz / zx.frameT;
 
-  const fast = turbo || (settings.speed >= 1 && zx.tape && zx.tape.playing);
+  const fast = turbo || (settings.speed >= 1 && ((zx.tape && zx.tape.playing) || zx.saving));
   if (fast) {
     const end = performance.now() + 12;
     do { processKeyEvents(); zx.runFrame(); } while (performance.now() < end);
@@ -322,7 +322,7 @@ async function initROMs() {
 initROMs();
 
 // ---------- controls: everything is a piece of hardware on the desk ----------
-function reset() { frozen && freeze(false); zx.reset(); renderTapeBlocks(); startAudio(); }
+function reset() { frozen && freeze(false); zx.reset(); renderTapeBlocks(); startAudio(); lastTitle = ''; } // a fresh start: what you SAVE now goes on My programs
 $('btnReset').onclick = reset;
 function saveSnapshot() {
   if (!zx.romLoaded) return;
@@ -372,9 +372,10 @@ $('btnTapePause').onclick = () => {
   if (zx.tape.playing) { zx.tape.playing = false; tapePaused = true; } else if (tapePaused) playTape();
 };
 $('btnFF').onclick = () => { if (zx.tape) zx.tape.skipBlock(); };
-$('btnRewind').onclick = () => { if (zx.tape) { zx.tape.rewind(); tapePaused = false; } };
+$('btnRewind').onclick = () => { setRec(false); if (zx.tape) { zx.tape.rewind(); tapePaused = false; } };
 // STOP/EJECT: stops a playing tape; pressed again it ejects the tape and opens another
 $('btnEject').onclick = () => {
+  if (recArmed) { setRec(false); status('Recording stopped'); return; }
   if (zx.tape && (zx.tape.playing || tapePaused)) { zx.tape.playing = false; tapePaused = false; return; }
   if (zx.tape) { zx.tape = null; renderTapeBlocks(); }
   openFile();
@@ -431,16 +432,124 @@ function updateTapeStatus() {
   updateCounter();
   const t = zx.tape;
   if (!t) return;
-  const state = t.playing + ':' + tapePaused;
+  const state = t.playing + ':' + tapePaused + ':' + recArmed + ':' + !!zx.saving;
   if (t.blockIdx === shownBlock && state === shownPlaying) return;
   shownBlock = t.blockIdx; shownPlaying = state;
   const items = $('tapeBlocks').children;
   for (let i = 1; i < items.length; i++) items[i].classList.toggle('current', i - 1 === t.blockIdx);
   $('tapeState').textContent = t.name.replace(/\.[^.]+$/, '').toUpperCase();
-  $('btnPlay').classList.toggle('on', t.playing || tapePaused);
+  $('btnPlay').classList.toggle('on', t.playing || tapePaused || recArmed);
   $('btnTapePause').classList.toggle('on', tapePaused);
-  $('deck').classList.toggle('playing', t.playing);
+  $('deck').classList.toggle('playing', t.playing || !!zx.saving);
 }
+
+// ---------- recording, as in 1982: press REC (REC and PLAY go down together), then let the computer SAVE ----------
+// The recorder holds a tape of your own while it records: this game's saves tape, or My programs after a reset.
+let recArmed = false, declineSaveUntil = 0, declineLoadUntil = 0;
+function setRec(on) {
+  recArmed = on;
+  $('btnRec').classList.toggle('on', on);
+  if (!on) $('btnPlay').classList.toggle('on', !!(zx.tape && (zx.tape.playing || tapePaused)));
+  shownPlaying = null; // redraw the keys
+}
+function pressRec() {
+  if (!zx.romLoaded) return;
+  if (recArmed) { setRec(false); status('Recording stopped'); return; }
+  const title = startRecording(); // tapes.js: puts the tape to record on into the recorder, wound to its end
+  setRec(true);
+  status('REC: ' + title);
+  startAudio();
+}
+$('btnRec').onclick = pressRec;
+const headerName = b => b.length === 19 && b[0] === 0 ? String.fromCharCode(...b.subarray(2, 12)).trim() : '';
+zx.onSave = cpu => {
+  if (frozen) return zx.holdHere(cpu);
+  if (!recArmed) {
+    if (zx.frames < declineSaveUntil) return zx.skipTapeRoutine(cpu, true); // "do not record": nothing goes on tape
+    openScreenMenu(recordMenu); // REC is not pressed: ask, on the screen (works in full screen too)
+    return zx.holdHere(cpu);
+  }
+  const block = zx.saveBlock(cpu);
+  recordBlock(block); // tapes.js: onto the tape in the recorder, and the rack
+  const name = headerName(block);
+  status(name ? 'Recording: ' + name : 'Recorded ' + (block.length - 2) + ' bytes');
+  if (zx.fastLoad) return zx.skipTapeRoutine(cpu, true); // INSTANT: done
+  zx.saving = true; // NORMAL / FAST: the ROM saves in its own time, stripes and all
+  return false;
+};
+// the computer wants to LOAD but there is nothing to load: the screen offers a tape (or to rewind this one)
+const isTapeFile = t => t && /\.(tap|tzx)$/i.test(t.name);
+zx.onNothingToLoad = cpu => {
+  if (frozen) return zx.holdHere(cpu);
+  if (zx.frames < declineLoadUntil || (!(zx.tape && zx.tape.blocks.length) && !tapes.some(isTapeFile))) return false;
+  setRec(false);
+  loadMenu.sel = 0;
+  openScreenMenu(loadMenu);
+  return zx.holdHere(cpu);
+};
+const recordMenu = {
+  sel: 0,
+  draw(s) {
+    const c = 3, w = 26, top = 7;
+    s.bar(top, 2 + 8, c, w); s.print(c + 1, top, 'Datacorder', 7 + 8, 2 + 8);
+    s.bar(top + 1, 7, c, w); s.print(c + 1, top + 1, 'The computer is saving,', 0);
+    s.bar(top + 2, 7, c, w); s.print(c + 1, top + 2, 'but REC is not pressed.', 0);
+    s.bar(top + 3, 7, c, w);
+    ['REC   record it', 'BREAK do not record'].forEach((label, i) => {
+      const paper = i === this.sel ? 5 + 8 : 7;
+      s.bar(top + 4 + i, paper, c, w); s.print(c + 1, top + 4 + i, label, i ? 1 : 2, paper);
+    });
+    s.bar(top + 6, 7, c, w);
+    s.bar(top + 7, 0, c, w); s.print(c + 1, top + 7, 'ENTER pick', 7, 0);
+  },
+  key(k) {
+    if (k === 'UP' || k === 'DOWN') this.sel ^= 1;
+    else if (k === 'ENTER') this.choose(this.sel);
+    else if (k === 'BREAK' || k === 'CHAR:n' || k === 'CHAR:N') this.choose(1);
+    else if (k === 'CHAR:r' || k === 'CHAR:R') this.choose(0);
+  },
+  click(col, row) { if (row === 11) this.choose(0); else if (row === 12) this.choose(1); },
+  choose(i) {
+    closeScreenMenu();
+    if (i === 0) pressRec(); else { declineSaveUntil = zx.frames + 250; status('Not recorded'); }
+    this.sel = 0;
+  },
+};
+const loadMenu = {
+  full: true, sel: 0,
+  items() {
+    const list = [];
+    if (zx.tape && zx.tape.blocks.length) list.push({ act: 'rewind', label: 'Rewind: ' + zx.tape.name.replace(/\.[^.]+$/, '') });
+    tapes.forEach((t, i) => { if (isTapeFile(t)) list.push({ slot: i, label: (i + 1) + ' ' + t.title }); });
+    return list;
+  },
+  draw(s) {
+    s.bar(0, 0); s.print(1, 0, 'Datacorder', 7, 0); s.stripes(27, 0);
+    s.print(1, 2, 'The computer is waiting to', 0);
+    s.print(1, 3, 'LOAD. Which tape goes in?', 0);
+    this.items().forEach((it, i) => {
+      const paper = i === this.sel ? 5 + 8 : 7;
+      s.bar(5 + i, paper); s.print(1, 5 + i, fit(it.label, 30), it.act ? 1 : 0, paper);
+    });
+    s.bar(23, 0); s.print(0, 23, 'ENTER put it in   BREAK wait', 7, 0);
+  },
+  key(k) {
+    const n = this.items().length;
+    if (k === 'UP') this.sel = (this.sel + n - 1) % n;
+    else if (k === 'DOWN') this.sel = (this.sel + 1) % n;
+    else if (k === 'ENTER') this.choose(this.sel);
+    else if (k === 'BREAK') this.choose(-1);
+    else if (/^CHAR:[1-8]$/.test(k)) { const i = this.items().findIndex(x => x.slot === +k.slice(5) - 1); if (i >= 0) this.choose(i); }
+  },
+  click(col, row) { const i = row - 5; if (i >= 0 && i < this.items().length) this.choose(i); },
+  choose(i) {
+    const it = this.items()[i];
+    closeScreenMenu();
+    if (!it) { declineLoadUntil = zx.frames + 50; return; } // wait: the ROM listens for a tape, BREAK stops it
+    if (it.act === 'rewind') { zx.tape.rewind(); renderTapeBlocks(); status('Rewound'); }
+    else insertRackTape(tapes[it.slot]); // tapes.js: in, rewound, without resetting the computer
+  },
+};
 
 // Multiface One: the red button freezes the computer and shows its menu on the screen (screenmenu.js)
 let frozen = false; // true while any menu is on the screen
@@ -577,6 +686,7 @@ const SHORTCUTS = {
   F2: ['Software catalogue', () => { if (screenMenu === catalogue) closeCatalogue(); else openCatalogue(); }],
   F3: ['Open a tape, snapshot or ROM', () => openFile()],
   F4: ['Multiface menu', () => $('mfButton').click()],
+  F5: ['Tape REC (record) / STOP', () => pressRec()],
   F6: ['Tape PLAY / STOP', () => {
     if (!zx.tape) { status('No tape', true); return; }
     if (zx.tape.playing) { zx.tape.playing = false; tapePaused = false; status('Tape stopped'); } else { playTape(); status('Tape playing'); }
@@ -598,7 +708,7 @@ const SHORTCUTS = {
   End: ['Picture: colour, black & white, green screen', () => tvPicture()],
 };
 // hover labels show the key, e.g. "Software catalogue (F2)"
-for (const [id, key] of [['manualBook', 'F1'], ['rack', 'F2'], ['mfButton', 'F4'], ['btnEject', 'F3'], ['btnPlay', 'F6'], ['btnRewind', 'F7'], ['btnReset', 'F8'], ['speed', 'F9'], ['btnZoom', 'F11'], ['btnPower', 'Pause']]) {
+for (const [id, key] of [['manualBook', 'F1'], ['rack', 'F2'], ['mfButton', 'F4'], ['btnEject', 'F3'], ['btnPlay', 'F6'], ['btnRec', 'F5'], ['btnRewind', 'F7'], ['btnReset', 'F8'], ['speed', 'F9'], ['btnZoom', 'F11'], ['btnPower', 'Pause']]) {
   const el = $(id);
   if (el && el.dataset.tip) el.dataset.tip += ' (' + key + ')';
 }

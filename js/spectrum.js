@@ -15,7 +15,7 @@ const MACHINES = {
 const CPU_HZ = MACHINES[48].cpuHz, FRAME_T = MACHINES[48].frameT;
 const BORDER_X = 32, BORDER_Y = 24;
 const SCREEN_W = 256 + 2 * BORDER_X, SCREEN_H = 192 + 2 * BORDER_Y;
-const LD_BYTES = 0x0556;
+const LD_BYTES = 0x0556, SA_BYTES = 0x04C2, SA_LD_RET = 0x053F;
 
 // ABGR (little-endian ImageData) palette: 0-7 normal, 8-15 bright
 const PALETTE = new Uint32Array(16);
@@ -251,7 +251,11 @@ class Spectrum {
   insertTape(tape) { this.tape = tape; this.tapeT = this.cpu.tstates; }
 
   trapHandler(cpu) {
-    if (cpu.pc !== LD_BYTES || !this.basicROM || !this.tape || this.tape.playing) return false;
+    if (cpu.pc === SA_LD_RET) { this.saving = false; return false; } // a save (or load) has finished
+    if (cpu.pc === SA_BYTES && this.basicROM && this.onSave) return this.onSave(cpu);
+    if (cpu.pc !== LD_BYTES || !this.basicROM) return false;
+    if ((!this.tape || (!this.tape.playing && !this.tape.currentBlock())) && this.onNothingToLoad && this.onNothingToLoad(cpu)) return true;
+    if (!this.tape || this.tape.playing) return false;
     const b = this.tape.currentBlock();
     if (!b) return false;
     if (!this.fastLoad || !b.std) {
@@ -286,6 +290,25 @@ class Spectrum {
     this.tape.skipBlock();
     return true;
   }
+
+  // SAVE: the block the ROM is about to save (A = flag, IX = start, DE = length), as a TAP block with its parity byte
+  saveBlock(cpu) {
+    const len = cpu.de, out = new Uint8Array(len + 2);
+    let par = out[0] = cpu.a;
+    for (let k = 0; k < len; k++) { const b = this.read((cpu.ix + k) & 0xffff); out[1 + k] = b; par ^= b; }
+    out[len + 1] = par;
+    return out;
+  }
+  // return from SA-BYTES / LD-BYTES at once, as if it had run (carry set: success)
+  skipTapeRoutine(cpu, ok) {
+    cpu.f = ok ? (cpu.f | 1) : (cpu.f & ~1);
+    cpu.iff1 = cpu.iff2 = 1;
+    cpu.pc = cpu.pop();
+    cpu.tstates += 100;
+    return true;
+  }
+  // stay at this instruction (a question is on the screen): time still passes, so a frame can end
+  holdHere(cpu) { cpu.tstates += 4; return true; }
 
   // ---- snapshots ----
   // Loading a snapshot switches to the model it was made on; the loaders return that model (48 or 128).

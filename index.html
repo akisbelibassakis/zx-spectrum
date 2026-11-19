@@ -182,7 +182,7 @@
         <div class="marks"><span data-pos="0">NORMAL</span><span data-pos="1">FAST</span><span data-pos="2">INSTANT</span></div></div>
     </div>
     <div class="pkeys">
-      <button class="pk rec" disabled>&#9679;<small>REC</small></button>
+      <button class="pk rec" id="btnRec" data-tip="Record: REC and PLAY">&#9679;<small>REC</small></button>
       <button class="pk" id="btnRewind" data-tip="Rewind">&#9664;&#9664;<small>REW</small></button>
       <button class="pk" id="btnPlay" data-tip="Play">&#9654;<small>PLAY</small></button>
       <button class="pk" id="btnFF" data-tip="Next block">&#9654;&#9654;<small>FF</small></button>
@@ -307,6 +307,7 @@
           <tr><td><kbd>F2</kbd></td><td>Software catalogue</td></tr>
           <tr><td><kbd>F3</kbd></td><td>Open a tape, snapshot or ROM</td></tr>
           <tr><td><kbd>F4</kbd></td><td>Multiface menu</td></tr>
+          <tr><td><kbd>F5</kbd></td><td>Tape REC (record) / STOP</td></tr>
           <tr><td><kbd>F6</kbd></td><td>Tape PLAY / STOP</td></tr>
           <tr><td><kbd>F7</kbd></td><td>Rewind the tape</td></tr>
           <tr><td><kbd>F8</kbd></td><td>Reset the computer</td></tr>
@@ -331,6 +332,7 @@
           <tr><td>Counter</td><td>Shows how far the tape has played; the small button sets it to 000.</td></tr>
           <tr><td>Multiface</td><td>The red button freezes the game and shows its menu on the screen: SAVE downloads a snapshot, LOAD opens one, TURBO runs as fast as possible, RESET restarts, RETURN carries on. Choose with the arrows and ENTER, or press S, L, T, X or R; BREAK returns to the game.</td></tr>
           <tr><td>Software catalogue</td><td>Type a title and press ENTER: ZXDB, the database of everything made for the Spectrum, is searched. Move with the arrows (or CAPS SHIFT + 5 to 8), press ENTER to load, DELETE to go back and BREAK to leave. Titles in red cannot be downloaded: their makers do not allow it, or they are newer than the archive. You can also click a line.</td></tr>
+          <tr><td>Saving</td><td>As in 1982: press <b>REC</b> on the recorder (REC and PLAY go down together; F5 on a PC), then let the program or game SAVE. It records onto a tape of your own on the rack: <i>&lt;game&gt; saves</i>, or <i>My programs</i> after a reset, for what you write in BASIC. If you forget REC, the screen asks. To load it back, LOAD "" (or the game's load option): when the recorder has nothing to load, the screen lets you pick a tape from the rack, or rewind this one. STOP ends the recording.</td></tr>
           <tr><td>My tapes</td><td>The rack keeps 8 tapes on this device, and they work offline: games from the catalogue, files you open and Multiface saves go onto it. When it is full the screen asks which tape makes room. Click <b>MY TAPES</b> on the rack for the list: ENTER loads, DELETE twice removes, O opens a file of your own, S saves a backup file of the whole rack and L loads one, on this or another device.</td></tr>
           <tr><td>Joystick</td><td>Click it to plug it in; each click changes the kind, shown on its base: <b>Kempston</b> (most games), <b>Sinclair</b> (Interface 2: keys 6 to 0), <b>Cursor</b> (Protek/AGF: keys 5 to 8, fire 0), then unplugged. Choose the one the game's menu offers. The arrow keys and Left Alt work it. On a phone or tablet a stick appears under your left thumb and a FIRE button under your right. A real joystick or gamepad (USB or Bluetooth) works too: press one of its buttons so the browser sees it; the touch stick then goes away, and its d-pad or stick and main buttons work the kind chosen here.</td></tr>
           <tr><td>Television</td><td><b>ZOOM</b> (or a double-click on the picture) fills the screen; POWER pauses everything. <b>Volume:</b> drag the VOLUME knob, or roll the mouse wheel anywhere over the TV; click the word VOLUME to turn the sound off and on. <b>Colour:</b> drag the COLOUR knob or hold Shift with the wheel; click the word COLOUR for black and white or a green-screen monitor. The TV remembers its settings, so if you left it silent it stays silent.</td></tr>

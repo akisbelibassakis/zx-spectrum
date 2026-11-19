@@ -217,7 +217,7 @@ button { font-family: Tahoma, sans-serif; }
 .book::backdrop { background: rgba(10,6,3,.7); }
 .pages { display: flex; filter: drop-shadow(0 18px 24px rgba(0,0,0,.6)); }
 .page {
-  position: relative; flex: 1 1 0; min-height: min(700px, calc(var(--vhreal) - 60px)); max-height: calc(var(--vhreal) - 40px); overflow-y: auto;
+  position: relative; flex: 1 1 0; height: min(700px, calc(var(--vhreal) - 60px)); overflow-y: auto; /* every page the same height: retro.js flows longer chapters onto more pages */
   padding: 46px 52px 54px; background: #fbfaf6; font: 13.5px/1.4 Arial, Helvetica, sans-serif; text-align: justify;
 }
 .page[hidden] { display: none; }
@@ -242,7 +242,7 @@ button { font-family: Tahoma, sans-serif; }
 .page td:first-child { width: 34%; }
 .page kbd { display: inline-block; font: bold 11px Arial, sans-serif; padding: 1px 5px; border: 1px solid #333; border-radius: 3px; background: #fff; box-shadow: 0 1px 0 #333; }
 .skey { display: inline-block; font: bold 10px Arial, sans-serif; color: #fff; background: #222; padding: 2px 5px; border-radius: 2px; }
-.page .figure { display: block; width: 100%; max-width: 440px; margin: 4px auto 8px; }
+.page .figure { display: block; width: 100%; max-width: 440px; max-height: calc(100% - 12px); margin: 4px auto 8px; } /* never taller than a page */
 .page ol.parts li { margin-bottom: 3px; font-size: 13px; }
 .page ol.parts li b + b { width: auto; margin-right: 4px; }
 .tabs button:last-child { color: #fff; }
@@ -325,7 +325,7 @@ button { font-family: Tahoma, sans-serif; }
   .tabs button.on { opacity: 1; }
   .bclose { left: auto; right: 0; top: -40px; }
   .book { margin-top: 48px; }
-  .page { padding: 24px 20px 44px; min-height: 0; max-height: calc(var(--vhreal) - 120px); }
+  .page { padding: 24px 20px 44px; height: calc(var(--vhreal) - 120px); }
   .page .pn { left: auto !important; right: 20px !important; }
   .pages::after { display: none; }
 }

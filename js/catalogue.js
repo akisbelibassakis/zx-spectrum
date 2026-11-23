@@ -196,7 +196,7 @@ const catalogue = {
   // your zips of games (library.js): touching the first line adds one, touching a zip twice removes it
   drawLibrary(s, row) {
     this.libRows = { add: row, zips: [] };
-    s.print(1, row++, 'Add your games (zip): touch', 4);
+    s.print(1, row++, 'Your games: F3, 2 (or touch)', 4);
     library.slice(0, 3).forEach(z => { // touch the name to see its games, the x (twice) to remove it
       const armed = this.removeArmed === z;
       this.libRows.zips.push({ row, z });
@@ -272,7 +272,7 @@ const catalogue = {
     if (row === 2) { this.mode = 'search'; return; }
     if (this.mode === 'search' && !this.games.length && row >= this.ownRows[0] && row < this.ownRows[1]) { closeCatalogue(); openFile(); return; }
     if (this.mode === 'search' && !this.games.length && this.libRows) { // the library lines on the first page
-      if (row === this.libRows.add) { this.removeArmed = null; closeCatalogue(); openFile(); return; }
+      if (row === this.libRows.add) { this.removeArmed = null; openTapeBrowser(); tapeBrowser.open({ act: 'library' }); redrawScreen(); return; }
       const hit = this.libRows.zips.find(r => r.row === row);
       if (hit && col >= 29) {
         if (this.removeArmed === hit.z) { removeLibrary(hit.z); this.removeArmed = null; this.status = 'Removed ' + hit.z.name; }

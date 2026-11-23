@@ -46,12 +46,12 @@ function listMove(menu, n, k) {
 
 // ---------- the Tape Browser ----------
 const tapeBrowser = {
-  full: true, sel: 0, top: 0, status: '', stack: [], busy: false, unlinkArmed: false,
+  full: true, sel: 0, top: 0, status: '', stack: [], busy: false, unlinkArmed: false, removeArmed: null,
   here() { return this.stack[this.stack.length - 1]; },
   homeItems() {
     const items = [
       { act: 'rack', label: '1 Cassette rack', right: tapes.filter(Boolean).length + ' tapes', about: ['Your tapes on the desk (A-D)'] },
-      { act: 'mine', label: '2 Your library', right: libraryCount() + ' games', about: ['Your zips of games, kept here', 'ENTER lists them (MINE)'] },
+      { act: 'library', label: '2 Your library', right: libraryCount() + ' games', about: ['Your zips of games, kept here:', 'search them, add or remove a zip'] },
       { act: 'zxdb', label: '3 Software catalogue', right: 'ZXDB', about: ['Everything made for the Spectrum', 'searched on the internet'] },
     ];
     if (canLinkFolder) {
@@ -62,18 +62,36 @@ const tapeBrowser = {
     if (linkedFolder) items.push({ act: 'unlink', label: this.unlinkArmed ? 'ENTER again to unlink the folder' : 'Unlink the folder', ink: 2, about: ['The folder is not touched, only', 'forgotten by the emulator'] });
     return items;
   },
-  items() { const h = this.here(); return h.kind === 'home' ? this.homeItems() : h.items; },
+  // your library: search it, add a zip, and each zip (ENTER lists its games, DELETE twice removes it)
+  libraryItems() {
+    const items = [
+      { act: 'mine', label: 'Search my games', right: libraryCount() ? String(libraryCount()) : '', about: ['The catalogue, only your games', '(MINE); ENTER with no title: all'] },
+      { act: 'addzip', label: '+ Add a zip of games', ink: 4, about: ['The browser\'s window: pick zips;', 'they stay in this browser'] },
+    ];
+    if (linkedFolder) items.push({ act: 'folder', label: '+ From the folder: ' + linkedFolder.name, ink: 4, about: ['Open a zip there and choose', '"Keep this zip in your library"'] });
+    for (const z of library) {
+      const armed = this.removeArmed === z;
+      items.push({ lib: z, label: armed ? 'DELETE again to remove it' : z.name, ink: armed ? 2 : 1, right: armed ? '' : String(z.games.length),
+        about: [z.name + ', ' + z.games.length + ' games', 'ENTER lists, DELETE x2 removes'] });
+    }
+    return items;
+  },
+  items() { const h = this.here(); return h.kind === 'home' ? this.homeItems() : h.kind === 'library' ? this.libraryItems() : h.items; },
   draw(s) {
     const h = this.here(), items = this.items();
-    const help = h.kind === 'home' ? 'Where is the tape?' : '<- -> page  DELETE back';
+    const help = h.kind === 'home' ? 'Where is the tape?' : h.kind === 'library' ? 'DELETE: back, or x2 on a zip' : '<- -> page  DELETE back';
     drawList(s, this, 'Tape Browser', h.path, items, help, h.kind === 'home' ? 'ENTER open  BREAK out' : 'ENTER open DELETE back BREAK out');
   },
   key(k) {
     if (this.busy) return;
     const items = this.items(), it = items[this.sel];
     if (k !== 'ENTER') this.unlinkArmed = false;
+    if (k !== 'DELETE') this.removeArmed = null;
     if (k === 'BREAK') closeScreenMenu();
-    else if (k === 'DELETE') this.back();
+    else if (k === 'DELETE' && it && it.lib) { // a zip of your library: DELETE twice removes it
+      if (this.removeArmed === it.lib) { removeLibrary(it.lib); this.removeArmed = null; this.status = 'Removed ' + it.lib.name; this.sel = Math.min(this.sel, this.items().length - 1); }
+      else this.removeArmed = it.lib;
+    } else if (k === 'DELETE') this.back();
     else if (['UP', 'DOWN', 'LEFT', 'RIGHT', 'PGUP', 'PGDN'].includes(k)) listMove(this, items.length, k);
     else if (k === 'ENTER') this.open(it);
     else if (this.here().kind === 'home' && /^CHAR:[1-6]$/.test(k)) { const i = items.findIndex(x => x.label.startsWith(k.slice(5) + ' ')); if (i >= 0) { this.sel = i; this.open(items[i]); } }
@@ -98,6 +116,9 @@ const tapeBrowser = {
   async open(it) {
     if (!it) return;
     if (it.act === 'rack') { closeScreenMenu(); openTapesMenu(); return; }
+    if (it.act === 'library') { this.go({ kind: 'library', path: 'Your library', items: [] }); this.sel = 0; return; }
+    if (it.act === 'addzip') return this.pickZips();
+    if (it.lib) { closeScreenMenu(); openCatalogue(); catalogue.browse(it.lib); return; }
     if (it.act === 'mine') { closeScreenMenu(); openCatalogue(); catalogue.scope = 'mine'; catalogue.libOnly = null; catalogue.query = ''; catalogue.search(); return; }
     if (it.act === 'zxdb') { closeScreenMenu(); openCatalogue(); if (catalogue.scope === 'mine') catalogue.toggleScope(); return; }
     if (it.act === 'pick') { closeScreenMenu(); document.getElementById('fileInput').click(); return; } // the browser's window: needs this key press or touch
@@ -115,6 +136,16 @@ const tapeBrowser = {
     if (it.addLib) { this.busy = true; await addZip(it.addLib); this.busy = false; this.status = 'In your library: EDIT in the catalogue'; return; }
     if (it.handle) return this.openFile(await it.handle.getFile());
     if (it.entry) return this.openZipEntry(it);
+  },
+  // zips from the device, always kept as libraries (the browser's window: needs this key press or touch)
+  pickZips() {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = '.zip'; input.multiple = true;
+    input.onchange = async () => {
+      for (const f of input.files) await addZip(f, { library: true });
+      if (screenMenu === this) { this.status = library.length ? libraryCount() + ' games in your library' : ''; redrawScreen(); }
+    };
+    input.click();
   },
   // the folder: asked for once (the browser's window), kept for later visits
   async link() {

@@ -96,11 +96,11 @@ async function openLibrary() {
 const libraryCount = () => library.reduce((n, z) => n + z.games.length, 0);
 
 // a zip from a file picker or a drop: one game loads at once, a collection becomes a library (returns true if handled)
-async function addZip(file) {
+async function addZip(file, opts = {}) { // opts.library: always a library, even of one game
   const blob = file instanceof Blob ? file : new Blob([file]);
   let entries;
   try { entries = await blobZipEntries(blob); } catch (e) { status(e.message, true); return true; }
-  if (isSingleGame(entries)) { // load it like a catalogue download, and onto the rack
+  if (!opts.library && isSingleGame(entries)) { // load it like a catalogue download, and onto the rack
     const { name, bytes } = await gameFromZip(await blob.arrayBuffer(), file.name || 'game.zip');
     if (loadFile(name, bytes)) rackOffer({ title: describeFile(file.name || name).title, name, bytes, source: 'file' });
     return true;

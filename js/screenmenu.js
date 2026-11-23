@@ -88,19 +88,19 @@ function screenMenuPCKey(e, down) {
   if (!screenMenu) return false;
   if (!down) return true;
   const named = { ArrowUp: 'UP', ArrowDown: 'DOWN', ArrowLeft: 'LEFT', ArrowRight: 'RIGHT', Enter: 'ENTER', NumpadEnter: 'ENTER',
-    Backspace: 'DELETE', Escape: 'BREAK', PageUp: 'PGUP', PageDown: 'PGDN' }[e.code];
+    Backspace: 'DELETE', Escape: 'BREAK', PageUp: 'PGUP', PageDown: 'PGDN', Tab: 'EDIT' }[e.code];
   if (named) menuKey(named);
   else if (e.key.length === 1 && !e.ctrlKey && !e.altKey) menuKey('CHAR:' + e.key);
   e.preventDefault();
   return true;
 }
-// on-screen Spectrum keys (called from virtualKey); CAPS SHIFT with 5-8 / 0 / SPACE gives the arrows, DELETE and BREAK
+// on-screen Spectrum keys (called from virtualKey); CAPS SHIFT with 5-8 / 0 / SPACE / 1 gives the arrows, DELETE, BREAK and EDIT
 function screenMenuSpectrumKey(name, down) {
   if (!screenMenu) return false;
   if (!down || name === 'CAPS' || name === 'SYM') return true;
   const caps = typeof latched !== 'undefined' && latched.has('CAPS');
-  const capsKeys = { 5: 'LEFT', 6: 'DOWN', 7: 'UP', 8: 'RIGHT', 0: 'DELETE', SPACE: 'BREAK' };
-  const named = { ENTER: 'ENTER', DELETE: 'DELETE', BREAK: 'BREAK', UP: 'UP', DOWN: 'DOWN', LEFT: 'LEFT', RIGHT: 'RIGHT', SPACE: 'CHAR: ' };
+  const capsKeys = { 5: 'LEFT', 6: 'DOWN', 7: 'UP', 8: 'RIGHT', 0: 'DELETE', SPACE: 'BREAK', 1: 'EDIT' };
+  const named = { ENTER: 'ENTER', DELETE: 'DELETE', BREAK: 'BREAK', UP: 'UP', DOWN: 'DOWN', LEFT: 'LEFT', RIGHT: 'RIGHT', EDIT: 'EDIT', SPACE: 'CHAR: ' };
   if (caps && capsKeys[name]) menuKey(capsKeys[name]);
   else if (named[name]) menuKey(named[name]);
   else if (/^[A-Z0-9]$/.test(name)) menuKey('CHAR:' + name.toLowerCase());

@@ -157,10 +157,13 @@ const INTRO = [
 const fit = (t, n) => { t = String(t == null ? '' : t); return t.length > n ? t.slice(0, n - 1) + '~' : t.padEnd(n); };
 const catalogue = {
   full: true, blinks: true,
-  ownRows: [0, 0], mode: 'search', query: '', status: 'Type a title, then ENTER', games: [], sel: 0, top: 0, files: [], fsel: 0, busy: false, ctl: null, progress: 0,
+  ownRows: [0, 0], mode: 'search', query: '', status: 'Type a title, then ENTER', games: [], sel: 0, top: 0, files: [], fsel: 0, busy: false, ctl: null, progress: 0, libOnly: null,
+  // ALL: your library and ZXDB; MINE: only your library (EDIT switches, remembered)
+  scope: (() => { try { return localStorage.getItem('zxCatScope') === 'mine' ? 'mine' : 'all'; } catch (e) { return 'all'; } })(),
 
   draw(s, blink) {
     s.bar(0, 0); s.print(1, 0, 'Software Catalogue', 7, 0); s.stripes(27, 0);
+    s.print(20, 0, this.scope === 'mine' ? ' MINE ' : ' ALL ', this.scope === 'mine' ? 0 : 7, this.scope === 'mine' ? 4 + 8 : 1); // EDIT switches
     s.print(0, 2, 'Title:', 1);
     s.print(7, 2, fit(this.query, 24));
     if (this.mode === 'search' && !this.busy) s.print(7 + this.query.length, 2, 'L', blink ? 7 : 0, blink ? 0 : 7); // the flashing cursor
@@ -171,6 +174,11 @@ const catalogue = {
     if (this.progress) { // the download: a bar along row 22
       s.bar(22, 7);
       s.print(0, 22, ' '.repeat(Math.max(1, Math.round(32 * this.progress))), 4 + 8, 4 + 8);
+    } else if (!this.busy) { // which keys do what (Spectrum keys: EDIT is CAPS SHIFT+1, the arrows CAPS SHIFT+5-8)
+      const pages = Math.ceil(this.games.length / LIST_ROWS), page = Math.floor(this.top / LIST_ROWS) + 1;
+      const help = this.mode === 'files' ? '' : this.mode === 'results' && pages > 1 ? '<- -> page   EDIT mine/all' : this.scope === 'mine' ? 'EDIT: also search ZXDB' : 'EDIT: search only mine';
+      s.print(0, 22, help, 1);
+      if (this.mode === 'results' && pages > 1) s.print(32 - (page + '/' + pages).length, 22, page + '/' + pages, 1);
     }
     s.bar(23, 0);
     s.print(0, 23, this.busy ? 'BREAK cancels' : this.mode === 'search' ? 'ENTER find  BREAK exit' : 'ENTER pick DELETE back BREAK out', 7, 0);
@@ -189,10 +197,11 @@ const catalogue = {
   drawLibrary(s, row) {
     this.libRows = { add: row, zips: [] };
     s.print(1, row++, 'Add your games (zip): touch', 4);
-    library.slice(0, 3).forEach(z => {
+    library.slice(0, 3).forEach(z => { // touch the name to see its games, the x (twice) to remove it
       const armed = this.removeArmed === z;
       this.libRows.zips.push({ row, z });
-      s.print(2, row++, fit(armed ? 'Touch again to remove ' + z.name : z.name + ' (' + z.games.length + ')', 29), armed ? 2 : 1);
+      s.print(2, row, fit(armed ? 'Touch x again to remove it' : z.name + ' (' + z.games.length + ')', 26), armed ? 2 : 1);
+      s.print(30, row++, 'x', 2);
     });
     return row;
   },
@@ -237,15 +246,17 @@ const catalogue = {
     if (this.busy) { if (k === 'BREAK' && this.ctl) this.ctl.abort(); return; } // a search or download: BREAK cancels it
     if (k === 'BREAK') { closeCatalogue(); return; }
     const ch = k.startsWith('CHAR:') ? k.slice(5) : null;
+    if (k === 'EDIT') { this.toggleScope(); return; }
     if (this.mode === 'search') {
-      if (ch && this.query.length < 24) this.query += ch;
-      else if (k === 'DELETE') this.query = this.query.slice(0, -1);
+      if (ch && this.query.length < 24) { this.query += ch; this.libOnly = null; }
+      else if (k === 'DELETE') { this.query = this.query.slice(0, -1); this.libOnly = null; }
       else if (k === 'ENTER') this.search();
       else if (k === 'DOWN' && this.games.length) this.mode = 'results';
     } else if (this.mode === 'results') {
       if (ch) { this.mode = 'search'; if (this.query.length < 24) this.query += ch; }
       else if (k === 'DELETE' || (k === 'UP' && this.sel === 0)) this.mode = 'search';
-      else if (k === 'UP' || k === 'DOWN' || k === 'PGUP' || k === 'PGDN') this.move({ UP: -1, DOWN: 1, PGUP: -LIST_ROWS, PGDN: LIST_ROWS }[k]);
+      else if (k === 'UP' || k === 'DOWN') this.move(k === 'UP' ? -1 : 1);
+      else if (k === 'PGUP' || k === 'PGDN' || k === 'LEFT' || k === 'RIGHT') this.page(k === 'PGUP' || k === 'LEFT' ? -1 : 1);
       else if (k === 'ENTER') this.choose();
     } else if (this.mode === 'files') {
       if (k === 'UP') this.fsel = Math.max(0, this.fsel - 1);
@@ -257,16 +268,18 @@ const catalogue = {
   click(col, row) {
     if (this.busy) { if ((row === 0 && col >= 31) || row === 23) this.ctl.abort(); return; }
     if (row === 0 && col >= 31) { closeCatalogue(); return; }
+    if (row === 0 && col >= 20 && col <= 25) { this.toggleScope(); return; }
     if (row === 2) { this.mode = 'search'; return; }
     if (this.mode === 'search' && !this.games.length && row >= this.ownRows[0] && row < this.ownRows[1]) { closeCatalogue(); openFile(); return; }
     if (this.mode === 'search' && !this.games.length && this.libRows) { // the library lines on the first page
       if (row === this.libRows.add) { this.removeArmed = null; closeCatalogue(); openFile(); return; }
       const hit = this.libRows.zips.find(r => r.row === row);
-      if (hit) {
+      if (hit && col >= 29) {
         if (this.removeArmed === hit.z) { removeLibrary(hit.z); this.removeArmed = null; this.status = 'Removed ' + hit.z.name; }
         else this.removeArmed = hit.z;
         redrawScreen(); return;
       }
+      if (hit) { this.browse(hit.z); return; }
     }
     if (this.mode === 'files') {
       const i = row - LIST_TOP - 2;
@@ -276,6 +289,25 @@ const catalogue = {
     const n = this.top + row - LIST_TOP;
     if (row >= LIST_TOP && row < LIST_TOP + LIST_ROWS && n < this.games.length) { this.mode = 'results'; this.sel = n; this.choose(); }
   },
+  // a page back or on: the list shows the next 12, the same line chosen on it
+  page(d) {
+    const pages = Math.ceil(this.games.length / LIST_ROWS);
+    const p = Math.max(0, Math.min(pages - 1, Math.floor(this.top / LIST_ROWS) + d));
+    const line = this.sel - this.top;
+    this.top = p * LIST_ROWS;
+    this.sel = Math.min(this.games.length - 1, this.top + line);
+  },
+  toggleScope() {
+    this.scope = this.scope === 'mine' ? 'all' : 'mine';
+    try { localStorage.setItem('zxCatScope', this.scope); } catch (e) { /* storage unavailable */ }
+    this.libOnly = null;
+    if (this.query.trim() || this.scope === 'mine') this.search(); else { this.games = []; this.mode = 'search'; this.status = 'Type a title, then ENTER'; }
+  },
+  // all the games of one zip of your library
+  browse(z) {
+    this.scope = 'mine'; this.libOnly = z; this.query = '';
+    this.search();
+  },
   move(d) {
     this.sel = Math.max(0, Math.min(this.games.length - 1, this.sel + d));
     if (this.sel < this.top) this.top = this.sel;
@@ -284,11 +316,19 @@ const catalogue = {
 
   async search() {
     const text = this.query.trim();
-    if (!text) return;
+    if (!text && this.scope !== 'mine') return;
     this.removeArmed = null;
-    // your library first (at once, offline too), then ZXDB
-    const mine = searchLibrary(text).slice(0, 200).map(g => ({ ...g, local: true, loadable: true, files: [], why: '' }));
+    // your library first (at once, offline too), then ZXDB; MINE: only your library (and an empty title lists it all)
+    let mine = searchLibrary(text).filter(g => !this.libOnly || g.lib === this.libOnly);
+    if (this.scope === 'mine') mine.sort((a, b) => naturally(a.title, b.title));
+    mine = mine.slice(0, this.scope === 'mine' ? 5000 : 200).map(g => ({ ...g, local: true, loadable: true, files: [], why: '' }));
     this.games = mine; this.sel = 0; this.top = 0;
+    if (this.scope === 'mine') {
+      this.mode = mine.length ? 'results' : 'search';
+      this.status = !library.length ? '!No library yet - EDIT for ZXDB' : mine.length ? mine.length + (this.libOnly ? ' in ' + this.libOnly.name : ' in your library') : '!Not in your library';
+      redrawScreen();
+      return;
+    }
     this.busy = true; this.status = 'Searching ZXDB...'; this.ctl = new AbortController();
     if (mine.length) this.mode = 'results';
     redrawScreen();

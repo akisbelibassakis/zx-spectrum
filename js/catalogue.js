@@ -113,13 +113,17 @@ function partLabels(names) {
 }
 async function downloadGame(file, signal, onProgress) {
   const buf = (await fetchBytes(file.url, { signal, onProgress })).buffer;
+  return gameFromZip(buf, decodeURIComponent(file.path.split('/').pop()));
+}
+// the game in a zip (a download, or a zip in your library): one tape or snapshot, or several tapes as one in parts
+async function gameFromZip(buf, zipFile) {
   const entries = zipEntries(buf).filter(e => /\.(tap|tzx|z80|sna)$/i.test(e.name));
   if (!entries.length) throw new Error('No tape or snapshot in the download');
   const tapeEntries = entries.filter(e => /\.(tap|tzx)$/i.test(e.name)).sort((a, b) => naturally(baseName(a.name), baseName(b.name)));
   if (tapeEntries.length < 2) return { name: entries[0].name.split('/').pop(), bytes: await unzipEntry(buf, entries[0]) };
   const files = [];
   for (const e of tapeEntries) files.push({ name: e.name, bytes: await unzipEntry(buf, e) });
-  const zipName = baseName(decodeURIComponent(file.path.split('/').pop()).replace(/\.zip$/i, ''));
+  const zipName = baseName(zipFile.replace(/\.zip$/i, ''));
   return { name: zipName + '.tzx', bytes: combineTapes(files, partLabels(files.map(f => f.name))) };
 }
 // the model a ZXDB title is for: 48 (16K or 48K only), 128 (128K only) or 0 (both, or not said)
@@ -140,16 +144,15 @@ const wrap = (text, n) => {
 };
 // the first page, before any search
 const INTRO = [
-  ['Search ZXDB, the database of everything ever made for the ZX Spectrum.', 0],
+  ['Search ZXDB, the database of everything made for the ZX Spectrum, and your own games.', 0],
   ['', 0],
-  ['Type a title and press ENTER. Games whose makers allow it load straight into the recorder.', 0],
-  ['', 0],
+  ['Type a title and press ENTER.', 0],
   ['Titles in red cannot be downloaded.', 2],
   ['', 0],
   ['Your own file: touch here.', 1],
+  ['LIBRARY', 0],
   ['', 0],
-  ['Data: ZXDB via ZXInfo', 1],
-  ['Files: World of Spectrum archive', 1],
+  ['ZXDB via ZXInfo; files from the World of Spectrum archive', 1],
 ];
 const fit = (t, n) => { t = String(t == null ? '' : t); return t.length > n ? t.slice(0, n - 1) + '~' : t.padEnd(n); };
 const catalogue = {
@@ -177,15 +180,27 @@ const catalogue = {
     for (const [text, ink] of INTRO) {
       if (!text) { row++; continue; }
       const first = row;
+      if (text === 'LIBRARY') { row = this.drawLibrary(s, row); continue; }
       for (const line of wrap(text, 30)) s.print(1, row++, line, ink);
       if (text.startsWith('Your own file')) this.ownRows = [first, row]; // touching it opens a file
     }
+  },
+  // your zips of games (library.js): touching the first line adds one, touching a zip twice removes it
+  drawLibrary(s, row) {
+    this.libRows = { add: row, zips: [] };
+    s.print(1, row++, 'Add your games (zip): touch', 4);
+    library.slice(0, 3).forEach(z => {
+      const armed = this.removeArmed === z;
+      this.libRows.zips.push({ row, z });
+      s.print(2, row++, fit(armed ? 'Touch again to remove ' + z.name : z.name + ' (' + z.games.length + ')', 29), armed ? 2 : 1);
+    });
+    return row;
   },
   drawGames(s) {
     this.games.slice(this.top, this.top + LIST_ROWS).forEach((g, i) => {
       const n = this.top + i, on = this.mode === 'results' && n === this.sel, paper = on ? 5 + 8 : 7;
       s.bar(LIST_TOP + i, paper);
-      s.print(1, LIST_TOP + i, fit(g.title, 25), g.loadable ? 0 : 2, paper);
+      s.print(1, LIST_TOP + i, fit(g.title, 25), g.local ? 4 : g.loadable ? 0 : 2, paper); // green: your library
       s.print(27, LIST_TOP + i, g.year || '', 1, paper);
     });
     if (this.games.length > LIST_ROWS) s.print(0, LIST_TOP + LIST_ROWS - 1, this.top + LIST_ROWS < this.games.length ? '+' : ' ', 1); // more below
@@ -197,6 +212,11 @@ const catalogue = {
     s.bar(17, 1); // a blue rule
     s.print(0, 18, fit(g.title, 32), 0);
     s.print(0, 19, fit([g.publisher, g.year].filter(Boolean).join(', '), 32), 1);
+    if (g.local) {
+      s.print(0, 20, fit('Your library: ' + g.lib.name + (g.folder && g.folder !== g.lib.name ? ' / ' + g.folder : ''), 32), 1);
+      s.print(0, 21, fit('ENTER loads it', 32), 4);
+      return;
+    }
     s.print(0, 20, fit([g.genre, (g.machine || '').replace('ZX-Spectrum ', 'Spectrum ')].filter(Boolean).join(' - '), 32), 1);
     if (g.loadable) s.print(0, 21, fit(g.files.length === 1 ? '1 tape - ENTER loads it' : g.files.length + ' tapes - ENTER to choose', 32), 4);
     else s.print(0, 21, fit(g.why, 32), 2);
@@ -239,6 +259,15 @@ const catalogue = {
     if (row === 0 && col >= 31) { closeCatalogue(); return; }
     if (row === 2) { this.mode = 'search'; return; }
     if (this.mode === 'search' && !this.games.length && row >= this.ownRows[0] && row < this.ownRows[1]) { closeCatalogue(); openFile(); return; }
+    if (this.mode === 'search' && !this.games.length && this.libRows) { // the library lines on the first page
+      if (row === this.libRows.add) { this.removeArmed = null; closeCatalogue(); openFile(); return; }
+      const hit = this.libRows.zips.find(r => r.row === row);
+      if (hit) {
+        if (this.removeArmed === hit.z) { removeLibrary(hit.z); this.removeArmed = null; this.status = 'Removed ' + hit.z.name; }
+        else this.removeArmed = hit.z;
+        redrawScreen(); return;
+      }
+    }
     if (this.mode === 'files') {
       const i = row - LIST_TOP - 2;
       if (i >= 0 && i < this.files.length) { this.fsel = i; this.load(this.files[i]); } else if (row === LIST_TOP) this.mode = 'results';
@@ -256,27 +285,47 @@ const catalogue = {
   async search() {
     const text = this.query.trim();
     if (!text) return;
-    this.busy = true; this.status = 'Searching ZXDB...'; this.games = []; this.ctl = new AbortController(); redrawScreen();
+    this.removeArmed = null;
+    // your library first (at once, offline too), then ZXDB
+    const mine = searchLibrary(text).slice(0, 200).map(g => ({ ...g, local: true, loadable: true, files: [], why: '' }));
+    this.games = mine; this.sel = 0; this.top = 0;
+    this.busy = true; this.status = 'Searching ZXDB...'; this.ctl = new AbortController();
+    if (mine.length) this.mode = 'results';
+    redrawScreen();
     try {
-      this.games = (await searchZXDB(text, this.ctl.signal)).map(g => {
+      const found = (await searchZXDB(text, this.ctl.signal)).map(g => {
         const files = g.files.filter(f => f.url);
         const why = !g.available ? g.availability : !g.files.length ? 'No tape or snapshot' : !files.length ? 'Not in the archive (after 2017)' : '';
         return { ...g, files, loadable: !why, why };
       });
-      this.sel = 0; this.top = 0;
-      this.status = this.games.length ? this.games.length + ' found - choose one' : '!Nothing found';
+      this.games = mine.concat(found);
+      this.status = !this.games.length ? '!Nothing found' : mine.length ? mine.length + ' yours, ' + found.length + ' in ZXDB' : this.games.length + ' found - choose one';
       if (this.games.length) this.mode = 'results';
     } catch (err) {
-      this.status = err.cancelled ? 'Type a title, then ENTER' : '!' + err.message;
+      this.status = err.cancelled ? (mine.length ? mine.length + ' in your library' : 'Type a title, then ENTER')
+        : mine.length ? '!ZXDB: ' + err.message.replace(/ - .*/, '') + ' - yours below' : '!' + err.message;
     }
     this.busy = false; this.ctl = null; redrawScreen();
   },
   choose() {
     const g = this.games[this.sel];
+    if (g && g.local) { this.loadLocal(g); return; }
     if (!g || !g.loadable) { if (g) this.status = '!' + g.why; return; }
     if (g.files.length === 1) { this.load(g.files[0]); return; }
     this.files = g.files.slice(0, 12); this.fsel = 0; this.mode = 'files';
     this.status = 'Choose a tape';
+  },
+  // a game from your library: unpacked from the zip kept in the browser, into the recorder and onto the rack
+  async loadLocal(g) {
+    this.busy = true; this.status = 'Unpacking ' + g.title + '...'; redrawScreen();
+    try {
+      const { name, bytes } = await libraryGame(g);
+      this.busy = false;
+      closeCatalogue();
+      if (loadFile(name, bytes)) rackOffer({ title: g.title, name, bytes, source: 'library' });
+    } catch (err) {
+      this.busy = false; this.status = '!' + err.message; redrawScreen();
+    }
   },
   // download a tape: the status line counts the seconds until the archive answers, then the kilobytes, with a bar
   async load(f) {

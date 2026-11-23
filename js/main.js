@@ -294,6 +294,7 @@ function loadFile(name, bytes, opts = {}) {
 }
 
 function readFile(file) {
+  if (/\.zip$/i.test(file.name) && typeof addZip === 'function') { addZip(file); return; } // a game, or a library of them (library.js)
   const fr = new FileReader();
   fr.onload = () => {
     const bytes = new Uint8Array(fr.result);

@@ -11,11 +11,47 @@ const LOADABLE = /\.(tap|tzx|z80|sna)\.zip$/i;
 // files added to ZXDB after 2017 live elsewhere and cannot be fetched by a web page
 const mirrorUrl = path => path.startsWith('/pub/') ? WOS_MIRROR + encodeURIComponent(path.slice(5)) : null;
 
-async function searchZXDB(text) {
+// a download with time limits (for the first answer, then between pieces), progress and cancelling;
+// its error messages fit the catalogue's status line, and say that ENTER tries again
+async function fetchBytes(url, { signal, onProgress, firstWait = 30000, stallWait = 20000 } = {}) {
+  const ctl = new AbortController(), stop = () => ctl.abort();
+  if (signal) { if (signal.aborted) stop(); else signal.addEventListener('abort', stop); }
+  let timer = 0, timedOut = false;
+  const arm = ms => { clearTimeout(timer); timer = setTimeout(() => { timedOut = true; ctl.abort(); }, ms); };
+  try {
+    arm(firstWait);
+    const r = await fetch(url, { signal: ctl.signal });
+    if (r.status === 404) throw new Error('Not found - try another tape');
+    if (!r.ok) throw new Error('Error ' + r.status + ' - ENTER tries again');
+    const total = +r.headers.get('Content-Length') || 0, parts = [];
+    let got = 0;
+    if (onProgress) onProgress(0, total);
+    const reader = r.body.getReader();
+    for (;;) {
+      arm(stallWait);
+      const { done, value } = await reader.read();
+      if (done) break;
+      parts.push(value); got += value.length;
+      if (onProgress) onProgress(got, total);
+    }
+    const out = new Uint8Array(got);
+    let o = 0;
+    for (const p of parts) { out.set(p, o); o += p.length; }
+    return out;
+  } catch (e) {
+    if (signal && signal.aborted) { const c = new Error('Cancelled'); c.cancelled = true; throw c; }
+    if (timedOut) throw new Error('No answer - ENTER tries again');
+    if (e instanceof TypeError) throw new Error('No connection - ENTER again');
+    throw e;
+  } finally {
+    clearTimeout(timer);
+    if (signal) signal.removeEventListener('abort', stop);
+  }
+}
+
+async function searchZXDB(text, signal) {
   const url = ZXINFO + encodeURIComponent(text) + '?mode=compact&size=30&contenttype=SOFTWARE&machinetype=ZXSPECTRUM';
-  const r = await fetch(url);
-  if (!r.ok) throw new Error('The catalogue did not answer (' + r.status + ')');
-  const data = await r.json();
+  const data = JSON.parse(new TextDecoder().decode(await fetchBytes(url, { signal, firstWait: 20000 })));
   return data.hits.hits.map(h => {
     const s = h._source;
     const files = [];
@@ -56,10 +92,8 @@ async function unzipEntry(buf, e) {
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
-async function downloadGame(file) {
-  const r = await fetch(file.url);
-  if (!r.ok) throw new Error('Download failed (' + r.status + ')');
-  const buf = await r.arrayBuffer();
+async function downloadGame(file, signal, onProgress) {
+  const buf = (await fetchBytes(file.url, { signal, onProgress })).buffer;
   const entry = zipEntries(buf).find(e => /\.(tap|tzx|z80|sna)$/i.test(e.name));
   if (!entry) throw new Error('No tape or snapshot in the download');
   return { name: entry.name.split('/').pop(), bytes: await unzipEntry(buf, entry) };
@@ -94,7 +128,7 @@ const INTRO = [
 const fit = (t, n) => { t = String(t == null ? '' : t); return t.length > n ? t.slice(0, n - 1) + '~' : t.padEnd(n); };
 const catalogue = {
   full: true, blinks: true,
-  ownRows: [0, 0], mode: 'search', query: '', status: 'Type a title, then ENTER', games: [], sel: 0, top: 0, files: [], fsel: 0, busy: false,
+  ownRows: [0, 0], mode: 'search', query: '', status: 'Type a title, then ENTER', games: [], sel: 0, top: 0, files: [], fsel: 0, busy: false, ctl: null, progress: 0,
 
   draw(s, blink) {
     s.bar(0, 0); s.print(1, 0, 'Software Catalogue', 7, 0); s.stripes(27, 0);
@@ -105,8 +139,12 @@ const catalogue = {
     if (this.mode === 'files') this.drawFiles(s);
     else if (!this.games.length && !this.busy) this.drawIntro(s);
     else this.drawGames(s);
+    if (this.progress) { // the download: a bar along row 22
+      s.bar(22, 7);
+      s.print(0, 22, ' '.repeat(Math.max(1, Math.round(32 * this.progress))), 4 + 8, 4 + 8);
+    }
     s.bar(23, 0);
-    s.print(0, 23, this.mode === 'search' ? 'ENTER find  BREAK exit' : 'ENTER pick DELETE back BREAK out', 7, 0);
+    s.print(0, 23, this.busy ? 'BREAK cancels' : this.mode === 'search' ? 'ENTER find  BREAK exit' : 'ENTER pick DELETE back BREAK out', 7, 0);
   },
   drawIntro(s) {
     let row = LIST_TOP;
@@ -150,7 +188,7 @@ const catalogue = {
   },
 
   key(k) {
-    if (this.busy) return;
+    if (this.busy) { if (k === 'BREAK' && this.ctl) this.ctl.abort(); return; } // a search or download: BREAK cancels it
     if (k === 'BREAK') { closeCatalogue(); return; }
     const ch = k.startsWith('CHAR:') ? k.slice(5) : null;
     if (this.mode === 'search') {
@@ -171,7 +209,7 @@ const catalogue = {
     }
   },
   click(col, row) {
-    if (this.busy) return;
+    if (this.busy) { if ((row === 0 && col >= 31) || row === 23) this.ctl.abort(); return; }
     if (row === 0 && col >= 31) { closeCatalogue(); return; }
     if (row === 2) { this.mode = 'search'; return; }
     if (this.mode === 'search' && !this.games.length && row >= this.ownRows[0] && row < this.ownRows[1]) { closeCatalogue(); openFile(); return; }
@@ -192,9 +230,9 @@ const catalogue = {
   async search() {
     const text = this.query.trim();
     if (!text) return;
-    this.busy = true; this.status = 'Searching ZXDB...'; this.games = []; redrawScreen();
+    this.busy = true; this.status = 'Searching ZXDB...'; this.games = []; this.ctl = new AbortController(); redrawScreen();
     try {
-      this.games = (await searchZXDB(text)).map(g => {
+      this.games = (await searchZXDB(text, this.ctl.signal)).map(g => {
         const files = g.files.filter(f => f.url);
         const why = !g.available ? g.availability : !g.files.length ? 'No tape or snapshot' : !files.length ? 'Not in the archive (after 2017)' : '';
         return { ...g, files, loadable: !why, why };
@@ -203,9 +241,9 @@ const catalogue = {
       this.status = this.games.length ? this.games.length + ' found - choose one' : '!Nothing found';
       if (this.games.length) this.mode = 'results';
     } catch (err) {
-      this.status = '!' + err.message;
+      this.status = err.cancelled ? 'Type a title, then ENTER' : '!' + err.message;
     }
-    this.busy = false; redrawScreen();
+    this.busy = false; this.ctl = null; redrawScreen();
   },
   choose() {
     const g = this.games[this.sel];
@@ -214,16 +252,32 @@ const catalogue = {
     this.files = g.files.slice(0, 12); this.fsel = 0; this.mode = 'files';
     this.status = 'Choose a tape';
   },
+  // download a tape: the status line counts the seconds until the archive answers, then the kilobytes, with a bar
   async load(f) {
-    this.busy = true; this.status = 'Loading from the archive...'; redrawScreen();
+    const t0 = Date.now(), ctl = new AbortController();
+    let started = false;
+    this.busy = true; this.ctl = ctl; this.progress = 0; this.status = 'Asking the archive...'; redrawScreen();
+    const tick = setInterval(() => { if (!started) { this.status = 'Waiting for the archive ' + Math.round((Date.now() - t0) / 1000) + 's'; redrawScreen(); } }, 1000);
+    const kb = n => Math.max(1, Math.round(n / 1024));
+    const onProgress = (got, total) => {
+      started = true;
+      this.status = total ? 'Downloading ' + kb(Math.min(got, total)) + ' of ' + kb(total) + ' KB' : 'Downloading ' + kb(got) + ' KB';
+      this.progress = total ? Math.min(1, got / total) : 0;
+      redrawScreen();
+    };
     try {
-      const { name, bytes } = await downloadGame(f);
+      const { name, bytes } = await downloadGame(f, ctl.signal, onProgress);
       const g = this.games[this.sel];
       this.busy = false;
       closeCatalogue();
       if (loadFile(name, bytes)) rackOffer({ title: g.title, name, bytes, source: 'archive' }); // and onto the rack
     } catch (err) {
-      this.busy = false; this.status = '!' + err.message; redrawScreen();
+      this.busy = false;
+      this.status = err.cancelled ? 'Cancelled' : '!' + err.message; // ENTER on the same title tries again
+    } finally {
+      clearInterval(tick);
+      this.ctl = null; this.progress = 0;
+      redrawScreen();
     }
   },
 };
@@ -235,7 +289,10 @@ function openCatalogue(text) {
   openScreenMenu(catalogue);
   if (text) catalogue.search();
 }
-function closeCatalogue() { if (screenMenu === catalogue) closeScreenMenu(); }
+function closeCatalogue() {
+  if (catalogue.ctl) catalogue.ctl.abort(); // a search or download still going: stop it
+  if (screenMenu === catalogue) closeScreenMenu();
+}
 
 // ?find=<title> in the address opens the catalogue with that search (?find alone just opens it)
 {

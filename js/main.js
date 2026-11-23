@@ -294,11 +294,10 @@ function loadFile(name, bytes, opts = {}) {
 }
 
 function readFile(file) {
-  if (/\.zip$/i.test(file.name) && typeof addZip === 'function') { addZip(file); return; } // a game, or a library of them (library.js)
   const fr = new FileReader();
   fr.onload = () => {
     const bytes = new Uint8Array(fr.result);
-    if (loadFile(file.name, bytes) && /\.(tap|tzx|sna|z80)$/i.test(file.name)) rackOffer({ title: typeof describeFile === 'function' ? describeFile(file.name).title : '', name: file.name, bytes, source: 'file' });
+    if (loadFile(file.name, bytes) && /\.(tap|tzx|sna|z80)$/i.test(file.name)) rackOffer({ name: file.name, bytes, source: 'file' });
   };
   fr.readAsArrayBuffer(file);
 }
@@ -356,7 +355,7 @@ function saveSnapshot() {
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
-const openFile = () => (typeof openTapeBrowser === 'function' ? openTapeBrowser() : $('fileInput').click()); // the Tape Browser on the TV (browser.js)
+const openFile = () => $('fileInput').click();
 function fullScreen() {
   if (document.fullscreenElement) document.exitFullscreen();
   else if ($('crt').requestFullscreen) $('crt').requestFullscreen();
@@ -403,8 +402,8 @@ $('btnEject').onclick = () => {
   if (zx.tape) { zx.tape = null; renderTapeBlocks(); }
   openFile();
 };
-// the cassette door: the tape's contents on the TV (browser.js), or with no tape in the Tape Browser
-$('door').onclick = () => { if (zx.tape) openTapeContents(); else openTapeBrowser(); };
+// the cassette door: shows the tape's contents, or with no tape in opens the software catalogue
+$('door').onclick = () => { if (zx.tape) $('tapeBlocks').hidden = !$('tapeBlocks').hidden; else openCatalogue(); };
 document.addEventListener('pointerdown', e => { if (!e.target.closest('#door, #tapeBlocks')) $('tapeBlocks').hidden = true; });
 
 // tape counter and the tape packs on the reels follow the tape position
@@ -732,7 +731,7 @@ document.addEventListener('pointerdown', startAudio, { once: true });
 const SHORTCUTS = {
   F1: ['The manual', () => { const m = document.getElementById('manual'); if (m.open) m.close(); else $('manualBook').click(); }],
   F2: ['Software catalogue', () => { if (screenMenu === catalogue) closeCatalogue(); else openCatalogue(); }],
-  F3: ['Tape Browser: rack, library, catalogue, folder, file', () => openFile()],
+  F3: ['Open a tape, snapshot or ROM', () => openFile()],
   F4: ['Multiface menu', () => $('mfButton').click()],
   F5: ['Tape REC (record) / STOP', () => pressRec()],
   F6: ['Tape PLAY / STOP', () => {

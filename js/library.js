@@ -9,17 +9,20 @@ let library = []; // { id, name, size, blob, games: [{ lib, path, title, year, p
 let libDbPromise = null;
 function libDb() {
   if (!libDbPromise) libDbPromise = new Promise((resolve, reject) => {
-    const r = indexedDB.open('zx-library', 1);
-    r.onupgradeneeded = () => r.result.createObjectStore('zips', { keyPath: 'id', autoIncrement: true });
+    const r = indexedDB.open('zx-library', 2);
+    r.onupgradeneeded = () => { // 1: your zips; 2: the folder linked in the Tape Browser (browser.js)
+      if (!r.result.objectStoreNames.contains('zips')) r.result.createObjectStore('zips', { keyPath: 'id', autoIncrement: true });
+      if (!r.result.objectStoreNames.contains('folders')) r.result.createObjectStore('folders', { keyPath: 'id' });
+    };
     r.onsuccess = () => resolve(r.result);
     r.onerror = () => reject(r.error);
   });
   return libDbPromise;
 }
-async function libDo(mode, fn) {
+async function libDo(mode, fn, store = 'zips') {
   const d = await libDb();
   return new Promise((resolve, reject) => {
-    const tx = d.transaction('zips', mode), req = fn(tx.objectStore('zips'));
+    const tx = d.transaction(store, mode), req = fn(tx.objectStore(store));
     tx.oncomplete = () => resolve(req && req.result);
     tx.onerror = () => reject(tx.error);
   });

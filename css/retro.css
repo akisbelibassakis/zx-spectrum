@@ -11,7 +11,7 @@
   --error: #ff8a78;
   /* everything is sized from --W so the TV, keyboard and tape deck fit the window height */
   /* TV height = .65W, keyboard height = .58W * .625; the rest is margins and the control strip */
-  --W: min(1100px, calc(var(--vw100) - 32px), calc((var(--vh100) - 116px) / 1.0125));
+  --W: min(calc(1100px * var(--k, 1)), calc(var(--vw100) - 32px), calc((var(--vh100) - 116px) / 1.0125));
   --tvw: var(--W);
 }
 * { box-sizing: border-box; }

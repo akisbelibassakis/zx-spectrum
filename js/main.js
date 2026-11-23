@@ -173,7 +173,13 @@ function frame(now) {
   const FPS = zx.cpuHz / zx.frameT;
 
   const fast = turbo || (settings.speed >= 1 && ((zx.tape && zx.tape.playing) || zx.saving));
-  if (fast) {
+  if (fast && settings.speed === 2 && !turbo && zx.tape && zx.tape.playing) {
+    // INSTANT with a loader of its own (the ROM's are trapped): as many frames as fit, without sound
+    // or pictures, until the tape stops; then one picture
+    const end = performance.now() + 30;
+    do { processKeyEvents(); zx.runFrame(true); } while (performance.now() < end && zx.tape && zx.tape.playing && !frozen);
+    zx.renderScreen();
+  } else if (fast) {
     const end = performance.now() + 12;
     do { processKeyEvents(); zx.runFrame(); } while (performance.now() < end);
   } else {
@@ -202,10 +208,30 @@ function status(msg, isError) {
   osdTimer = setTimeout(() => el.classList.remove('show'), isError ? 5000 : 2500);
 }
 
-function bootFast() {
-  // run the ROM start-up instantly so the auto-typed command is not lost
-  zx.reset();
-  for (let i = 0; i < (zx.is128 ? 150 : 120); i++) zx.runFrame();
+function bootFast(in48) {
+  // run the ROM start-up instantly so the auto-typed command is not lost; in48: a 128K in 48 BASIC
+  if (in48) zx.boot48(); else zx.reset();
+  for (let i = 0; i < (zx.is128 && !in48 ? 150 : 120); i++) zx.runFrame();
+}
+// AUTO LOAD: reset and load the tape. A tape in parts starts at the part for this model (48K or 128K version);
+// on the 128K a tape for the 48K loads in 48 BASIC, as many 48K games need. machine: what the tape is for, if known
+function autoLoad(tape, machine) {
+  let part = -1;
+  if (tape.parts.length) {
+    part = tape.parts.findIndex(p => partMachine(p.name) === zx.machine);
+    if (part < 0) part = tape.parts.findIndex(p => partMachine(p.name) !== (zx.is128 ? 48 : 128));
+    if (part < 0) part = 0;
+  }
+  const forModel = (part >= 0 && partMachine(tape.parts[part].name)) || machine || partMachine(tape.name);
+  const in48 = zx.is128 && forModel === 48;
+  bootFast(in48);
+  if (part > 0) tape.windTo(tape.parts[part].block);
+  // 128K: ENTER picks "Tape Loader" on the start-up menu; 48K (and 48 BASIC): LOAD "" ENTER (J, then SYMBOL SHIFT+P twice)
+  if (zx.is128 && !in48) zx.typeKeys([{ keys: [K.ENTER] }]);
+  else zx.typeKeys([{ keys: [K.J] }, { keys: [K.SYM, K.P] }, { keys: [K.SYM, K.P] }, { keys: [K.ENTER] }]);
+  renderTapeBlocks();
+  if (!zx.is128 && forModel === 128) status('This tape is for the 128K (channel 3)', true);
+  else status(part >= 0 ? 'Loading: ' + tape.parts[part].name : in48 ? 'Loading in 48 BASIC' : 'Tape inserted');
 }
 
 // switch model: resets the machine and shows its case and keyboard
@@ -229,7 +255,8 @@ function showMachine() {
   else { $('romNote').hidden = true; status(modelName()); }
 }
 
-function loadFile(name, bytes) {
+// opts.machine: the model the file is for, when the catalogue or the rack knows it (48, 128 or 0)
+function loadFile(name, bytes, opts = {}) {
   const ext = extOf(name);
   try {
     if (ext === 'rom' || ((bytes.length === 16384 || bytes.length === 32768) && !['tap', 'tzx', 'sna', 'z80'].includes(ext))) {
@@ -246,13 +273,8 @@ function loadFile(name, bytes) {
       const tape = ext === 'tap' ? Tape.fromTAP(bytes, name) : Tape.fromTZX(bytes, name);
       zx.insertTape(tape);
       renderTapeBlocks();
-      if (settings.autoLoad) {
-        bootFast();
-        // 128K: ENTER picks "Tape Loader" on the start-up menu; 48K: LOAD "" ENTER (J, then SYMBOL SHIFT+P twice)
-        if (zx.is128) zx.typeKeys([{ keys: [K.ENTER] }]);
-        else zx.typeKeys([{ keys: [K.J] }, { keys: [K.SYM, K.P] }, { keys: [K.SYM, K.P] }, { keys: [K.ENTER] }]);
-      }
-      status('Tape inserted');
+      if (settings.autoLoad) autoLoad(tape, opts.machine || 0);
+      else status(tape.parts.length ? 'Tape inserted: ' + tape.parts.length + ' parts' : 'Tape inserted');
     } else if (ext === 'sna' || ext === 'z80') {
       const before = zx.machine;
       if (ext === 'sna') zx.loadSNA(bytes); else zx.loadZ80(bytes);
@@ -365,18 +387,18 @@ setSpeed(settings.speed);
 setAutoLoad(settings.autoLoad);
 
 let tapePaused = false;
-function playTape() { if (zx.tape) { tapePaused = false; zx.tape.playing = true; zx.tapeT = zx.cpu.tstates; } startAudio(); }
+function playTape() { if (zx.tape) { tapePaused = false; zx.tape.held = false; zx.playTape(false); } startAudio(); }
 $('btnPlay').onclick = playTape;
 $('btnTapePause').onclick = () => {
   if (!zx.tape) return;
-  if (zx.tape.playing) { zx.tape.playing = false; tapePaused = true; } else if (tapePaused) playTape();
+  if (zx.tape.playing) { zx.tape.playing = false; zx.tape.held = tapePaused = true; } else if (tapePaused) playTape();
 };
 $('btnFF').onclick = () => { if (zx.tape) zx.tape.skipBlock(); };
 $('btnRewind').onclick = () => { setRec(false); if (zx.tape) { zx.tape.rewind(); tapePaused = false; } };
 // STOP/EJECT: stops a playing tape; pressed again it ejects the tape and opens another
 $('btnEject').onclick = () => {
   if (recArmed) { setRec(false); status('Recording stopped'); return; }
-  if (zx.tape && (zx.tape.playing || tapePaused)) { zx.tape.playing = false; tapePaused = false; return; }
+  if (zx.tape && (zx.tape.playing || tapePaused)) { zx.tape.playing = false; zx.tape.held = true; tapePaused = false; return; } // stays stopped until PLAY
   if (zx.tape) { zx.tape = null; renderTapeBlocks(); }
   openFile();
 };
@@ -417,13 +439,18 @@ function renderTapeBlocks() {
   head.textContent = zx.tape.name;
   list.appendChild(head);
   zx.tape.blocks.forEach((b, i) => {
+    const part = zx.tape.parts.find(p => p.block === i);
+    if (part) { // a part of the tape (48K or 128K version, a side): a heading that winds to it
+      const h = document.createElement('li');
+      h.className = 'part';
+      h.textContent = part.name;
+      h.onclick = () => { zx.tape.windTo(i); updateTapeStatus(); status('Wound to: ' + part.name); };
+      list.appendChild(h);
+    }
     const li = document.createElement('li');
     li.textContent = b.desc;
-    li.onclick = () => {
-      const t = zx.tape;
-      t.blockIdx = i; t.pos = b.pulseStart; t.remain = t.startPulse(t.pos);
-      updateTapeStatus();
-    };
+    li.dataset.block = i;
+    li.onclick = () => { zx.tape.windTo(i); updateTapeStatus(); };
     list.appendChild(li);
   });
   updateTapeStatus();
@@ -436,8 +463,9 @@ function updateTapeStatus() {
   if (t.blockIdx === shownBlock && state === shownPlaying) return;
   shownBlock = t.blockIdx; shownPlaying = state;
   const items = $('tapeBlocks').children;
-  for (let i = 1; i < items.length; i++) items[i].classList.toggle('current', i - 1 === t.blockIdx);
-  $('tapeState').textContent = t.name.replace(/\.[^.]+$/, '').toUpperCase();
+  for (const li of items) if (li.dataset.block) li.classList.toggle('current', +li.dataset.block === t.blockIdx);
+  const part = t.parts[t.partAt(t.blockIdx)];
+  $('tapeState').textContent = (t.name.replace(/\.[^.]+$/, '') + (part ? ' - ' + part.name : '')).toUpperCase();
   $('btnPlay').classList.toggle('on', t.playing || tapePaused || recArmed);
   $('btnTapePause').classList.toggle('on', tapePaused);
   $('deck').classList.toggle('playing', t.playing || !!zx.saving);
@@ -487,6 +515,15 @@ zx.onNothingToLoad = cpu => {
   openScreenMenu(loadMenu);
   return zx.holdHere(cpu);
 };
+// a game's own loader waits at the end of the tape (a multi-load wanting a level, or the other side): the same offer,
+// with the tape's parts; once declined it is not offered again until the tape moves
+let endDeclined = null;
+zx.onTapeEnd = () => {
+  if (frozen || screenMenuOpen() || (zx.tape && endDeclined === zx.tape && zx.tape.atEnd)) return;
+  setRec(false);
+  loadMenu.sel = 0; loadMenu.atEnd = true;
+  openScreenMenu(loadMenu);
+};
 const recordMenu = {
   sel: 0,
   draw(s) {
@@ -516,17 +553,21 @@ const recordMenu = {
   },
 };
 const loadMenu = {
-  full: true, sel: 0,
+  full: true, sel: 0, atEnd: false,
+  // this tape: rewind, or wind to one of its parts; then the rack's tapes (this bank first), as many as fit
   items() {
     const list = [];
-    if (zx.tape && zx.tape.blocks.length) list.push({ act: 'rewind', label: 'Rewind: ' + zx.tape.name.replace(/\.[^.]+$/, '') });
-    tapes.forEach((t, i) => { if (isTapeFile(t)) list.push({ slot: i, label: (i + 1) + ' ' + t.title }); });
+    if (zx.tape && zx.tape.blocks.length) {
+      list.push({ act: 'rewind', label: 'Rewind: ' + zx.tape.name.replace(/\.[^.]+$/, '') });
+      zx.tape.parts.forEach((p, i) => { if (p.block > 0) list.push({ act: 'part', part: i, label: 'Wind to: ' + p.name }); });
+    }
+    rackOrder().forEach(i => { if (isTapeFile(tapes[i]) && list.length < 16) list.push({ slot: i, label: slotName(i) + ' ' + tapes[i].title }); });
     return list;
   },
   draw(s) {
     s.bar(0, 0); s.print(1, 0, 'Datacorder', 7, 0); s.stripes(27, 0);
-    s.print(1, 2, 'The computer is waiting to', 0);
-    s.print(1, 3, 'LOAD. Which tape goes in?', 0);
+    s.print(1, 2, this.atEnd ? 'The tape has run out, but the' : 'The computer is waiting to', 0);
+    s.print(1, 3, this.atEnd ? 'game wants more. Which part?' : 'LOAD. Which tape goes in?', 0);
     this.items().forEach((it, i) => {
       const paper = i === this.sel ? 5 + 8 : 7;
       s.bar(5 + i, paper); s.print(1, 5 + i, fit(it.label, 30), it.act ? 1 : 0, paper);
@@ -539,14 +580,20 @@ const loadMenu = {
     else if (k === 'DOWN') this.sel = (this.sel + 1) % n;
     else if (k === 'ENTER') this.choose(this.sel);
     else if (k === 'BREAK') this.choose(-1);
-    else if (/^CHAR:[1-8]$/.test(k)) { const i = this.items().findIndex(x => x.slot === +k.slice(5) - 1); if (i >= 0) this.choose(i); }
+    else if (/^CHAR:[1-8]$/.test(k)) { const i = this.items().findIndex(x => x.slot === rackBank * RACK_SIZE + +k.slice(5) - 1); if (i >= 0) this.choose(i); }
   },
   click(col, row) { const i = row - 5; if (i >= 0 && i < this.items().length) this.choose(i); },
   choose(i) {
     const it = this.items()[i];
     closeScreenMenu();
-    if (!it) { declineLoadUntil = zx.frames + 50; return; } // wait: the ROM listens for a tape, BREAK stops it
+    if (!it) { // wait: the ROM listens for a tape, BREAK stops it; a game's loader just goes on waiting
+      if (this.atEnd) endDeclined = zx.tape; else declineLoadUntil = zx.frames + 50;
+      this.atEnd = false;
+      return;
+    }
+    this.atEnd = false;
     if (it.act === 'rewind') { zx.tape.rewind(); renderTapeBlocks(); status('Rewound'); }
+    else if (it.act === 'part') { const p = zx.tape.parts[it.part]; zx.tape.windTo(p.block); renderTapeBlocks(); status('Wound to: ' + p.name); }
     else insertRackTape(tapes[it.slot]); // tapes.js: in, rewound, without resetting the computer
   },
 };
@@ -689,7 +736,7 @@ const SHORTCUTS = {
   F5: ['Tape REC (record) / STOP', () => pressRec()],
   F6: ['Tape PLAY / STOP', () => {
     if (!zx.tape) { status('No tape', true); return; }
-    if (zx.tape.playing) { zx.tape.playing = false; tapePaused = false; status('Tape stopped'); } else { playTape(); status('Tape playing'); }
+    if (zx.tape.playing) { zx.tape.playing = false; zx.tape.held = true; tapePaused = false; status('Tape stopped'); } else { playTape(); status('Tape playing'); }
   }],
   F7: ['Rewind the tape', () => { $('btnRewind').click(); if (zx.tape) status('Tape rewound'); }],
   F8: ['Reset the computer', () => { reset(); status('Reset'); }],

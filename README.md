@@ -15,7 +15,8 @@ Then open http://localhost:8048 (add `?machine=plus` or `?machine=128` to start 
 **The desk:** there are no ordinary buttons; every control is a piece of 80s hardware. Hover over one for a label.
 
 - TV channels 1-3 pick the ZX Spectrum 48K, the Spectrum+ (a 48K in the Spectrum+ case) or the 128K; the choice is remembered. Loading a 128K snapshot switches to the 128K by itself. ZOOM (or a double-click on the picture) is full screen; POWER pauses.
-- The Datacorder: STOP/EJECT opens a tape, snapshot or ROM; PLAY, REW, FF (next block), PAUSE; the counter and the tape on the reels follow the tape. The SPEED switch is NORMAL (real time), FAST (full speed while the tape plays) or INSTANT (ROM trap). AUTO LOAD resets and starts the tape on insert. Click the cassette to see its blocks.
+- The Datacorder: STOP/EJECT opens a tape, snapshot or ROM; PLAY, REW, FF (next block), PAUSE; the counter and the tape on the reels follow the tape. The SPEED switch is NORMAL (real time), FAST (full speed while the tape plays) or INSTANT (ROM trap for standard blocks; games with loaders of their own run flat out without sound or pictures, with their edge-waiting loops skipped). AUTO LOAD resets and starts the tape on insert, at the part for the model (48K or 128K version); on the 128K a tape for the 48K only loads in 48 BASIC. Click the cassette to see its parts and blocks, and click one to wind there.
+- The tape plays when a loader listens for it and stops at the end of a block when it stops listening (loader detection, after Fuse), so multi-load games find their next part waiting; when the tape has run out and a game keeps waiting, the screen offers to rewind, wind to a part or put in another tape. STOP keeps the tape still until PLAY.
 - The reset button is on the side of the computer.
 - Multiface One: the red button freezes the machine and shows its menu on the TV screen, in the Spectrum's font: SAVE (.SNA download), LOAD, TURBO, RESET, RETURN.
 - The joystick: click it to plug it in on the arrow keys (Left Alt = fire); each click (or F10) changes the kind, shown on its base: Kempston, Sinclair (Interface 2, keys 6-0), Cursor (keys 5-8, fire 0), then unplugged.
@@ -23,7 +24,7 @@ Then open http://localhost:8048 (add `?machine=plus` or `?machine=128` to start 
 - Shortcuts on the function keys: F1 manual, F2 software catalogue, F3 open a file, F4 Multiface, F6 tape play/stop, F7 rewind, F8 reset, F9 tape speed, F10 joystick, F11 full screen, Pause pauses. Volume and picture: PgUp/PgDn (or Num + -) volume, Home (or Num *) sound off/on, End (or Num /) picture: colour, black & white, green screen. The mouse wheel over the TV sets the volume (with Shift, the colour); clicking the words VOLUME and COLOUR mutes and changes the picture. The TV remembers these settings.
 - On a phone or tablet, plugging in the joystick shows a touch stick (left thumb) and FIRE (right thumb). A real joystick or gamepad (USB or Bluetooth, through the Gamepad API) works as the chosen kind and hides the touch stick: press one of its buttons first so the browser sees it.
 - Saving, as in 1982: press REC (F5), then SAVE from BASIC or a game's save option; it records onto a tape of your own on the rack ("<game> saves", or "My programs" after a reset). If REC is not pressed the screen asks; when a LOAD finds nothing in the recorder, the screen offers the rack's tapes. Works in full screen too.
-- The cassette rack holds your 8 tapes, kept in the browser so they work offline: catalogue downloads, files you open and Multiface saves go onto it (when it is full the TV asks which tape makes room); MY TAPES lists them and saves or loads a `.zxtapes` backup of the whole rack. An empty place on the rack (or F2, or the empty cassette window) opens a software catalogue on the TV, drawn in the Spectrum's own font like the 128's menu (type, arrows or CAPS SHIFT+5-8, ENTER, DELETE, BREAK, or click): it searches ZXDB through the [ZXInfo API](https://api.zxinfo.dk/v5/) and loads titles whose makers allow distribution straight from the World of Spectrum mirror on archive.org. `?find=<title>` in the address opens it with a search. Titles added after 2017 are listed but cannot be downloaded from a web page yet.
+- The cassette rack holds 32 tapes in four banks of 8 (A-D, the buttons under it), kept in the browser so they work offline: catalogue downloads, files you open and Multiface saves go onto it (when it is full the TV asks which tape makes room); MY TAPES lists them and saves or loads a `.zxtapes` backup of the whole rack. An empty place on the rack (or F2, or the empty cassette window) opens a software catalogue on the TV, drawn in the Spectrum's own font like the 128's menu (type, arrows or CAPS SHIFT+5-8, ENTER, DELETE, BREAK, or click): it searches ZXDB through the [ZXInfo API](https://api.zxinfo.dk/v5/) and loads titles whose makers allow distribution straight from the World of Spectrum mirror on archive.org. `?find=<title>` in the address opens it with a search. Titles added after 2017 are listed but cannot be downloaded from a web page yet. A download holding several tapes (two sides, a levels tape, or the 48K and 128K versions) becomes one tape in parts, named after what tells the files apart.
 
 On a PC the TV stands on the computer with the gadgets and recorder beside it; on a phone in landscape the TV sits beside the keyboard; in portrait everything is stacked.
 
@@ -40,9 +41,9 @@ Tapes go in the cassette recorder beside it, whose reels turn while the tape pla
 - ULA: 69,888 T-states per frame (48K), 50 Hz interrupt, border changes drawn at their T-state (loading stripes), FLASH, BRIGHT.
 - Keyboard with PC mappings (see the manual), cursor keys or Kempston joystick on the arrows.
 - Beeper sound through Web Audio, plus tape noise while loading.
-- Tapes: `.TAP` and `.TZX` (standard, turbo, pure tone, pulses, pure data, direct recording, pauses, loops).
-  Standard blocks load instantly through a ROM trap at `LD-BYTES`; turbo and custom loaders play the tape in real time, run at full speed by default.
-  On insert, the machine resets and types `LOAD ""` (on the 128K it picks Tape Loader from the start-up menu).
+- Tapes: `.TAP` and `.TZX` (standard, turbo, pure tone, pulses, pure data, direct recording, pauses, loops, stop the tape, stop the tape if in 48K mode, select block for parts).
+  Standard blocks load instantly through a ROM trap at `LD-BYTES`; turbo and custom loaders play the tape, run at full speed without pictures in INSTANT, where loops that only wait for the next edge are skipped up to just before it.
+  On insert, the machine resets and types `LOAD ""` (on the 128K it picks Tape Loader from the start-up menu, or starts in 48 BASIC for a 48K-only tape).
 - Snapshots: load `.SNA` and `.Z80` (v1/v2/v3) for the 48K and 128K, save `.SNA` of either.
 
 Not yet: 128K models and AY sound, memory/IO contention (some timing-critical demos and multicolour effects are off), and beam-racing paper rendering (the paper is drawn once per frame).
@@ -53,14 +54,14 @@ Not yet: 128K models and AY sound, memory/IO contention (some timing-critical de
 |---|---|
 | `index.html` | The page: the desk, the TV, the gadgets, the recorder and the manual's text |
 | `js/z80.js` | Z80 CPU: all documented and undocumented opcodes and flags |
-| `js/spectrum.js` | The 48K and 128K machines: memory paging, ULA (video, keyboard, beeper, EAR), tape trap, snapshots |
+| `js/spectrum.js` | The 48K and 128K machines: memory paging, ULA (video, keyboard, beeper, EAR), tape trap, loader detection and edge-loop skipping, snapshots |
 | `js/ay.js` | AY-3-8912 sound chip of the 128K: three tones, noise and envelopes |
-| `js/tape.js` | TAP/TZX parsing into an EAR pulse stream, plus the standard blocks for instant loading |
+| `js/tape.js` | TAP/TZX parsing into an EAR pulse stream, the standard blocks for instant loading, tape parts, and joining several tape files into one tape in parts |
 | `js/main.js` | Browser front end: picture, PC keyboard, audio output, joysticks and gamepads, file loading, tape controls, function keys |
 | `js/retro.js` | The TV (power, channels, knobs, static), the on-screen 48K, Spectrum+ and 128 keyboards, and the manual (fixed-shape pages, one or two at a time, longer chapters flowed onto more pages) |
 | `js/screenmenu.js` | Menus drawn on the Spectrum's own screen in the ROM font: the Multiface menu and the catalogue |
 | `js/catalogue.js` | Software catalogue: searches ZXDB through the ZXInfo API and loads games from the World of Spectrum mirror on archive.org |
-| `js/tapes.js` | The cassette rack: up to 8 tapes kept in the browser (IndexedDB), recording SAVEs, `.zxtapes` backups |
+| `js/tapes.js` | The cassette rack: four banks of 8 tapes kept in the browser (IndexedDB), recording SAVEs, `.zxtapes` backups |
 | `js/textfix.js` | Undoes the text enlargement of in-app browsers (Messenger and others) |
 | `js/rom48.js`, `js/rom128.js` | The ROMs as scripts, so `index.html` also works opened straight from disk |
 | `roms/48.rom`, `roms/128.rom` | The original ROMs |
@@ -80,7 +81,8 @@ Not yet: 128K models and AY sound, memory/IO contention (some timing-critical de
 
 - ZEXDOC and ZEXALL: all 67 groups pass (documented and undocumented flags).
 - ROM boots to the copyright screen; BASIC accepts typed input.
-- `hello.tap` loads and auto-runs both through the instant ROM trap and through real-time pulse loading (about 10 s emulated, with loading stripes).
+- `hello.tap` loads and auto-runs through the instant ROM trap, through real-time pulse loading (about 10 s emulated, with loading stripes) and as a loader of its own with edge loops skipped; tapes in parts and stop blocks are checked too (`node test/tape-test.js`).
+- Checked from the catalogue: Zynaps, Renegade, Target: Renegade, NARC and Sai Combat load on the 48K and the 128K (Speedlock 4 and 7, Hewson and turbo loaders, multi-load levels).
 
 ## Install it
 

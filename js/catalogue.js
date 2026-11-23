@@ -92,12 +92,38 @@ async function unzipEntry(buf, e) {
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
+// A download can hold several tapes: two sides, a levels tape, or the 48K and 128K versions. They become one tape
+// whose parts are named after what tells the files apart ("48k", "Side 2", "Levels"); the tape stops between parts.
+const baseName = n => n.split('/').pop().replace(/\.[^.]+$/, '');
+const naturally = (a, b) => a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' });
+function partLabels(names) {
+  const bases = names.map(baseName), low = bases.map(b => b.toLowerCase());
+  const same = (f, n) => low.every(b => f(b, n) === f(low[0], n));
+  let head = 0, tail = 0;
+  while (head < low[0].length && same((b, n) => b[n], head)) head++;
+  while (tail < low[0].length - head && same((b, n) => b[b.length - 1 - n], tail)) tail++;
+  while (head > 0 && /\w/.test(low[0][head - 1])) head--;  // whole words: "Side 1", not "1"
+  while (tail > 0 && /\w/.test(low[0][low[0].length - tail])) tail--;
+  const cut = () => bases.map(b => b.slice(head, b.length - tail).replace(/^[\s\-_.,()]+|[\s\-_.,()]+$/g, ''));
+  if (cut().every(x => x.length <= 2)) { // only "1" and "2", or "A" and "B": with the word before ("Side 1")
+    while (head > 0 && !/\w/.test(low[0][head - 1])) head--;
+    while (head > 0 && /\w/.test(low[0][head - 1])) head--;
+  }
+  return cut().map((x, i) => x || 'Part ' + (i + 1));
+}
 async function downloadGame(file, signal, onProgress) {
   const buf = (await fetchBytes(file.url, { signal, onProgress })).buffer;
-  const entry = zipEntries(buf).find(e => /\.(tap|tzx|z80|sna)$/i.test(e.name));
-  if (!entry) throw new Error('No tape or snapshot in the download');
-  return { name: entry.name.split('/').pop(), bytes: await unzipEntry(buf, entry) };
+  const entries = zipEntries(buf).filter(e => /\.(tap|tzx|z80|sna)$/i.test(e.name));
+  if (!entries.length) throw new Error('No tape or snapshot in the download');
+  const tapeEntries = entries.filter(e => /\.(tap|tzx)$/i.test(e.name)).sort((a, b) => naturally(baseName(a.name), baseName(b.name)));
+  if (tapeEntries.length < 2) return { name: entries[0].name.split('/').pop(), bytes: await unzipEntry(buf, entries[0]) };
+  const files = [];
+  for (const e of tapeEntries) files.push({ name: e.name, bytes: await unzipEntry(buf, e) });
+  const zipName = baseName(decodeURIComponent(file.path.split('/').pop()).replace(/\.zip$/i, ''));
+  return { name: zipName + '.tzx', bytes: combineTapes(files, partLabels(files.map(f => f.name))) };
 }
+// the model a ZXDB title is for: 48 (16K or 48K only), 128 (128K only) or 0 (both, or not said)
+const titleMachine = m => /^ZX-Spectrum (16K|48K)$/.test(m || '') ? 48 : /128/.test(m || '') && !/48/.test(m || '') ? 128 : 0;
 
 // ---------- the catalogue, on the Spectrum's screen in the style of the 128's menu ----------
 // rows: 0 title bar, 2 search line, 3 status, 5-16 list, 18-21 details of the chosen title, 23 keys
@@ -267,10 +293,10 @@ const catalogue = {
     };
     try {
       const { name, bytes } = await downloadGame(f, ctl.signal, onProgress);
-      const g = this.games[this.sel];
+      const g = this.games[this.sel], machine = titleMachine(g.machine);
       this.busy = false;
       closeCatalogue();
-      if (loadFile(name, bytes)) rackOffer({ title: g.title, name, bytes, source: 'archive' }); // and onto the rack
+      if (loadFile(name, bytes, { machine })) rackOffer({ title: g.title, name, bytes, source: 'archive', machine }); // and onto the rack
     } catch (err) {
       this.busy = false;
       this.status = err.cancelled ? 'Cancelled' : '!' + err.message; // ENTER on the same title tries again

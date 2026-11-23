@@ -39,6 +39,10 @@ class Spectrum {
     this.screen = new Uint32Array(SCREEN_W * SCREEN_H);
     this.tape = null;
     this.fastLoad = true;
+    this.autoTape = true;           // loader detection starts and stops the tape
+    this.lastReadT = 0; this.lastReadB = 0; this.loaderReads = 0; this.loaderStreak = 0; this.sameB = 0; this.waitSince = 0;
+    this.edgeLoop = { pc: -1, t: 0, b: 0, r: 0, len: 0, db: 0, dr: 0, writes: 0 };
+    this.writes = 0;                // memory writes so far: an edge loop writes nothing
     this.frames = 0;
     this.sampleRate = sampleRate || 44100;
     this.setMachine(machine || 48);
@@ -77,6 +81,13 @@ class Spectrum {
     this.slots[3] = this.ram[this.is128 ? p & 7 : 0];
     this.screenBank = this.ram[this.is128 && (p & 8) ? 7 : 5];
   }
+  // a 48K, or a 128K locked into 48K mode (48 BASIC, USR 0)
+  get in48Mode() { return !this.is128 || (this.pagingLocked && (this.port7ffd & 0x10) !== 0); }
+  // a 128K started in 48 BASIC: the 48 ROM paged in and the paging locked, as the start-up menu's 48 BASIC does
+  boot48() {
+    this.reset();
+    if (this.is128) { this.port7ffd = 0x30; this.pagingLocked = true; this.page(); }
+  }
   get basicROM() { return !this.is128 || (this.port7ffd & 0x10) !== 0; }
 
   reset() {
@@ -100,7 +111,7 @@ class Spectrum {
 
   // ---- bus ----
   read(a) { return this.slots[a >> 14][a & 0x3fff]; }
-  write(a, v) { if (a >= 0x4000) this.slots[a >> 14][a & 0x3fff] = v; }
+  write(a, v) { if (a >= 0x4000) this.slots[a >> 14][a & 0x3fff] = v; this.writes++; }
 
   input(port) {
     if ((port & 0xff) === 0x1f) return this.kempston;
@@ -110,8 +121,10 @@ class Spectrum {
     const hi = port >> 8;
     for (let r = 0; r < 8; r++) if (!(hi & (1 << r))) v &= this.keys[r];
     let ear;
+    if (this.tape) this.detectLoader();
     if (this.tape && this.tape.playing) {
       this.syncTape();
+      if (this.fastLoad) this.accelerate();
       ear = this.tape.ear;
     } else {
       ear = this.beeper; // issue 3 behaviour: EAR input follows the EAR output bit
@@ -140,6 +153,73 @@ class Spectrum {
     }
   }
 
+  // A loader polling the EAR bit (reads of port 0xFE close together, counting with INC B or DEC B)
+  // starts the tape; once it stops, a tape it started stops at the end of that block (so a multi-load waits
+  // at the next part, while a pause in which the loader decrypts still plays out).
+  // After Fuse's loader detection.
+  detectLoader() {
+    const cpu = this.cpu, t = cpu.tstates + this.frames * this.frameT, tape = this.tape;
+    const dt = t - this.lastReadT, db = (cpu.b - this.lastReadB) & 0xff;
+    this.lastReadT = t; this.lastReadB = cpu.b;
+    if (!this.autoTape || tape.held) return; // held: PAUSE pressed on the recorder
+    const looks = dt <= 500 && (db === 1 || db === 0xff);
+    if (tape.playing) {
+      if (!tape.autoStarted) return;
+      this.sameB = db === 0 ? this.sameB + 1 : 0; // a loader counts on every pass; a keyboard loop does not
+      if (dt > 1000 || (db !== 1 && db !== 0 && db !== 0xff) || this.sameB > 20) {
+        this.loaderStreak = 0;
+        if (++this.loaderReads >= 2) { tape.stopAtBlockEnd = true; this.loaderReads = 0; } // the pause after a block plays out
+      } else {
+        this.loaderReads = 0;
+        if (!looks) this.loaderStreak = 0;
+        else if (++this.loaderStreak >= 10) tape.stopAtBlockEnd = false; // a loader again: play on
+      }
+      return;
+    }
+    if (tape.atEnd) { // the tape has run out: a loader that keeps waiting for 1.5 s wants another part (a multi-load)
+      if (dt > 5000) { this.waitSince = t; this.loaderReads = 0; } else if (looks) this.loaderReads++;
+      if (this.loaderReads >= 10 && t - this.waitSince > this.cpuHz * 1.5) {
+        this.waitSince = t; this.loaderReads = 0;
+        if (this.onTapeEnd) this.onTapeEnd();
+      }
+    } else if (!looks) this.loaderReads = 0;
+    else if (++this.loaderReads >= 10) { this.loaderReads = 0; this.playTape(true); }
+  }
+  // INSTANT, for loaders of their own: a loop that only waits for the next edge (each pass: the same
+  // instruction, the same length, B up or down by one, no memory written, nothing else changed) skips the passes until just
+  // before that edge, as if they had run. Only while the level is as on the last pass (this read sees no edge),
+  // and with interrupts off.
+  accelerate() {
+    const cpu = this.cpu, a = this.edgeLoop, t = cpu.tstates;
+    const len = t - a.t, db = (cpu.b - a.b) & 0xff, dr = (cpu.r - a.r) & 0x7f;
+    const ear = this.tape.ear;
+    if (a.pc === cpu.pc && a.ear === ear && this.writes === a.writes && len > 0 && len === a.len && db === a.db && (db === 1 || db === 0xff) && dr === a.dr && !cpu.iff1 &&
+      a.c === cpu.c && a.de === cpu.de && a.hl === cpu.hl && a.ix === cpu.ix && a.iy === cpu.iy && a.sp === cpu.sp) {
+      const n = Math.min(Math.floor(this.tape.remain / len) - 1,  // keep one pass before the edge
+        db === 1 ? 0xff - cpu.b : cpu.b - 1,                     // B must not run out
+        Math.floor((this.frameT - t) / len) - 1);                // stay in this frame
+      if (n > 0) {
+        const skip = n * len;
+        cpu.tstates += skip;
+        cpu.b = (cpu.b + n * db) & 0xff;
+        cpu.r = (cpu.r & 0x80) | ((cpu.r + n * dr) & 0x7f);
+        this.tape.advance(skip);
+        this.tapeT = cpu.tstates;
+        this.lastReadT += skip; this.lastReadB = cpu.b; // the loader detection sees the passes as run
+      }
+    }
+    a.pc = cpu.pc; a.t = cpu.tstates; a.b = cpu.b; a.r = cpu.r; a.len = len; a.db = db; a.dr = dr;
+    a.writes = this.writes; a.ear = ear;
+    a.c = cpu.c; a.de = cpu.de; a.hl = cpu.hl; a.ix = cpu.ix; a.iy = cpu.iy; a.sp = cpu.sp;
+  }
+  // start the tape; auto: started by a loader (the trap or the detection), so it stops by itself too
+  playTape(auto) {
+    if (!this.tape) return;
+    this.tape.playing = true; this.tape.autoStarted = !!auto; this.tape.stopAtBlockEnd = false;
+    this.tape.is48 = this.in48Mode;
+    this.tapeT = this.cpu.tstates;
+  }
+
   syncTape() {
     const t = this.cpu.tstates;
     if (t > this.tapeT) { this.tape.advance(t - this.tapeT); this.tapeT = t; }
@@ -166,7 +246,8 @@ class Spectrum {
   }
 
   // ---- frame ----
-  runFrame() {
+  // quick: no sound samples and no picture (INSTANT loading runs many frames between two pictures)
+  runFrame(quick) {
     const cpu = this.cpu;
     this.borderAtStart = this.border;
     this.borderEvents.length = 0;
@@ -176,6 +257,7 @@ class Spectrum {
     while (cpu.tstates < frameT) {
       if (!intDone && cpu.tstates < intT && cpu.iff1 && !cpu.eiDelay) { cpu.interrupt(); intDone = true; }
       cpu.step();
+      if (quick) continue;
       while (cpu.tstates >= this.nextSampleT && this.nextSampleT < frameT) {
         const st = this.nextSampleT;
         if (this.tape && this.tape.playing && st > this.tapeT) { this.tape.advance(st - this.tapeT); this.tapeT = st; }
@@ -190,8 +272,8 @@ class Spectrum {
     this.tapeT = 0;
     this.audioLastT = 0;
     if (this.is128) this.ay.endFrame(frameT);
-    this.nextSampleT -= frameT;
-    this.renderScreen();
+    if (quick) { this.nextSampleT = this.tPerSample; this.audioAcc = 0; this.ay.acc = 0; } else this.nextSampleT -= frameT;
+    if (!quick) this.renderScreen();
     this.frames++;
     return this.audio.subarray(0, samples);
   }
@@ -248,20 +330,19 @@ class Spectrum {
   }
 
   // ---- tape ----
-  insertTape(tape) { this.tape = tape; this.tapeT = this.cpu.tstates; }
+  insertTape(tape) { this.tape = tape; this.tapeT = this.cpu.tstates; tape.is48 = this.in48Mode; }
 
   trapHandler(cpu) {
     if (cpu.pc === SA_LD_RET) { this.saving = false; return false; } // a save (or load) has finished
     if (cpu.pc === SA_BYTES && this.basicROM && this.onSave) return this.onSave(cpu);
     if (cpu.pc !== LD_BYTES || !this.basicROM) return false;
     if ((!this.tape || (!this.tape.playing && !this.tape.currentBlock())) && this.onNothingToLoad && this.onNothingToLoad(cpu)) return true;
-    if (!this.tape || this.tape.playing) return false;
+    if (!this.tape || this.tape.playing || this.tape.held) return false; // held: stopped on the recorder, PLAY goes on
     const b = this.tape.currentBlock();
     if (!b) return false;
     if (!this.fastLoad || !b.std) {
       // custom/turbo block or real-time loading: just start the tape
-      this.tape.playing = true;
-      this.tapeT = cpu.tstates;
+      this.playTape(true);
       return false;
     }
     const data = b.data;
@@ -288,6 +369,9 @@ class Spectrum {
     cpu.pc = cpu.pop();
     cpu.tstates += 100;
     this.tape.skipBlock();
+    // a pause block next (in which the program decrypts what it loaded, say): a real tape plays on through it
+    const next = this.tape.currentBlock();
+    if (next && next.pause) { this.playTape(true); this.tape.stopAtBlockEnd = true; }
     return true;
   }
 

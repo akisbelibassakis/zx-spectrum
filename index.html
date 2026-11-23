@@ -61,6 +61,7 @@
     <div id="rack" class="rack">
       <button class="racklabel" data-tip="My tapes: load, remove, back up">MY TAPES</button>
       <div class="slots"></div>
+      <div class="banks"></div>
     </div>
     <button id="joystick" class="joystick" aria-label="Joystick" aria-pressed="false" data-tip="Joystick: plug in">
       <span class="jbase"></span><span class="jstick"></span><span class="jfire"></span><span class="jfire2"></span><span class="jcable"></span><span class="jtype"></span>
@@ -282,7 +283,7 @@
           <li><b>6</b><b>ZX Spectrum.</b> Type on your PC keyboard or click the keys.</li>
           <li><b>7</b><b>Reset button</b> on the side of the computer.</li>
           <li><b>8</b><b>Datacorder.</b> STOP/EJ opens a tape; click the cassette to see what is on it. With no tape in, the cassette window opens the catalogue.</li>
-          <li><b>9</b><b>Cassette rack.</b> Your tapes: click one to load it, an empty place to find a game, MY TAPES for the list.</li>
+          <li><b>9</b><b>Cassette rack.</b> Your tapes: click one to load it, an empty place to find a game, MY TAPES for the list, A to D for the other banks.</li>
         </ol>
         <p>Rest the mouse on any of them to see its name. On a phone they are arranged to fit the screen.</p>
         <div class="pn">3</div>
@@ -327,13 +328,14 @@
       <article class="page" id="ch-settings">
         <h1>4. Settings</h1>
         <table>
-          <tr><td>SPEED switch</td><td><b>NORMAL</b>: real tape speed, with the border stripes and the loading sound. <b>FAST</b>: the computer runs flat out while the tape plays. <b>INSTANT</b>: programs go straight into memory.</td></tr>
-          <tr><td>AUTO LOAD</td><td>Putting in a tape resets the computer and starts loading it (LOAD "" on the 48K and Spectrum+, Tape Loader on the 128).</td></tr>
+          <tr><td>SPEED switch</td><td><b>NORMAL</b>: real tape speed, with the border stripes and the loading sound. <b>FAST</b>: the computer runs flat out while the tape plays. <b>INSTANT</b>: programs go straight into memory; games with a loader of their own (turbo, Speedlock and the like) run flat out with the picture still, so they load in seconds too.</td></tr>
+          <tr><td>AUTO LOAD</td><td>Putting in a tape resets the computer and starts loading it (LOAD "" on the 48K and Spectrum+, Tape Loader on the 128). On the 128, a game made only for the 48K loads in 48 BASIC, as many of them need. A tape with a 48K and a 128K version starts at the one for your model.</td></tr>
+          <tr><td>Tape parts and multi-load</td><td>Some tapes come in parts: two sides, a tape of levels, or the 48K and 128K versions. They go into the recorder as one tape, which stops between its parts. Click the cassette window to see the parts and their blocks; click one to wind the tape there. The tape starts by itself when a game listens for it, and stops at the end of a block when the game has what it wants, so a game that loads its levels one by one finds the next one waiting. If the tape runs out while a game still waits, the screen offers to rewind it, wind it to a part, or put in another tape. STOP keeps the tape still until you press PLAY.</td></tr>
           <tr><td>Counter</td><td>Shows how far the tape has played; the small button sets it to 000.</td></tr>
           <tr><td>Multiface</td><td>The red button freezes the game and shows its menu on the screen: SAVE downloads a snapshot, LOAD opens one, TURBO runs as fast as possible, RESET restarts, RETURN carries on. Choose with the arrows and ENTER, or press S, L, T, X or R; BREAK returns to the game.</td></tr>
           <tr><td>Software catalogue</td><td>Type a title and press ENTER: ZXDB, the database of everything made for the Spectrum, is searched. Move with the arrows (or CAPS SHIFT + 5 to 8), press ENTER to load, DELETE to go back and BREAK to leave. Titles in red cannot be downloaded: their makers do not allow it, or they are newer than the archive. You can also click a line. While a game downloads, the screen counts the seconds until the archive answers, then shows how much has arrived; BREAK cancels, and if the archive does not answer, ENTER tries again.</td></tr>
           <tr><td>Saving</td><td>As in 1982: press <b>REC</b> on the recorder (REC and PLAY go down together; F5 on a PC), then let the program or game SAVE. It records onto a tape of your own on the rack: <i>&lt;game&gt; saves</i>, or <i>My programs</i> after a reset, for what you write in BASIC. If you forget REC, the screen asks. To load it back, LOAD "" (or the game's load option): when the recorder has nothing to load, the screen lets you pick a tape from the rack, or rewind this one. STOP ends the recording.</td></tr>
-          <tr><td>My tapes</td><td>The rack keeps 8 tapes on this device, and they work offline: games from the catalogue, files you open and Multiface saves go onto it. When it is full the screen asks which tape makes room. Click <b>MY TAPES</b> on the rack for the list: ENTER loads, DELETE twice removes, O opens a file of your own, S saves a backup file of the whole rack and L loads one, on this or another device.</td></tr>
+          <tr><td>My tapes</td><td>The rack keeps 32 tapes on this device, in four banks of 8 (A to D: the buttons under the rack), and they work offline: games from the catalogue, files you open and Multiface saves go onto it, in the bank on show while it has room. When all are full the screen asks which tape makes room. Click <b>MY TAPES</b> on the rack for the list: LEFT and RIGHT (or A to D) change the bank, ENTER loads, DELETE twice removes, O opens a file of your own, S saves a backup file of the whole rack and L loads one, on this or another device.</td></tr>
           <tr><td>Joystick</td><td>Click it to plug it in; each click changes the kind, shown on its base: <b>Kempston</b> (most games), <b>Sinclair</b> (Interface 2: keys 6 to 0), <b>Cursor</b> (Protek/AGF: keys 5 to 8, fire 0), then unplugged. Choose the one the game's menu offers. The arrow keys and Left Alt work it. On a phone or tablet a stick appears under your left thumb and a FIRE button under your right. A real joystick or gamepad (USB or Bluetooth) works too: press one of its buttons so the browser sees it; the touch stick then goes away, and its d-pad or stick and main buttons work the kind chosen here.</td></tr>
           <tr><td>Television</td><td><b>ZOOM</b> (or a double-click on the picture) fills the screen; POWER pauses everything. <b>Volume:</b> drag the VOLUME knob, or roll the mouse wheel anywhere over the TV; click the word VOLUME to turn the sound off and on. <b>Colour:</b> drag the COLOUR knob or hold Shift with the wheel; click the word COLOUR for black and white or a green-screen monitor. The TV remembers its settings, so if you left it silent it stays silent.</td></tr>
         </table>

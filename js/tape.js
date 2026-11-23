@@ -5,10 +5,11 @@
 const PILOT = 2168, SYNC1 = 667, SYNC2 = 735, BIT0 = 855, BIT1 = 1710;
 const PILOT_HEADER = 8063, PILOT_DATA = 3223;
 const MS = 3500; // T-states per millisecond
+const STOP = -1, STOP48 = -2; // markers in the pulse list: TZX "stop the tape", and "stop the tape if in 48K mode"
 
 class Tape {
   constructor() {
-    this.pulses = [];    // >0: hold level for n T-states then toggle; <0 (pause): hold -n T-states then set level low
+    this.pulses = [];    // >0: hold level for n T-states then toggle; <0 (pause): hold -n T-states then set level low; STOP, STOP48: markers
     this.blocks = [];    // { data: Uint8Array|null, pulseStart, pulseEnd, std: bool, desc }
     this.blockIdx = 0;
     this.pos = 0;        // index into pulses
@@ -16,19 +17,55 @@ class Tape {
     this.ear = 0;
     this.playing = false;
     this.name = '';
+    this.parts = [];     // separately loadable parts (48K / 128K versions, sides): { name, block }
+    this.is48 = false;   // the machine is in 48K mode: STOP48 markers stop the tape
   }
 
   get loaded() { return this.blocks.length > 0; }
   get atEnd() { return this.pos >= this.pulses.length; }
 
   rewind() {
-    this.blockIdx = 0; this.pos = 0; this.ear = 0; this.playing = false;
-    this.remain = this.pulses.length ? this.startPulse(0) : 0;
+    this.ear = 0; this.playing = false; this.held = false; this.autoStarted = false; this.stopAtBlockEnd = false;
+    this.windTo(0);
+  }
+  // wind to the start of a block (the tape stops)
+  windTo(block) {
+    const b = this.blocks[block];
+    this.blockIdx = b ? block : this.blocks.length;
+    this.pos = b ? b.pulseStart : this.pulses.length;
+    this.playing = false;
+    this.settle();
+  }
+  // the part a block belongs to
+  partAt(block) {
+    let p = -1;
+    this.parts.forEach((x, i) => { if (x.block <= block) p = i; });
+    return p;
   }
 
   startPulse(i) {
     const p = this.pulses[i];
     return p < 0 ? -p : p;
+  }
+  // at a new position: act on markers there, then start its pulse; false if the tape stopped
+  settle() {
+    let going = true;
+    for (;;) {
+      while (this.blockIdx < this.blocks.length && this.pos >= this.blocks[this.blockIdx].pulseEnd) {
+        this.blockIdx++;
+        if (this.stopAtBlockEnd) { this.stopAtBlockEnd = false; going = false; } // the loader asked for a stop
+      }
+      const p = this.pulses[this.pos];
+      if (p === STOP || p === STOP48) {
+        this.pos++;
+        if (p === STOP || this.is48) going = false; // the level stays, so the last edge before it counts
+        continue;
+      }
+      break;
+    }
+    this.remain = this.pos < this.pulses.length ? this.startPulse(this.pos) : 0;
+    if (!going) this.playing = false;
+    return going;
   }
 
   // Advance the tape by dt T-states.
@@ -40,14 +77,7 @@ class Tape {
       dt -= this.remain;
       if (this.pulses[this.pos] > 0) this.ear ^= 1; else this.ear = 0;
       this.pos++;
-      while (this.blockIdx < this.blocks.length && this.pos >= this.blocks[this.blockIdx].pulseEnd) this.blockIdx++;
-      if (this.pulses[this.pos] === -1) { // TZX "stop the tape"
-        this.ear = 0; this.pos++; this.playing = false;
-        while (this.blockIdx < this.blocks.length && this.pos >= this.blocks[this.blockIdx].pulseEnd) this.blockIdx++;
-        if (this.pos < this.pulses.length) this.remain = this.startPulse(this.pos);
-        return;
-      }
-      if (this.pos < this.pulses.length) this.remain = this.startPulse(this.pos);
+      if (!this.settle()) return;
     }
   }
 
@@ -57,7 +87,9 @@ class Tape {
     if (!b) return;
     this.blockIdx++;
     this.pos = b.pulseEnd;
-    this.remain = this.pos < this.pulses.length ? this.startPulse(this.pos) : 0;
+    const playing = this.playing;
+    this.settle();
+    this.playing = playing; // a trapped load goes on as it was
   }
 
   currentBlock() { return this.blocks[this.blockIdx] || null; }
@@ -84,8 +116,8 @@ class Tape {
     this.addPause(pauseMs);
     this.blocks.push({ data, pulseStart: start, pulseEnd: this.pulses.length, std: true, desc: desc || describeBlock(data) });
   }
-  addOther(start, desc) {
-    if (this.pulses.length > start) this.blocks.push({ data: null, pulseStart: start, pulseEnd: this.pulses.length, std: false, desc });
+  addOther(start, desc, pause) {
+    if (this.pulses.length > start) this.blocks.push({ data: null, pulseStart: start, pulseEnd: this.pulses.length, std: false, desc, pause: !!pause });
   }
 
   static fromTAP(buf, name) {
@@ -111,10 +143,12 @@ class Tape {
     const w = i => buf[i] | (buf[i + 1] << 8);
     const w3 = i => buf[i] | (buf[i + 1] << 8) | (buf[i + 2] << 16);
     const dw = i => (buf[i] | (buf[i + 1] << 8) | (buf[i + 2] << 16) | (buf[i + 3] << 24)) >>> 0;
-    let i = 10, loopStart = -1, loopCount = 0;
+    let i = 10, loopStart = -1, loopCount = 0, n = 0;
+    const firstBlock = [], selects = []; // per TZX block: the first of our blocks at or after it; select blocks
     while (i < buf.length) {
       const id = buf[i++];
       const start = t.pulses.length;
+      firstBlock[n++] = t.blocks.length;
       switch (id) {
         case 0x10: { // standard speed data
           const pause = w(i), len = w(i + 2);
@@ -175,8 +209,8 @@ class Tape {
         case 0x18: case 0x19: i += 4 + dw(i); break; // CSW / generalized data: not supported
         case 0x20: { // pause / stop the tape
           const pause = w(i);
-          if (pause) t.addPause(pause); else t.pulses.push(-1);
-          t.addOther(start, pause ? 'Pause' : 'Stop');
+          if (pause) t.addPause(pause); else t.pulses.push(STOP);
+          t.addOther(start, pause ? 'Pause' : 'Stop', pause > 0);
           i += 2;
           break;
         }
@@ -189,8 +223,17 @@ class Tape {
           break;
         case 0x26: i += 2 + w(i) * 2; break;        // call sequence (ignored)
         case 0x27: break;                            // return
-        case 0x28: i += 2 + w(i); break;            // select block
-        case 0x2a: i += 4; break;                    // stop if 48K
+        case 0x28: {                                 // select block: the parts of the tape
+          let p = i + 3;
+          for (let k = 0; k < buf[i + 2]; k++) {
+            const rel = (w(p) << 16) >> 16, len = buf[p + 2];
+            selects.push({ name: String.fromCharCode.apply(null, buf.subarray(p + 3, p + 3 + len)).trim(), at: n - 1 + rel });
+            p += 3 + len;
+          }
+          i += 2 + w(i);
+          break;
+        }
+        case 0x2a: t.pulses.push(STOP48); i += 4; break; // stop the tape if in 48K mode
         case 0x2b: i += 5; break;                    // signal level
         case 0x30: i += 1 + buf[i]; break;          // text description
         case 0x31: i += 2 + buf[i + 1]; break;      // message
@@ -202,10 +245,78 @@ class Tape {
           throw new Error('Unsupported TZX block 0x' + id.toString(16));
       }
     }
+    firstBlock[n] = t.blocks.length;
+    for (const s of selects) {
+      const block = firstBlock[Math.max(0, Math.min(n, s.at))];
+      if (block < t.blocks.length) t.parts.push({ name: s.name || 'Part ' + (t.parts.length + 1), block });
+    }
     t.rewind();
     return t;
   }
 }
+
+// Several tape files (sides, or 48K and 128K versions) as one TZX: a select block names the parts,
+// and the tape stops between them. files: [{ name, bytes }] in order; labels: the part names.
+function combineTapes(files, labels) {
+  const join = parts => { // Uint8Arrays and arrays of bytes into one Uint8Array
+    const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+    let o = 0;
+    for (const p of parts) { out.set(p, o); o += p.length; }
+    return out;
+  };
+  const u16 = v => [v & 0xff, (v >> 8) & 0xff];
+  const bodies = files.map(f => {
+    if (/\.tzx$/i.test(f.name)) return f.bytes.subarray(10);
+    const b = [];
+    for (let i = 0; i + 2 <= f.bytes.length;) { // TAP blocks as TZX standard speed blocks
+      const len = f.bytes[i] | (f.bytes[i + 1] << 8);
+      if (!len || i + 2 + len > f.bytes.length) break;
+      b.push([0x10, ...u16(1000), ...u16(len)], f.bytes.subarray(i + 2, i + 2 + len));
+      i += 2 + len;
+    }
+    return join(b);
+  });
+  // the select block, then each part followed by a "stop the tape"; offsets count TZX blocks
+  const count = body => { let k = 0; for (let i = 0; i < body.length; k++) i = tzxNext(body, i); return k; };
+  const sel = [];
+  let rel = 1;
+  bodies.forEach((body, k) => {
+    const text = Array.from(String(labels[k]).slice(0, 30), c => c.charCodeAt(0) & 0x7f);
+    sel.push(...u16(rel), text.length, ...text);
+    rel += count(body) + 1;
+  });
+  const parts = [[...'ZXTape!'].map(c => c.charCodeAt(0)).concat([0x1a, 1, 20, 0x28, ...u16(sel.length + 1), bodies.length], sel)];
+  for (const body of bodies) parts.push(body, [0x20, 0, 0]);
+  return join(parts);
+}
+// the position after the TZX block that starts at i (its ID byte)
+function tzxNext(b, i) {
+  const w = k => b[k] | (b[k + 1] << 8), w3 = k => w(k) | (b[k + 2] << 16), dw = k => w(k) + w(k + 2) * 65536;
+  const id = b[i++];
+  switch (id) {
+    case 0x10: return i + 4 + w(i + 2);
+    case 0x11: return i + 18 + w3(i + 15);
+    case 0x12: return i + 4;
+    case 0x13: return i + 1 + b[i] * 2;
+    case 0x14: return i + 10 + w3(i + 7);
+    case 0x15: return i + 8 + w3(i + 5);
+    case 0x18: case 0x19: return i + 4 + dw(i);
+    case 0x20: case 0x23: case 0x24: return i + 2;
+    case 0x21: case 0x30: return i + 1 + b[i];
+    case 0x22: case 0x25: case 0x27: return i;
+    case 0x26: return i + 2 + w(i) * 2;
+    case 0x28: case 0x32: return i + 2 + w(i);
+    case 0x2a: return i + 4;
+    case 0x2b: return i + 5;
+    case 0x31: return i + 2 + b[i + 1];
+    case 0x33: return i + 1 + b[i] * 3;
+    case 0x35: return i + 0x14 + dw(i + 0x10);
+    case 0x5a: return i + 9;
+    default: return b.length; // unknown: the rest is one block
+  }
+}
+// the model a part is for, from its name: 128, 48 or 0 (not said)
+const partMachine = name => /128/.test(name) ? 128 : /48/.test(name) ? 48 : 0;
 
 function describeBlock(d) {
   if (d[0] === 0 && d.length === 19) {
@@ -216,4 +327,4 @@ function describeBlock(d) {
   return 'Data (' + (d.length - 2) + ' bytes)';
 }
 
-if (typeof module !== 'undefined') module.exports = { Tape };
+if (typeof module !== 'undefined') module.exports = { Tape, combineTapes, partMachine };

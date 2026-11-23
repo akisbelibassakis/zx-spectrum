@@ -292,29 +292,163 @@ setPower(true);
 retroLoop();
 
 // ---------- the manual: two pages side by side on wide screens, one on phones ----------
+// Every page is the same height (room.css). A chapter is written as one <article>; when it is longer than a page,
+// paginate() flows the rest onto continuation pages, splitting tables and lists between rows, and numbers the pages.
 const manual = document.getElementById('manual');
-const allPages = [...manual.querySelectorAll('.page')];
-let pageNo = 0, shownPage = document.getElementById('ch-contents');
-const spreadSize = () => (matchMedia('(min-width: 900px)').matches ? 2 : 1);
-// two pages side by side include the blank insides of the covers; one at a time skips them
-const bookPages = () => (spreadSize() === 2 ? allPages : allPages.filter(p => !p.classList.contains('blank')));
+const pagesBox = manual.querySelector('.pages');
+const chapters = [...manual.querySelectorAll('.page:not(.blank)')];
+const endBlank = pagesBox.lastElementChild; // the inside of the back cover
+const pageParts = n => n.matches('.pn, .stripes'); // fixed parts of a page, not part of the text
+// the text of each chapter, in order; tables and lists remember their rows so they can be split and put back
+for (const ch of chapters) {
+  ch.dataset.ch = ch.id.slice(3);
+  ch.flow = [...ch.children].filter(n => !pageParts(n));
+  for (const n of ch.flow) {
+    const box = n.tagName === 'TABLE' ? n.tBodies[0] : n.tagName === 'OL' || n.tagName === 'UL' ? n : null;
+    if (box) { n.box = box; n.items = [...box.children]; }
+  }
+}
+const allPages = () => [...pagesBox.querySelectorAll('.page')];
+let pageNo = 0, shownPage = document.getElementById('ch-contents'), paginatedFor = '';
+const spreadSize = () => (innerWidth > innerHeight ? 2 : 1); // landscape: two pages side by side; portrait: one
+// the size of the open book: pages of one shape (11:14) as large as fit, up to 550 x 700; the text scales with them
+// down to 85%, below that a page holds less and the chapter takes more pages
+const PAGE_W = 550, PAGE_H = 700;
+function layoutBook() {
+  const k = spreadSize(), W = innerWidth, H = innerHeight;
+  const tabtop = k === 1 && W < 700; // phones held upright: the tabs go above the page
+  const tabslim = !tabtop && H < 520; // phones held sideways: slim tabs with only the chapter number
+  const availW = tabtop ? W - 40 : tabslim ? W - 112 : W - 236; // room for the tabs and the close button on the right
+  const availH = tabtop ? H - 56 - 34 - 12 : H - 24;
+  const ph = Math.floor(Math.min(PAGE_H, availH, availW / k * PAGE_H / PAGE_W)), pw = Math.floor(ph * PAGE_W / PAGE_H);
+  const z = Math.min(1, Math.max(0.85, ph / PAGE_H));
+  manual.style.setProperty('--pw', pw + 'px');
+  manual.style.setProperty('--ph', ph + 'px');
+  manual.style.setProperty('--z', z);
+  manual.style.setProperty('--bw', k * pw + 'px');
+  manual.classList.toggle('tabtop', tabtop);
+  manual.classList.toggle('tabslim', tabslim);
+  manual.classList.toggle('compact', pw / z < 480);
+  manual.classList.toggle('single', k === 1); // one page at a time: the binding down its left edge
+  return k + ':' + pw + 'x' + ph;
+}
+// two pages side by side include the blank insides of the covers (the back one only to fill the last spread);
+// one at a time skips them
+function bookPages() {
+  const all = allPages();
+  if (spreadSize() === 1) return all.filter(p => !p.classList.contains('blank'));
+  return all.length % 2 ? all.filter(p => p !== endBlank) : all;
+}
+function paginate() {
+  const key = layoutBook();
+  if (key === paginatedFor) return;
+  paginatedFor = key;
+  // put every chapter back together on its first page
+  pagesBox.querySelectorAll('.page.cont, [data-piece]').forEach(p => p.remove());
+  for (const ch of chapters) {
+    for (const n of ch.flow) { if (n.items) n.box.append(...n.items); ch.insertBefore(n, ch.querySelector(':scope > .pn')); }
+  }
+  // measure one page at a time, at the width it has in the book
+  allPages().forEach(p => { p.hidden = true; });
+  for (const ch of chapters) {
+    let page = ch;
+    const show = p => { p.hidden = false; };
+    const fits = () => page.scrollHeight <= page.clientHeight;
+    const add = n => page.insertBefore(n, page.querySelector(':scope > .pn'));
+    const text = () => [...page.children].filter(n => !pageParts(n) && n.tagName !== 'H1');
+    const turn = () => { // a new page; a heading left at the foot of the old one comes along
+      const p = document.createElement('article');
+      p.className = 'page cont';
+      p.dataset.ch = ch.dataset.ch;
+      p.innerHTML = '<div class="pn"></div>';
+      const last = text().pop(), keep = last && last.tagName === 'H2' && text().length > 1 ? last : null;
+      page.hidden = true;
+      page.after(p);
+      page = p;
+      show(page);
+      if (keep) add(keep);
+    };
+    // the first words of a paragraph that fit on this page, and the rest of it
+    const splitToFit = n => {
+      const gaps = [], walk = document.createTreeWalker(n, NodeFilter.SHOW_TEXT);
+      for (let t; (t = walk.nextNode());) for (const m of t.data.matchAll(/\s+/g)) if (m.index) gaps.push([t, m.index]);
+      const part = (from, to) => {
+        const r = document.createRange(), p = n.cloneNode(false);
+        if (from) r.setStart(...from); else r.setStart(n, 0);
+        if (to) r.setEnd(...to); else r.setEnd(n, n.childNodes.length);
+        p.append(r.cloneContents());
+        p.dataset.piece = '';
+        return p;
+      };
+      let lo = -1, hi = gaps.length - 1;
+      while (lo < hi) { // binary search for the most words that fit
+        const mid = (lo + hi + 1) >> 1, head = part(null, gaps[mid]);
+        add(head);
+        const ok = fits();
+        head.remove();
+        if (ok) lo = mid; else hi = mid - 1;
+      }
+      if (lo < 0) return null;
+      const tail = part(gaps[lo], null);
+      tail.classList.add('cont');
+      return [part(null, gaps[lo]), tail];
+    };
+    show(page);
+    ch.flow.forEach(n => n.remove());
+    const queue = [...ch.flow];
+    while (queue.length) {
+      const n = queue.shift();
+      add(n);
+      if (fits()) continue;
+      n.remove();
+      if (!n.items) { // a paragraph is split between pages; a picture goes to the next page whole
+        const parts = n.tagName === 'P' ? splitToFit(n) : null;
+        if (parts) { add(parts[0]); turn(); queue.unshift(parts[1]); continue; }
+        if (text().length) turn();
+        add(n); // longer than a whole page: it scrolls
+        continue;
+      }
+      // a table or a list: as many rows as fit, the rest in a copy of it on the next page
+      let piece = n, box = n.box;
+      box.replaceChildren();
+      add(piece);
+      for (const item of n.items) {
+        box.append(item);
+        if (fits() || (box.children.length === 1 && !text().some(t => t !== piece))) continue;
+        item.remove();
+        if (!box.children.length) piece.remove();
+        turn();
+        piece = n.cloneNode(false);
+        box = piece;
+        if (n.box !== n) { box = n.box.cloneNode(false); piece.append(box); }
+        add(piece);
+        box.append(item);
+      }
+    }
+    page.hidden = true;
+  }
+  // page numbers, in the corners and on the contents page
+  bookPages().filter(p => !p.classList.contains('blank')).forEach((p, i) => { p.querySelector('.pn').textContent = i + 1; });
+  manual.querySelectorAll('.toc button').forEach(b => { b.querySelector('b').textContent = chapter(b.dataset.ch).querySelector('.pn').textContent; });
+}
 // show a page (an element, or a number in the current list) with its facing page
 function showPage(target) {
+  paginate();
+  if (!shownPage.isConnected) shownPage = chapter(shownPage.dataset.ch); // its page went away in a new layout
   const list = bookPages(), k = spreadSize();
-  let i = typeof target === 'number' ? target : Math.max(0, list.indexOf(target));
+  let i = typeof target === 'number' ? target : Math.max(0, list.indexOf(target && target.isConnected ? target : shownPage));
   i = Math.max(0, Math.min(list.length - 1, i));
   i -= i % k;
   pageNo = i;
   const shown = list.slice(i, i + k);
   shownPage = shown.find(p => !p.classList.contains('blank')) || shown[0];
-  allPages.forEach(p => { p.hidden = !shown.includes(p); });
-  manual.classList.toggle('single', k === 1); // one page at a time: no binding down the middle
-  manual.querySelectorAll('.tabs button').forEach(t => t.classList.toggle('on', shown.some(p => p.id === 'ch-' + t.dataset.ch)));
+  allPages().forEach(p => { p.hidden = !shown.includes(p); });
+  manual.querySelectorAll('.tabs button').forEach(t => t.classList.toggle('on', shown.some(p => p.dataset.ch === t.dataset.ch)));
   manual.querySelector('.prev').hidden = i === 0;
   manual.querySelector('.next').hidden = i + k >= list.length;
 }
 const chapter = id => document.getElementById('ch-' + id);
-document.getElementById('manualBook').onclick = () => { showPage(shownPage); manual.showModal(); };
+document.getElementById('manualBook').onclick = () => { manual.showModal(); showPage(shownPage); };
 manual.querySelectorAll('.tabs button, .toc button').forEach(b => { b.onclick = () => showPage(chapter(b.dataset.ch)); });
 manual.querySelector('.prev').onclick = () => showPage(pageNo - spreadSize());
 manual.querySelector('.next').onclick = () => showPage(pageNo + spreadSize());
@@ -356,7 +490,12 @@ if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
 // ?manual=<n> or ?manual=<chapter> (using, desk, keys, settings, about) opens the manual there
 {
   const m = new URLSearchParams(location.search).get('manual');
-  if (m) { showPage(/^\d+$/.test(m) ? allPages[parseInt(m, 10) - 1] || allPages[1] : chapter(m)); manual.showModal(); }
+  if (m) {
+    manual.showModal();
+    paginate();
+    const numbered = allPages().filter(p => !p.classList.contains('blank'));
+    showPage(/^\d+$/.test(m) ? numbered[parseInt(m, 10) - 1] || numbered[0] : chapter(m));
+  }
 }
 
 // ---------- volume and picture: the knobs, the mouse wheel over the TV, the number pad, the knob labels ----------

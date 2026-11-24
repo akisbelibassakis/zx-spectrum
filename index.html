@@ -213,7 +213,20 @@
     </div>
     <button class="bclose" aria-label="Close">&#10005;</button>
     <div class="pages">
-      <article class="page blank" aria-hidden="true"></article>
+      <article class="page quick" id="ch-quick">
+        <h1>Quick start</h1>
+        <ol>
+          <li><b>1</b><b>Choose a computer</b> with the television's buttons: <b>48K</b>, <b>+</b> or <b>128</b>.</li>
+          <li><b>2</b><b>Find a game:</b> press <b>F2</b> (or click an empty place on the rack). Type a title, press ENTER, choose with the arrow keys and press ENTER again. The game loads by itself.</li>
+          <li><b>3</b><b>Play</b> with the keys the game shows, or click the <b>joystick</b> to plug it in: the arrow keys move and Left Alt fires.</li>
+          <li><b>4</b><b>Play it again later:</b> every game you load goes onto the <b>cassette rack</b>; click it there.</li>
+          <li><b>5</b><b>Your own games:</b> in the catalogue press DOWN, then <b>Z</b> for a zip or <b>F</b> for a folder.</li>
+          <li><b>6</b><b>Keep your place</b> in a game: the Multiface's red button (<b>F4</b>), then SAVE.</li>
+          <li><b>7</b><b>Stuck?</b> <b>Esc</b> is BREAK, which leaves a menu or stops a program; <b>F8</b> resets the computer; <b>F1</b> opens this manual.</li>
+        </ol>
+        <p>The chapters tell the rest.</p>
+        <div class="pn">1</div>
+      </article>
       <article class="page contents" id="ch-contents">
         <h1>Contents</h1>
         <ol class="toc">
@@ -234,13 +247,15 @@
         <p>This booklet is for anyone who has never used a ZX Spectrum, and for those who used one long ago and have forgotten how. Everything on the desk works: the computer, the television, the recorder and the gadgets around them.</p>
         <p>And the whole Spectrum library is a few keys away: the software catalogue searches <b>ZXDB</b>, the database of everything ever made for the Spectrum, and loads the games straight from the <b>World of Spectrum</b> archive, with nothing to download or unpack.</p>
         <ol>
-          <li><b>1</b>The computer. Choose it with the television's channel buttons: <b>48K</b>, <b>+</b> or <b>128</b>. Changing channel resets it.</li>
+          <li><b>1</b>The computer. Choose it with the television's channel buttons: <b>48K</b>, <b>+</b> or <b>128</b>. Changing channel resets it. Switched on, the 48K and the Spectrum+ show the copyright message (figure 2); the 128 shows its menu.</li>
           <li><b>2</b>A tape. Press <b>STOP/EJ</b> on the recorder and pick a <b>.tap</b> or <b>.tzx</b> tape, a <b>.z80</b> or <b>.sna</b> snapshot, or a ROM. You can also drop files anywhere on the page, or find a game in the <b>software catalogue</b> (F2, an empty place on the rack, or the empty cassette window), or in your own libraries of games: chapter 4 shows how. Every tape you load goes onto your <b>cassette rack</b>, so you can play it again later, even offline.</li>
           <li><b>3</b>The recorder. With <b>AUTO LOAD</b> on, the tape starts by itself. Otherwise type the load command and press <b>PLAY</b>.</li>
         </ol>
+        <figure class="tvfig"><svg viewBox="0 0 320 250" role="img" aria-label="The television after switching on: © 1982 Sinclair Research Ltd at the bottom"><path d="M34 18 Q160 6 286 18 Q306 20 308 40 Q316 125 308 210 Q306 230 286 232 Q160 244 34 232 Q14 230 12 210 Q4 125 12 40 Q14 20 34 18 Z"/><image href="manual/fig-copyright.png" x="32" y="29" width="256" height="192"/></svg><figcaption>Figure 2</figcaption></figure>
         <h2>Loading a program by hand</h2>
         <p>On the 48K and the Spectrum+, type</p>
         <div class="fig">LOAD ""<br>(J, then SYMBOL SHIFT + P twice, then ENTER)</div>
+        <figure class="tvfig"><svg viewBox="0 0 320 250" role="img" aria-label="LOAD "" typed at the bottom of the screen, followed by the cursor"><path d="M34 18 Q160 6 286 18 Q306 20 308 40 Q316 125 308 210 Q306 230 286 232 Q160 244 34 232 Q14 230 12 210 Q4 125 12 40 Q14 20 34 18 Z"/><image href="manual/fig-load.png" x="32" y="29" width="256" height="192"/></svg><figcaption>Figure 3</figcaption></figure>
         <p>and press PLAY. The border flashes while the program loads. On the 128, choose <b>Tape Loader</b> from the menu instead.</p>
         <p>Click the cassette to see what is on the tape; click a line to wind the tape to it.</p>
         <h2>If something goes wrong</h2>
@@ -344,7 +359,11 @@
           <li><b>2</b>Type part of a title, say <i>jet set</i>, and press <b>ENTER</b>. ZXDB, the database of Spectrum software, and your libraries are searched together.</li>
           <li><b>3</b>Move with the arrow keys and press <b>ENTER</b>. When a game has several tapes, choose one; the game downloads and loads by itself.</li>
         </ol>
-        <p>In the list, titles in black can be loaded; <span class="red">red</span> ones cannot, because their makers do not allow it or they are newer than the archive. A <b>green star</b> marks a game you have in a library: ENTER loads your file. Titles in <b>green</b> are only in your libraries.</p>
+        <figure class="tvfig big"><svg viewBox="0 0 320 250" role="img" aria-label="The first page of the catalogue: the Title line, YOUR LIBRARIES with My games.zip, then + Add a folder, + Add a zip, + Open one file"><path d="M34 18 Q160 6 286 18 Q306 20 308 40 Q316 125 308 210 Q306 230 286 232 Q160 244 34 232 Q14 230 12 210 Q4 125 12 40 Q14 20 34 18 Z"/><image href="manual/fig-catalogue.png" x="32" y="29" width="256" height="192"/></svg><figcaption>Figure 4</figcaption></figure>
+
+        <p>In the list, titles in black can be loaded; <span class="red">red</span> ones cannot, because their makers do not allow it or they are newer than the archive. A <b>green star</b> marks a game you have in a library: ENTER loads your file. Titles in <b>green</b> are only in your libraries. Under the list are the chosen title's publisher, year, type and machine (figure 5).</p>
+        <figure class="tvfig big"><svg viewBox="0 0 320 250" role="img" aria-label="A search for manic miner: Manic Miner and other titles, and the details of Manic Miner underneath"><path d="M34 18 Q160 6 286 18 Q306 20 308 40 Q316 125 308 210 Q306 230 286 232 Q160 244 34 232 Q14 230 12 210 Q4 125 12 40 Q14 20 34 18 Z"/><image href="manual/fig-search.png" x="32" y="29" width="256" height="192"/></svg><figcaption>Figure 5</figcaption></figure>
+
         <p>The line under the title bar says where you are, and the line above the keys says what the keys do there. DELETE goes back one step, BREAK goes back to the first page, and BREAK there returns to the Spectrum. You can also click any line.</p>
         <h2>Your own libraries</h2>
         <ol>
@@ -376,9 +395,10 @@
         <h2>Saving onto tape, as in 1982</h2>
         <ol>
           <li><b>1</b>Press <b>REC</b> on the recorder (F5 on a PC). REC and PLAY go down together.</li>
-          <li><b>2</b>Let the game save, or type <b>SAVE</b> in BASIC (chapter 6).</li>
+          <li><b>2</b>Let the game save, or type <b>SAVE</b> in BASIC (chapter 6). The Spectrum then says <i>Start tape, then press any key</i> (figure 6): press a key.</li>
           <li><b>3</b>Press <b>STOP</b> when it has finished.</li>
         </ol>
+        <figure class="tvfig"><svg viewBox="0 0 320 250" role="img" aria-label="Start tape, then press any key. at the bottom of the screen"><path d="M34 18 Q160 6 286 18 Q306 20 308 40 Q316 125 308 210 Q306 230 286 232 Q160 244 34 232 Q14 230 12 210 Q4 125 12 40 Q14 20 34 18 Z"/><image href="manual/fig-save.png" x="32" y="29" width="256" height="192"/></svg><figcaption>Figure 6</figcaption></figure>
         <p>It records onto a tape of your own on the rack: <i>&lt;game&gt; saves</i> while you play a game, or <i>My programs</i> after a reset, for what you write yourself. If you forget REC, the screen asks.</p>
         <p>To load it back, type <b>LOAD ""</b> or choose the game's load option. When the recorder has nothing to load, the screen lets you pick a tape from the rack, or rewind this one.</p>
         <h2>Snapshots with the Multiface</h2>
@@ -397,6 +417,8 @@
           <tr><td><span class="cur">L</span></td><td>Letters, after a keyword. CAPS SHIFT gives capitals; CAPS SHIFT + 2 locks them (cursor <span class="cur">C</span>).</td></tr>
           <tr><td><span class="cur">E</span></td><td>Extended: press CAPS SHIFT and SYMBOL SHIFT together (Tab on a PC), then a key for the words printed above and below it: E then T gives RND; E then SYMBOL SHIFT + X gives INK, + C gives PAPER, + Z gives BEEP.</td></tr>
         </table>
+        <p>Press <b>P</b> now and the Spectrum writes PRINT, and the cursor turns to <span class="cur">L</span> (figure 7).</p>
+        <figure class="tvfig"><svg viewBox="0 0 320 250" role="img" aria-label="PRINT at the bottom of the screen, followed by the L cursor"><path d="M34 18 Q160 6 286 18 Q306 20 308 40 Q316 125 308 210 Q306 230 286 232 Q160 244 34 232 Q14 230 12 210 Q4 125 12 40 Q14 20 34 18 Z"/><image href="manual/fig-print.png" x="32" y="29" width="256" height="192"/></svg><figcaption>Figure 7</figcaption></figure>
         <p><b>SYMBOL SHIFT</b> (Ctrl or Right Shift) with a key gives the red symbol or word on it: P gives ", L =, K +, J -, B *, V /, F TO, G THEN, Z :, O ;, N , (a comma). On a PC the keys <kbd>'</kbd> <kbd>,</kbd> <kbd>.</kbd> <kbd>;</kbd> <kbd>-</kbd> <kbd>=</kbd> <kbd>/</kbd> also work. Look at the keyboard on the screen: everything is printed there.</p>
         <h2>The words in this chapter</h2>
         <table class="basickeys">
@@ -416,7 +438,11 @@
         <h2>Your first program</h2>
         <p>A line that starts with a number is kept as part of the program. Type each line and press ENTER:</p>
         <div class="fig">10 PRINT "HELLO"<br>20 GO TO 10</div>
+        <p>After each ENTER the Spectrum lists the program; the <span class="cur">&gt;</span> marks the line you entered last (figure 8).</p>
+        <figure class="tvfig"><svg viewBox="0 0 320 250" role="img" aria-label="The program listed at the top: 10 PRINT "HELLO", 20 GO TO 10"><path d="M34 18 Q160 6 286 18 Q306 20 308 40 Q316 125 308 210 Q306 230 286 232 Q160 244 34 232 Q14 230 12 210 Q4 125 12 40 Q14 20 34 18 Z"/><image href="manual/fig-listing.png" x="32" y="29" width="256" height="192"/></svg><figcaption>Figure 8</figcaption></figure>
         <p>Then press <b>R</b> (RUN) and ENTER. The screen fills with HELLO; when it asks <i>scroll?</i>, any key carries on and N stops. <b>BREAK</b> (Esc, or CAPS SHIFT + SPACE) stops a program at any time. <b>K</b> (LIST) shows the program, and <b>A</b> (NEW) wipes it.</p>
+        <figure class="tvfig"><svg viewBox="0 0 320 250" role="img" aria-label="A column of HELLO filling the screen, and scroll? at the bottom"><path d="M34 18 Q160 6 286 18 Q306 20 308 40 Q316 125 308 210 Q306 230 286 232 Q160 244 34 232 Q14 230 12 210 Q4 125 12 40 Q14 20 34 18 Z"/><image href="manual/fig-scroll.png" x="32" y="29" width="256" height="192"/></svg><figcaption>Figure 9</figcaption></figure>
+
         <h2>Colours</h2>
         <div class="fig">10 BORDER 1: PAPER 6: INK 2: CLS<br>20 PRINT "Red on yellow"</div>
         <p>The colours are numbered 0 to 7 as on the number keys: 0 black, 1 blue, 2 red, 3 magenta, 4 green, 5 cyan, 6 yellow, 7 white. The colon (SYMBOL SHIFT + Z) puts several statements on one line.</p>
@@ -426,19 +452,23 @@
         <div class="fig">10 INPUT "Your name? "; a$<br>20 PRINT "Hello, "; a$</div>
         <p>IF decides, with THEN (SYMBOL SHIFT + G):</p>
         <div class="fig">10 LET x=INT (RND*10)+1<br>20 INPUT "Guess 1 to 10: "; g<br>30 IF g=x THEN PRINT "Right!": STOP<br>40 PRINT "No, try again": GO TO 20</div>
-        <p>RND gives a random number between 0 and 1, so x is a whole number from 1 to 10. When you guess it, the program ends with the report <i>9 STOP statement, 30:3</i>: not an error, just the STOP in line 30.</p>
+        <p>RND gives a random number between 0 and 1, so x is a whole number from 1 to 10. When you guess it, the program ends with the report <i>9 STOP statement, 30:3</i>: not an error, just the STOP in line 30 (figure 10).</p>
+        <figure class="tvfig"><svg viewBox="0 0 320 250" role="img" aria-label="No, try again three times, then Right!, and the report 9 STOP statement, 30:3"><path d="M34 18 Q160 6 286 18 Q306 20 308 40 Q316 125 308 210 Q306 230 286 232 Q160 244 34 232 Q14 230 12 210 Q4 125 12 40 Q14 20 34 18 Z"/><image href="manual/fig-guess.png" x="32" y="29" width="256" height="192"/></svg><figcaption>Figure 10</figcaption></figure>
+
         <h2>Sound and pictures</h2>
         <div class="fig">BEEP 0.5,0<br>BEEP 0.5,7</div>
         <p>plays middle C, then G, for half a second each (the second number is in semitones). Typed without a line number, a command runs at once.</p>
         <div class="fig">10 CIRCLE 128,88,60<br>20 PLOT 0,0: DRAW 255,175</div>
-        <p>draws a circle in the middle of the screen and a line across it; the screen is 256 dots wide and 176 high, counted from the bottom left.</p>
+        <p>draws a circle in the middle of the screen and a line across it (figure 11); the screen is 256 dots wide and 176 high, counted from the bottom left. The report <i>0 OK, 20:2</i> says the program ran to its end.</p>
+        <figure class="tvfig"><svg viewBox="0 0 320 250" role="img" aria-label="A circle in the middle of the screen, a line from the bottom left to the top right, and 0 OK, 20:2"><path d="M34 18 Q160 6 286 18 Q306 20 308 40 Q316 125 308 210 Q306 230 286 232 Q160 244 34 232 Q14 230 12 210 Q4 125 12 40 Q14 20 34 18 Z"/><image href="manual/fig-circle.png" x="32" y="29" width="256" height="192"/></svg><figcaption>Figure 11</figcaption></figure>
+
         <h2>Changing a program</h2>
         <p>To change a line, type it again with the same number; to delete it, type its number alone and press ENTER. Or press <b>EDIT</b> (CAPS SHIFT + 1): the line marked <span class="cur">&gt;</span> in the listing comes down to the bottom of the screen, where the arrow keys move along it and DELETE rubs out; ENTER puts it back. The up and down arrows move the <span class="cur">&gt;</span> mark between lines.</p>
         <p>When something is wrong, the Spectrum puts a flashing <span class="cur">?</span> where it cannot understand the line, or stops with a report such as <i>2 Variable not found, 20:1</i>: the error, then the line and the statement where it happened.</p>
         <h2>Keeping your program</h2>
         <p>Press <b>REC</b> on the recorder (F5), then type</p>
         <div class="fig">SAVE "hello"</div>
-        <p>(S gives SAVE). Your program goes onto <i>My programs</i> on the rack. To get it back another day: LOAD "" (J, then SYMBOL SHIFT + P twice) and ENTER, then pick the tape when the screen asks.</p>
+        <p>(S gives SAVE) and ENTER. At <i>Start tape, then press any key</i>, press a key: your program goes onto <i>My programs</i> on the rack. To get it back another day: LOAD "" (J, then SYMBOL SHIFT + P twice) and ENTER, then pick the tape when the screen asks.</p>
         <h2>On the 128</h2>
         <p>Choose <b>128 BASIC</b> from the menu. There you type every keyword letter by letter (P, R, I, N, T), and the cursor keys move freely around the program. <b>48 BASIC</b> on the menu works exactly like the 48K.</p>
         <div class="pn">7</div>

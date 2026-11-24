@@ -253,6 +253,13 @@ button { font-family: Tahoma, sans-serif; }
 .book.single .page .rh { left: auto !important; right: 52px !important; }
 .page .cur { display: inline-block; min-width: .9em; padding: 0 1px; line-height: 1.05; text-align: center; font-weight: bold; color: #fbfaf6; background: #111; } /* a cursor: K L E C ? */
 .page .figcap { margin: 0 0 8px; text-indent: 0; font-size: 13px; }
+/* a television screen, drawn as in the 1982 booklet: the outline, the Spectrum's picture, "Figure 2" to the left */
+.page .tvfig { margin: 8px 0 10px; }
+.page .tvfig svg { display: block; width: 72%; max-width: 330px; margin: 0 auto; overflow: visible; }
+.page .tvfig path { fill: #fff; stroke: #111; stroke-width: 3; }
+.page .tvfig image { image-rendering: pixelated; image-rendering: crisp-edges; }
+.page .tvfig figcaption { margin-top: -18px; font-size: 13px; }
+.page .tvfig.big svg { width: 100%; max-width: 440px; } /* the catalogue's screens: small print */
 .page table { border-collapse: collapse; width: 100%; font-size: 13px; margin: 4px 0 8px; }
 .page td { padding: 4px 6px; border-bottom: 1px solid #ccc; vertical-align: top; text-align: left; }
 .page td:first-child { width: 34%; }

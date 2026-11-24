@@ -20,7 +20,7 @@ Then open http://localhost:8048 (add `?machine=plus` or `?machine=128` to start 
 - The reset button is on the side of the computer.
 - Multiface One: the red button freezes the machine and shows its menu on the TV screen, in the Spectrum's font: SAVE (.SNA download), LOAD, TURBO, RESET, RETURN.
 - The joystick: click it to plug it in on the arrow keys (Left Alt = fire); each click (or F10) changes the kind, shown on its base: Kempston, Sinclair (Interface 2, keys 6-0), Cursor (keys 5-8, fire 0), then unplugged.
-- The manual: getting started, the desk, the PC keys, guides to finding and loading games (catalogue, your libraries, the rack, tapes in parts) and to saving, a short course in Spectrum BASIC (every key and example checked on the emulator), and the settings. `?manual=<chapter>` (using, desk, keys, games, saving, basic, settings, about) opens it there.
+- The manual, typeset like the 1982 Introduction booklet, with its drawn TV screens: a quick start, getting started, the desk, the PC keys, guides to finding and loading games (catalogue, your libraries, the rack, tapes in parts) and to saving, a short course in Spectrum BASIC (every key and example checked on the emulator), and the settings. `?manual=<chapter>` (using, desk, keys, games, saving, basic, settings, about) opens it there.
 - Shortcuts on the function keys: F1 manual, F2 software catalogue, F3 open a file, F4 Multiface, F6 tape play/stop, F7 rewind, F8 reset, F9 tape speed, F10 joystick, F11 full screen, Pause pauses. Volume and picture: PgUp/PgDn (or Num + -) volume, Home (or Num *) sound off/on, End (or Num /) picture: colour, black & white, green screen. The mouse wheel over the TV sets the volume (with Shift, the colour); clicking the words VOLUME and COLOUR mutes and changes the picture. The TV remembers these settings.
 - On a phone or tablet, plugging in the joystick shows a touch stick (left thumb) and FIRE (right thumb). A real joystick or gamepad (USB or Bluetooth, through the Gamepad API) works as the chosen kind and hides the touch stick: press one of its buttons first so the browser sees it.
 - Saving, as in 1982: press REC (F5), then SAVE from BASIC or a game's save option; it records onto a tape of your own on the rack ("<game> saves", or "My programs" after a reset). If REC is not pressed the screen asks; when a LOAD finds nothing in the recorder, the screen offers the rack's tapes. Works in full screen too.
@@ -71,6 +71,8 @@ Not yet: 128K models and AY sound, memory/IO contention (some timing-critical de
 | `sw.js`, `manifest.webmanifest`, `icons/` | Installable app: offline cache, app details and icons |
 | `serve.js` | Tiny static file server: `node serve.js [port]` |
 | `installer/` | Windows installer: `build.ps1` makes `dist\ZX-Spectrum-Setup.exe` with IExpress; `install.ps1` / `uninstall.ps1` install for the current user without admin rights |
+| `manual/` | The manual's TV-screen figures, taken from the emulator (`fig-catalogue.png` and `fig-search.png` from the catalogue in the browser) |
+| `tools/manual-figures.js` | Makes the manual's TV-screen figures: types on a 48K as the manual says and saves each screen in black and white: `node tools/manual-figures.js` |
 | `tools/list-basic.js` | Lists the blocks of a TAP/TZX file and prints any BASIC program in it as text |
 | `test/sanity.js` | Quick CPU checks: `node test/sanity.js` |
 | `test/cpm.js` | CP/M harness for the ZEX exercisers: `node test/cpm.js test/zex/zexall.com` (about 5 minutes) |

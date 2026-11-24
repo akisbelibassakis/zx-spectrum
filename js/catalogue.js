@@ -170,7 +170,7 @@ const catalogue = {
       s.print(0, 22, ' '.repeat(Math.max(1, Math.round(32 * this.progress))), 4 + 8, 4 + 8);
     }
     s.bar(23, 0);
-    s.print(0, 23, this.busy ? 'BREAK cancels' : this.mode === 'search' ? 'ENTER find  BREAK exit' : 'ENTER pick DELETE back BREAK out', 7, 0);
+    s.print(0, 23, this.busy ? 'BREAK cancels' : this.mode !== 'search' ? 'ENTER pick DEL back BREAK start' : this.games.length ? 'ENTER find  BREAK first page' : 'ENTER find  BREAK exit', 7, 0);
   },
   drawIntro(s) {
     let row = LIST_TOP;
@@ -215,7 +215,10 @@ const catalogue = {
 
   key(k) {
     if (this.busy) { if (k === 'BREAK' && this.ctl) this.ctl.abort(); return; } // a search or download: BREAK cancels it
-    if (k === 'BREAK') { closeCatalogue(); return; }
+    if (k === 'BREAK') { // from a list: back to the first page; from the first page: back to the Spectrum
+      if (this.games.length || this.mode !== 'search') this.home(); else closeCatalogue();
+      return;
+    }
     const ch = k.startsWith('CHAR:') ? k.slice(5) : null;
     if (this.mode === 'search') {
       if (ch && this.query.length < 24) this.query += ch;

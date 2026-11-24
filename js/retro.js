@@ -404,7 +404,11 @@ function paginate() {
       if (fits()) continue;
       n.remove();
       if (!n.items) { // a paragraph is split between pages; a picture goes to the next page whole
-        const parts = n.tagName === 'P' ? splitToFit(n) : null;
+        if (n.matches('.sign')) { // a signature never stands alone: the paragraph before it comes along
+          const prev = text().pop();
+          if (prev && text().length > 1) { prev.remove(); turn(); add(prev); add(n); continue; }
+        }
+        const parts = n.tagName === 'P' && !n.matches('.sign') ? splitToFit(n) : null;
         if (parts) { add(parts[0]); turn(); queue.unshift(parts[1]); continue; }
         if (text().length) turn();
         add(n); // longer than a whole page: it scrolls

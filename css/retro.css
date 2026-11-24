@@ -382,3 +382,178 @@ code { font-family: 'Courier New', monospace; }
 .key128.latched { outline: 2px solid var(--accent); outline-offset: 2px; }
 .key128:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+
+/* ================= Spectrum +2 (Amstrad, 1986): --q = one key pitch =================
+   A grey case 23.3 pitches wide and 8.3 deep: the logo strip along the top, the 128's keyboard with grey keys on the
+   left, the Datacorder built into the right (its window with the rainbow DATACORDER label, the six square keys in
+   front, level with the keyboard's bottom row). The recorder (#deck) itself moves into .deckslot (retro.js). */
+.spectrumplus2 {
+  --g1: #5f6163; --g2: #535557; --g3: #47494b;
+  flex: 0 0 auto; position: relative; width: calc(var(--q) * 23.3); height: calc(var(--q) * 8.3);
+  border-radius: calc(var(--q) * .1);
+  background: repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 1px, transparent 1px 3px), linear-gradient(180deg, var(--g1), var(--g2) 30%, var(--g3));
+  box-shadow: 0 calc(var(--q) * .3) calc(var(--q) * .45) rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.22),
+    inset 0 calc(var(--q) * -.1) 0 rgba(0,0,0,.3);
+  font-family: Arial, Helvetica, sans-serif;
+}
+.spectrumplus2[hidden] { display: none; }
+.p2ridge { /* the teeth of the vents along the back edge */
+  position: absolute; left: calc(var(--q) * .25); right: calc(var(--q) * .25); top: calc(var(--q) * -.1); height: calc(var(--q) * .14);
+  background: repeating-linear-gradient(90deg, #3e4042 0 calc(var(--q) * .1), transparent calc(var(--q) * .1) calc(var(--q) * .26));
+}
+.p2top { /* the raised strip with the names, a step down to the keyboard */
+  position: absolute; left: 0; right: 0; top: 0; height: calc(var(--q) * 1.95); border-radius: calc(var(--q) * .1) calc(var(--q) * .1) 0 0;
+  background: linear-gradient(180deg, #6c6e70, #5f6163); box-shadow: 0 1px 0 rgba(255,255,255,.12), 0 calc(var(--q) * .06) 0 rgba(0,0,0,.35);
+}
+.p2logo {
+  position: absolute; left: calc(var(--q) * .85); top: calc(var(--q) * .5); width: calc(var(--q) * 3.6); height: calc(var(--q) * .52);
+  overflow: visible; color: #c8231c; filter: drop-shadow(0 1px 0 rgba(0,0,0,.6));
+}
+.p2rule { position: absolute; top: calc(var(--q) * 1.42); height: max(1px, calc(var(--q) * .03)); background: #2e3032; box-shadow: 0 1px 0 rgba(255,255,255,.18); }
+.p2rule.l { left: calc(var(--q) * .85); width: calc(var(--q) * 14.1); }
+.p2rule.r { left: calc(var(--q) * 15.85); width: calc(var(--q) * 6.75); }
+.p2k {
+  position: absolute; left: calc(var(--q) * 13.1); top: calc(var(--q) * .62);
+  font: italic bold calc(var(--q) * .45) Arial, Helvetica, sans-serif; letter-spacing: -.03em; color: #c8231c; text-shadow: 0 1px 0 rgba(0,0,0,.5);
+}
+.p2led { position: absolute; left: calc(var(--q) * 15.25); top: calc(var(--q) * 1.38); width: calc(var(--q) * .28); height: calc(var(--q) * .12); background: #5a1410; box-shadow: inset 0 1px 1px #000; }
+.p2name {
+  position: absolute; left: calc(var(--q) * 15.95); top: calc(var(--q) * .52); white-space: nowrap;
+  font: italic bold calc(var(--q) * .5) Arial, Helvetica, sans-serif; color: #eeeeec; text-shadow: 0 1px 0 rgba(0,0,0,.5);
+}
+.p2name b { font-size: 1.45em; margin-left: .12em; vertical-align: -.06em; }
+.p2grooves { /* the case lines that run right across, one per key row */
+  position: absolute; left: 0; right: 0; top: calc(var(--q) * 2.18); height: calc(var(--q) * 6);
+  background: repeating-linear-gradient(180deg, transparent 0 calc(var(--q) - 2px), rgba(0,0,0,.45) calc(var(--q) - 2px) calc(var(--q) - 1px),
+    rgba(255,255,255,.1) calc(var(--q) - 1px) var(--q));
+}
+.p2frame {
+  position: absolute; left: calc(var(--q) * .9); top: calc(var(--q) * 2.25); width: calc(var(--q) * 13.6); height: calc(var(--q) * 5.22);
+  border-radius: calc(var(--q) * .07); background: rgba(0,0,0,.14);
+  box-shadow: inset 0 calc(var(--q) * .07) calc(var(--q) * .1) rgba(0,0,0,.5), inset 0 0 0 max(1px, calc(var(--q) * .03)) rgba(0,0,0,.35),
+    0 max(1px, calc(var(--q) * .025)) 0 rgba(255,255,255,.14), 0 calc(var(--q) * -.02) 0 rgba(0,0,0,.25);
+}
+.keysplus2 { position: absolute; left: calc(var(--q) * .95); top: calc(var(--q) * 2.3); width: calc(var(--q) * 13.5); height: calc(var(--q) * 5); z-index: 1; }
+/* tall typewriter-style keycaps: a dished top face (.cap) on a body whose sloping front catches the light,
+   standing well up from the case (the deep shadow) inside the keyboard's frame (.p2frame), going down a long way when pressed */
+.key128.kp2 {
+  height: calc(var(--q) * .92); border-radius: calc(var(--q) * .08);
+  background: linear-gradient(180deg, #2c2e30 0%, #393b3e 45%, #4a4c4f 78%, #5d5f62 100%);
+  box-shadow: inset calc(var(--q) * .025) 0 calc(var(--q) * .02) rgba(0,0,0,.4), inset calc(var(--q) * -.025) 0 calc(var(--q) * .02) rgba(0,0,0,.4),
+    inset 0 -1px 0 rgba(255,255,255,.18), 0 calc(var(--q) * .1) 0 #161718, 0 calc(var(--q) * .17) calc(var(--q) * .14) rgba(0,0,0,.55);
+  font-style: italic; color: #f4f4f2; transition: transform .05s, box-shadow .05s;
+}
+.kp2 .cap {
+  position: absolute; left: calc(var(--q) * .07); right: calc(var(--q) * .07); top: calc(var(--q) * .03); bottom: calc(var(--q) * .2);
+  border-radius: calc(var(--q) * .07);
+  background: radial-gradient(ellipse 90% 70% at 50% 35%, rgba(255,255,255,.07), transparent 70%), linear-gradient(180deg, #57595c, #47494c);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.25), inset 0 calc(var(--q) * -.02) calc(var(--q) * .03) rgba(0,0,0,.3), 0 calc(var(--q) * .015) calc(var(--q) * .02) rgba(0,0,0,.45);
+}
+.key128.kp2.down, .key128.kp2:active {
+  transform: translateY(calc(var(--q) * .08));
+  box-shadow: inset calc(var(--q) * .025) 0 calc(var(--q) * .02) rgba(0,0,0,.4), inset calc(var(--q) * -.025) 0 calc(var(--q) * .02) rgba(0,0,0,.4),
+    inset 0 -1px 0 rgba(255,255,255,.12), 0 calc(var(--q) * .02) 0 #161718, 0 calc(var(--q) * .04) calc(var(--q) * .05) rgba(0,0,0,.55);
+}
+.key128.kp2.enter::before { /* the top of the L: the same tall cap */
+  left: calc(var(--q) * .75); bottom: calc(var(--q) * .7); height: calc(var(--q) * 1.2); border-radius: calc(var(--q) * .08) calc(var(--q) * .08) 0 0;
+  background: linear-gradient(90deg, #2a2c2e, #393b3e 12%, #393b3e 88%, #2a2c2e);
+  box-shadow: none;
+}
+.key128.kp2.enter::after { /* its top face, joined to the cap below */
+  content: ''; position: absolute; left: calc(var(--q) * .82); width: calc(var(--q) * .76); bottom: calc(var(--q) * .6); height: calc(var(--q) * 1.27);
+  border-radius: calc(var(--q) * .07) calc(var(--q) * .07) 0 0;
+  background: radial-gradient(ellipse 90% 45% at 50% 25%, rgba(255,255,255,.07), transparent 70%), linear-gradient(180deg, #5a5c5f, #57595c);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.25), inset calc(var(--q) * -.02) 0 calc(var(--q) * .02) rgba(0,0,0,.25);
+}
+.kp2 .p2main { left: calc(var(--q) * .15); right: auto; bottom: calc(var(--q) * .23); font: italic bold calc(var(--q) * .34) Arial, Helvetica, sans-serif; }
+.kp2 .p2sym { left: calc(var(--q) * .16); right: auto; top: calc(var(--q) * .07); font: italic bold calc(var(--q) * .17) Arial, Helvetica, sans-serif; white-space: nowrap; text-align: left; }
+.kp2 .p2lab {
+  left: calc(var(--q) * .12); right: auto; bottom: calc(var(--q) * .24); text-align: left; white-space: nowrap;
+  font: italic bold calc(var(--q) * .15) Arial, Helvetica, sans-serif; line-height: 1.05;
+}
+.kp2 .p2lab b { display: inline-block; font-size: calc(var(--q) * .36); margin-left: calc(var(--q) * .1); }
+.kp2.space .p2lab, .kp2[aria-label="LEFT"] .p2lab, .kp2[aria-label="RIGHT"] .p2lab, .kp2[aria-label="UP"] .p2lab, .kp2[aria-label="DOWN"] .p2lab {
+  left: 0; right: 0; top: 0; bottom: calc(var(--q) * .17); display: flex; align-items: center; justify-content: center;
+}
+.kp2 .chev { /* the arrow keys: chevrons */
+  display: block; width: calc(var(--q) * .2); height: calc(var(--q) * .2); margin: 0 !important;
+  border: solid #f4f4f2; border-width: max(1.5px, calc(var(--q) * .045)) max(1.5px, calc(var(--q) * .045)) 0 0;
+}
+.kp2 .chev.r { transform: translateX(-25%) rotate(45deg); } .kp2 .chev.l { transform: translateX(25%) rotate(-135deg); }
+.kp2 .chev.u { transform: translateY(25%) rotate(-45deg); } .kp2 .chev.d { transform: translateY(-25%) rotate(135deg); }
+.kp2 .ret { /* the return arrow after ENTER */
+  display: inline-block; width: calc(var(--q) * .2); height: calc(var(--q) * .45); margin-left: calc(var(--q) * .04);
+  border: solid #f4f4f2; border-width: 0 max(1px, calc(var(--q) * .03)) max(1px, calc(var(--q) * .03)) 0;
+}
+.kp2.enter .p2lab { bottom: calc(var(--q) * .26); z-index: 1; }
+
+/* the built-in Datacorder: 1em = 1/400 of its width (7.3 pitches) */
+.p2bay, .deckslot { position: absolute; left: calc(var(--q) * 15.3); top: calc(var(--q) * 2.2); width: 400em; font-size: calc(var(--q) * 7.3 / 400); }
+.p2bay { /* the recess the cassette sits in, with the DATACORDER label below its window */
+  height: 196em; border-radius: 4em; background: linear-gradient(180deg, #47494b, #535557);
+  box-shadow: inset 0 3em 5em rgba(0,0,0,.55), inset 0 0 0 2em #3d3f41, 0 1px 0 rgba(255,255,255,.15);
+}
+.p2well { position: absolute; left: 38em; top: 8em; width: 324em; height: 118em; border-radius: 3em; background: #3a3c3e; box-shadow: inset 0 2em 4em rgba(0,0,0,.6); }
+.p2label { /* sized in its own em: 44 bay units */
+  position: absolute; left: .27em; right: .27em; top: 3em; height: 1.27em; border-radius: .05em; overflow: hidden;
+  background: linear-gradient(180deg, #2c2d2f, #232426); box-shadow: inset 0 0 0 .035em #1a1b1c;
+  font: italic 900 44em/1.27 'Arial Black', Arial, sans-serif; letter-spacing: .01em; text-align: center; color: transparent;
+  background-image: linear-gradient(180deg, transparent 20%, #d9281d 20% 35%, #f5cf12 35% 50%, #4dae3e 50% 65%, #3c8ed5 65% 80%, transparent 80%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-stroke: .02em #0a0a0a;
+}
+.p2bay::after { /* the dark plate behind the label */
+  content: ''; position: absolute; left: 12em; right: 12em; top: 132em; height: 56em; border-radius: 2em; z-index: -1;
+}
+.p2hole { display: none; }
+.deckslot { height: 318em; z-index: 2; pointer-events: none; }
+.deckslot > * { pointer-events: auto; }
+.deckslot .recorder.builtin {
+  position: absolute; left: 0; top: 0; width: 400em; height: 318em; display: block; padding: 0; transform: none;
+  background: none; box-shadow: none; border-radius: 0;
+}
+.recorder.builtin .rbrand { display: none; }
+.recorder.builtin .door { position: absolute; left: 44em; top: 12em; width: 312em; height: 112em; background: #1c1d1e; border-radius: 3em; }
+.recorder.builtin .cass, .recorder.builtin .deckbed { left: 72em; top: 4em; transform: scale(.82); transform-origin: 0 0; }
+.recorder.builtin .rside { /* counter, its reset, AUTO LOAD: a row under the label */
+  position: absolute; left: 14em; top: 204em; flex-direction: row; gap: 8em; color: #d8d8d4;
+}
+.recorder.builtin .counter i { font-size: 13em; }
+.recorder.builtin .autoload { flex-direction: row; padding: 0; gap: 5em; }
+.recorder.builtin .rside .cap { font-size: 7em; text-align: left; }
+.recorder.builtin .rspeed { position: absolute; right: 12em; top: 202em; gap: 6em; color: #d8d8d4; }
+.recorder.builtin .rspeed .cap { font-size: 7em; }
+.recorder.builtin .slot { width: 110em; }
+.recorder.builtin .slide[data-pos="1"] .sknob { left: 40em; } .recorder.builtin .slide[data-pos="2"] .sknob { left: 80em; }
+.recorder.builtin .marks { width: 126em; margin-top: 4em; }
+.recorder.builtin .marks span { font-size: 7em; }
+.recorder.builtin .pkeys { /* six square keys in the +2's order: REC, PLAY, REW, F.FWD, STOP/EJECT, PAUSE */
+  position: absolute; left: 28em; right: 28em; top: 243em; gap: 3em; padding: 2em 2em 7em; border-radius: 3em;
+  background: #161718; box-shadow: inset 0 2em 4em rgba(0,0,0,.8), 0 1px 0 rgba(255,255,255,.14), 0 0 0 2em #3e4042;
+}
+/* the tape keys: tall keys like the keyboard's, filling their dark frame, with the +2's symbols instead of words:
+   a red dot, PLAY, REW, F.FWD, STOP/EJECT and PAUSE. 1em here = 15 deck units */
+.recorder.builtin .pk {
+  --face: linear-gradient(180deg, #57595c, #47494c); --dy: 0em;
+  height: 3.6em; border-radius: .15em; font-size: 15em; color: transparent;
+  background: var(--icon) center calc(36% + var(--dy)) / 1.9em 1.9em no-repeat,
+    var(--face) center calc(.12em + var(--dy)) / calc(100% - .4em) 2.35em no-repeat,
+    linear-gradient(180deg, #2c2e30 0%, #393b3e 45%, #4a4c4f 78%, #5d5f62 100%);
+  box-shadow: inset .1em 0 .08em rgba(0,0,0,.4), inset -.1em 0 .08em rgba(0,0,0,.4), inset 0 -1px 0 rgba(255,255,255,.18),
+    0 .3em 0 #101112, 0 .45em .4em rgba(0,0,0,.6);
+  transition: transform .05s, box-shadow .05s;
+}
+.recorder.builtin .pk small { display: none; }
+.recorder.builtin .pk:active, .recorder.builtin .pk.on { /* pressed: the key goes down into its frame */
+  transform: translateY(.25em);
+  box-shadow: inset .1em 0 .08em rgba(0,0,0,.4), inset -.1em 0 .08em rgba(0,0,0,.4), inset 0 -1px 0 rgba(255,255,255,.12), 0 .05em 0 #101112;
+}
+.recorder.builtin .pk.on { --face: linear-gradient(180deg, #5f6164, #4d4f52); } /* a key that stays down: PLAY, REC, PAUSE */
+.recorder.builtin #btnRec { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f4f4f2' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='2.6' fill='%23e3261b' stroke='none'/%3E%3C/svg%3E"); }
+.recorder.builtin #btnPlay { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f4f4f2' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 7l5 5-5 5'/%3E%3C/svg%3E"); }
+.recorder.builtin #btnRewind { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f4f4f2' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 7l-5 5 5 5M17 7l-5 5 5 5'/%3E%3C/svg%3E"); }
+.recorder.builtin #btnFF { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f4f4f2' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 7l5 5-5 5M12 7l5 5-5 5'/%3E%3C/svg%3E"); }
+.recorder.builtin #btnEject { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f4f4f2' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7.5 14.5v-4L12 7l4.5 3.5v4z M7.5 17.5h9'/%3E%3C/svg%3E"); }
+.recorder.builtin #btnTapePause { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f4f4f2' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 7.5v9M14 7.5v9' stroke-width='2'/%3E%3C/svg%3E"); }
+.recorder.builtin #btnRec { order: 1; } .recorder.builtin #btnPlay { order: 2; } .recorder.builtin #btnRewind { order: 3; }
+.recorder.builtin #btnFF { order: 4; } .recorder.builtin #btnEject { order: 5; } .recorder.builtin #btnTapePause { order: 6; }
+.deckslot .card { font-size: 13em; } /* the insert card: about the size it is beside the separate recorder */

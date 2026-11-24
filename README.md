@@ -1,6 +1,6 @@
-# ZX Spectrum 48K / + / 128K emulator
+# ZX Spectrum 48K / + / 128K / +2 emulator
 
-A ZX Spectrum 48K, Spectrum+ and 128K emulator in plain JavaScript that runs in the browser, with no build step and no dependencies.
+A ZX Spectrum 48K, Spectrum+, 128K and +2 emulator in plain JavaScript that runs in the browser, with no build step and no dependencies.
 
 ## Run
 
@@ -8,14 +8,14 @@ A ZX Spectrum 48K, Spectrum+ and 128K emulator in plain JavaScript that runs in 
 node serve.js
 ```
 
-Then open http://localhost:8048 (add `?machine=plus` or `?machine=128` to start on another model). Opening `index.html` directly also works: the ROMs then come from `js/rom48.js` and `js/rom128.js`.
+Then open http://localhost:8048 (add `?machine=plus`, `?machine=128` or `?machine=plus2` to start on another model). Opening `index.html` directly also works: the ROMs then come from `js/rom48.js`, `js/rom128.js` and `js/romplus2.js`.
 
-**ROMs:** the original ROMs are in `roms/48.rom` (16,384 bytes) and `roms/128.rom` (32,768 bytes: the 128 editor ROM followed by its 48 BASIC ROM); Amstrad allows them to be distributed with emulators. They are kept in the browser's local storage once loaded.
+**ROMs:** the original ROMs are in `roms/48.rom` (16,384 bytes) and `roms/128.rom` (32,768 bytes: the 128 editor ROM followed by its 48 BASIC ROM) and `roms/plus2.rom` (32,768 bytes: Amstrad's +2 editor ROM with its start-up menu, then its 48 BASIC ROM; `plus2-0.rom` and `plus2-1.rom` as shipped with the Fuse emulator); Amstrad allows them to be distributed with emulators. They are kept in the browser's local storage once loaded.
 
 **The desk:** there are no ordinary buttons; every control is a piece of 80s hardware. Hover over one for a label.
 
-- TV channels 1-3 pick the ZX Spectrum 48K, the Spectrum+ (a 48K in the Spectrum+ case) or the 128K; the choice is remembered. Loading a 128K snapshot switches to the 128K by itself. ZOOM (or a double-click on the picture) is full screen; POWER pauses.
-- The Datacorder: STOP/EJECT opens a tape, snapshot or ROM; PLAY, REW, FF (next block), PAUSE; the counter and the tape on the reels follow the tape. The SPEED switch is NORMAL (real time), FAST (full speed while the tape plays) or INSTANT (ROM trap for standard blocks; games with loaders of their own run flat out without sound or pictures, with their edge-waiting loops skipped). AUTO LOAD resets and starts the tape on insert, at the part for the model (48K or 128K version); on the 128K a tape for the 48K only loads in 48 BASIC. Click the cassette to see its parts and blocks, and click one to wind there.
+- TV channels 1-4 pick the ZX Spectrum 48K, the Spectrum+ (a 48K in the Spectrum+ case), the 128K or the +2 (Amstrad's grey 128K with its own ROMs and the Datacorder built in); the choice is remembered. Loading a 128K snapshot switches to the 128K by itself (on the +2 it stays a +2; a .Z80 made on a +2 picks the +2). ZOOM (or a double-click on the picture) is full screen; POWER pauses.
+- The Datacorder: STOP/EJECT opens a tape, snapshot or ROM; PLAY, REW, FF (next block), PAUSE; the counter and the tape on the reels follow the tape. The SPEED switch is NORMAL (real time), FAST (full speed while the tape plays) or INSTANT (ROM trap for standard blocks; games with loaders of their own run flat out without sound or pictures, with their edge-waiting loops skipped). AUTO LOAD resets and starts the tape on insert, at the part for the model (48K or 128K version); on the 128K and +2 a tape for the 48K only loads in 48 BASIC. Click the cassette to see its parts and blocks, and click one to wind there.
 - The tape plays when a loader listens for it and stops at the end of a block when it stops listening (loader detection, after Fuse), so multi-load games find their next part waiting; when the tape has run out and a game keeps waiting, the screen offers to rewind, wind to a part or put in another tape. STOP keeps the tape still until PLAY.
 - The reset button is on the side of the computer.
 - Multiface One: the red button freezes the machine and shows its menu on the TV screen, in the Spectrum's font: SAVE (.SNA download), LOAD, TURBO, RESET, RETURN.
@@ -28,25 +28,27 @@ Then open http://localhost:8048 (add `?machine=plus` or `?machine=128` to start 
 
 On a PC the TV stands on the computer with the gadgets and recorder beside it; on a phone in landscape the TV sits beside the keyboard; in portrait everything is stacked.
 
+**The +2** is drawn as one machine, as Amstrad made it: the grey case with the keyboard on the left and the Datacorder built into the right (its window, the rainbow DATACORDER label and the six square keys in the +2's order, REC, PLAY, REW, F.FWD, STOP/EJECT, PAUSE). The recorder itself moves into the case, with its counter, AUTO LOAD and SPEED switch, and the separate Datacorder leaves the desk, on the PC and on phones alike: two recorders would make it unclear which one plays, and the +2 never had a second one. The case is wider than the 128's, so its keys are a little smaller: about 15% in portrait and 20% on a phone held sideways, where the TV keeps the full height.
+
 ## Look and feel
 
 The picture runs inside an 80s wood-cabinet colour TV with a CRT look: scanlines, a curved and vignetted glass, power on/off animation, static on channels 2-6, and VOLUME and COLOUR knobs (drag or scroll; COLOUR at minimum gives a black-and-white set).
-Below it sits the original rubber-key 48K keyboard with all its legends, or the Spectrum+ keyboard in either the black Spectrum+ case or the Spectrum 128's case with its heatsink and 128K badge (its extra keys such as DELETE, EDIT and the arrows press the two 48K keys they stand for). The keys can be clicked or tapped and light up when pressed from the PC keyboard; a click on CAPS SHIFT or SYMBOL SHIFT holds it for the next key.
+Below it sits the original rubber-key 48K keyboard with all its legends, or the Spectrum+ keyboard in either the black Spectrum+ case or the Spectrum 128's case with its heatsink and 128K badge, or the +2's grey case with grey keys, Amstrad's sparser legends and the tape deck on the right (its extra keys such as DELETE, EDIT and the arrows press the two 48K keys they stand for). The keys can be clicked or tapped and light up when pressed from the PC keyboard; a click on CAPS SHIFT or SYMBOL SHIFT holds it for the next key.
 Tapes go in the cassette recorder beside it, whose reels turn while the tape plays.
 
 ## Features
 
 - Z80 core: all documented and undocumented opcodes (IXh/IXl, SLL, DDCB register copies), undocumented flag bits 3/5, IM 0/1/2, HALT, EI delay, per-instruction T-state counts.
-- 128K: memory paging through port 0x7FFD (eight RAM banks, two ROMs, shadow screen, paging lock), 70,908 T-states per frame, AY-3-8912 sound chip (three tones, noise, envelopes).
+- 128K and +2: memory paging through port 0x7FFD (eight RAM banks, two ROMs, shadow screen, paging lock), 70,908 T-states per frame, AY-3-8912 sound chip (three tones, noise, envelopes).
 - ULA: 69,888 T-states per frame (48K), 50 Hz interrupt, border changes drawn at their T-state (loading stripes), FLASH, BRIGHT.
 - Keyboard with PC mappings (see the manual), cursor keys or Kempston joystick on the arrows.
 - Beeper sound through Web Audio, plus tape noise while loading.
 - Tapes: `.TAP` and `.TZX` (standard, turbo, pure tone, pulses, pure data, direct recording, pauses, loops, stop the tape, stop the tape if in 48K mode, select block for parts).
   Standard blocks load instantly through a ROM trap at `LD-BYTES`; turbo and custom loaders play the tape, run at full speed without pictures in INSTANT, where loops that only wait for the next edge are skipped up to just before it.
-  On insert, the machine resets and types `LOAD ""` (on the 128K it picks Tape Loader from the start-up menu, or starts in 48 BASIC for a 48K-only tape).
+  On insert, the machine resets and types `LOAD ""` (on the 128K and +2 it picks Tape Loader from the start-up menu, or starts in 48 BASIC for a 48K-only tape).
 - Snapshots: load `.SNA` and `.Z80` (v1/v2/v3) for the 48K and 128K, save `.SNA` of either.
 
-Not yet: 128K models and AY sound, memory/IO contention (some timing-critical demos and multicolour effects are off), and beam-racing paper rendering (the paper is drawn once per frame).
+Not yet: the +2A and +3, memory/IO contention (some timing-critical demos and multicolour effects are off), and beam-racing paper rendering (the paper is drawn once per frame).
 
 ## Files
 
@@ -54,19 +56,19 @@ Not yet: 128K models and AY sound, memory/IO contention (some timing-critical de
 |---|---|
 | `index.html` | The page: the desk, the TV, the gadgets, the recorder and the manual's text |
 | `js/z80.js` | Z80 CPU: all documented and undocumented opcodes and flags |
-| `js/spectrum.js` | The 48K and 128K machines: memory paging, ULA (video, keyboard, beeper, EAR), tape trap, loader detection and edge-loop skipping, snapshots |
+| `js/spectrum.js` | The 48K, 128K and +2 machines (the +2 is the 128K hardware with its own ROM set): memory paging, ULA (video, keyboard, beeper, EAR), tape trap, loader detection and edge-loop skipping, snapshots |
 | `js/ay.js` | AY-3-8912 sound chip of the 128K: three tones, noise and envelopes |
 | `js/tape.js` | TAP/TZX parsing into an EAR pulse stream, the standard blocks for instant loading, tape parts, and joining several tape files into one tape in parts |
 | `js/main.js` | Browser front end: picture, PC keyboard, audio output, joysticks and gamepads, file loading, tape controls, function keys |
-| `js/retro.js` | The TV (power, channels, knobs, static), the on-screen 48K, Spectrum+ and 128 keyboards, and the manual (fixed-shape pages, one or two at a time, longer chapters flowed onto more pages) |
+| `js/retro.js` | The TV (power, channels, knobs, static), the on-screen 48K, Spectrum+, 128 and +2 keyboards (and moving the recorder into the +2's case), and the manual (fixed-shape pages, one or two at a time, longer chapters flowed onto more pages) |
 | `js/screenmenu.js` | Menus drawn on the Spectrum's own screen in the ROM font: the Multiface menu and the catalogue |
 | `js/catalogue.js` | Software catalogue: searches ZXDB through the ZXInfo API and loads games from the World of Spectrum mirror on archive.org |
 | `js/library.js` | Your libraries: folders and zips of your own games, indexed (names and places only, ZIP64 too), searched with ZXDB, reconnected on request |
 | `js/tapes.js` | The cassette rack: four banks of 8 tapes kept in the browser (IndexedDB), recording SAVEs, `.zxtapes` backups |
 | `js/textfix.js` | Undoes the text enlargement of in-app browsers (Messenger and others) |
-| `js/rom48.js`, `js/rom128.js` | The ROMs as scripts, so `index.html` also works opened straight from disk |
-| `roms/48.rom`, `roms/128.rom` | The original ROMs |
-| `css/retro.css` | TV, keyboard and cassette recorder styling |
+| `js/rom48.js`, `js/rom128.js`, `js/romplus2.js` | The ROMs as scripts, so `index.html` also works opened straight from disk |
+| `roms/48.rom`, `roms/128.rom`, `roms/plus2.rom` | The original ROMs |
+| `css/retro.css` | TV, keyboards, the computers' cases (the +2 with its built-in Datacorder) and cassette recorder styling |
 | `css/room.css` | The room's layout for PC, phone in landscape and phone in portrait; the gadgets, the manual, the rack, the touch joystick |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Installable app: offline cache, app details and icons |
 | `serve.js` | Tiny static file server: `node serve.js [port]` |
@@ -83,9 +85,9 @@ Not yet: 128K models and AY sound, memory/IO contention (some timing-critical de
 ## Test status
 
 - ZEXDOC and ZEXALL: all 67 groups pass (documented and undocumented flags).
-- ROM boots to the copyright screen; BASIC accepts typed input.
+- ROM boots to the copyright screen; BASIC accepts typed input. The +2 boots to its menu ("(c)1986, (c)1982 Amstrad Consumer Electronics plc") and 128 BASIC prints.
 - `hello.tap` loads and auto-runs through the instant ROM trap, through real-time pulse loading (about 10 s emulated, with loading stripes) and as a loader of its own with edge loops skipped; tapes in parts and stop blocks are checked too (`node test/tape-test.js`).
-- Checked from the catalogue: Zynaps, Renegade, Target: Renegade, NARC and Sai Combat load on the 48K and the 128K (Speedlock 4 and 7, Hewson and turbo loaders, multi-load levels).
+- Checked from the catalogue: Zynaps, Renegade, Target: Renegade, NARC and Sai Combat load on the 48K and the 128K (Speedlock 4 and 7, Hewson and turbo loaders, multi-load levels); on the +2, Where Time Stood Still (128K) and Zynaps (48K, in 48 BASIC).
 
 ## Install it
 

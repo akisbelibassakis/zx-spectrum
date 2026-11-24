@@ -1,4 +1,4 @@
-// The 80s television (power, channels, knobs, CRT static), the rubber-key 48K keyboard and the 128's keyboard.
+// The 80s television (power, channels, knobs, CRT static), the rubber-key 48K keyboard, the 128's keyboard and the +2's.
 'use strict';
 
 // ---------- keyboard ----------
@@ -165,14 +165,29 @@ function keyFace128(name) {
   return `<span class="small">${lines.map(l => l || '&nbsp;').join('<br>')}</span><span class="main">${esc(legend)}</span>`;
 }
 
-function buildKeyboard128() {
-  const kb = document.getElementById('keysPlus');
+// the +2's grey keys (Amstrad, 1986): the same layout with far fewer legends, in white italics: the letter or digit,
+// the symbol above it on some, and RUN, CODE and LOAD; the special keys are named in the bottom-left corner
+const PLUS2_SYMBOLS = { 1: '!', 2: '@', 3: '#', 4: '$', 5: '%', 6: '&amp;', 7: "'", 8: '(', 9: ')', 0: '_',
+  R: '&lt; RUN', T: '&gt;', I: 'CODE', H: '&uarr;', J: '&minus; LOAD', K: '+', L: '=', Z: ':', X: '&pound;', C: '?', V: '/', B: '*' };
+const PLUS2_LABELS = { TRUEVID: 'TRUE<br>VIDEO', INVVID: 'INV<br>VIDEO', BREAK: 'BREAK', DELETE: 'DELETE', GRAPH: 'GRAPH',
+  EXTEND: 'EXTEND MODE', EDIT: 'EDIT', ENTER: 'ENTER<i class="ret"></i>', CAPS: 'CAPS SHIFT', CAPSLOCK: 'CAPS<br>LOCK', SYM: 'SYMB<br>SHIFT',
+  SEMI: '<b>;</b>', QUOTE: '<b>"</b>', DOT: '<b>.</b>', COMMA: '<b>,</b>',
+  LEFT: '<b class="chev l"></b>', RIGHT: '<b class="chev r"></b>', UP: '<b class="chev u"></b>', DOWN: '<b class="chev d"></b>', SPACE: '' };
+function keyFacePlus2(name) {
+  if (PLUS2_LABELS[name] !== undefined) return `<span class="p2lab">${PLUS2_LABELS[name]}</span>`;
+  const sym = PLUS2_SYMBOLS[name];
+  return (sym ? `<span class="p2sym">${sym}</span>` : '') + `<span class="p2main">${name === '0' ? '&Oslash;' : name}</span>`;
+}
+
+// plus2: the +2's grey keys (in its own case), otherwise the black keys of the Spectrum+ and 128
+function buildKeyboard128(plus2) {
+  const kb = document.getElementById(plus2 ? 'keysPlus2' : 'keysPlus');
   for (const [name, x, y, w, face] of KB128) {
     const key = document.createElement('button');
-    key.className = 'key128' + (name === 'ENTER' ? ' enter' : '') + (name === 'SPACE' ? ' space' : '');
+    key.className = 'key128' + (plus2 ? ' kp2' : '') + (name === 'ENTER' ? ' enter' : '') + (name === 'SPACE' ? ' space' : '');
     key.style.cssText = `--x:${x};--y:${y};--w:${w}`;
     key.setAttribute('aria-label', name);
-    key.innerHTML = face !== undefined ? `<span class="label">${face}</span>` : keyFace128(name);
+    key.innerHTML = plus2 ? '<i class="cap"></i>' + keyFacePlus2(name) : face !== undefined ? `<span class="label">${face}</span>` : keyFace128(name);
     const combo = COMBOS[name] || [name];
     keyEls.push({ el: key, keys: combo.map(n => K[n]) });
     attachKey(key, name, name === 'CAPS' || name === 'SYM');
@@ -180,14 +195,22 @@ function buildKeyboard128() {
   }
 }
 
-// show the case and keyboard of the chosen model: '48', 'plus' or '128'
+// show the case and keyboard of the chosen model: '48', 'plus', '128' or 'plus2'.
+// The +2 has the Datacorder built in: the recorder (and its insert card) moves into the +2's case and leaves the desk.
 function showKeyboard(model) {
-  const plusKeys = model !== '48';
+  const plus2 = model === 'plus2', plusKeys = model === 'plus' || model === '128';
   document.querySelector('.desk').classList.toggle('mplus', plusKeys);
-  document.getElementById('spectrum48').hidden = plusKeys;
+  document.querySelector('.desk').classList.toggle('mplus2', plus2);
+  document.documentElement.classList.toggle('plus2', plus2);
+  document.getElementById('spectrum48').hidden = model !== '48';
   const caseEl = document.getElementById('spectrumPlus');
   caseEl.hidden = !plusKeys;
   caseEl.classList.toggle('is128', model === '128');
+  document.getElementById('spectrumPlus2').hidden = !plus2;
+  const deck = document.getElementById('deck'), card = document.getElementById('tapeBlocks');
+  const home = plus2 ? document.querySelector('#spectrumPlus2 .deckslot') : document.querySelector('.recwrap');
+  if (deck.parentElement !== home) { home.append(deck, card); }
+  deck.classList.toggle('builtin', plus2);
   latched.clear();
   document.querySelectorAll('.latched').forEach(k => k.classList.remove('latched'));
 }
@@ -227,14 +250,14 @@ function setPower(on) {
   document.getElementById('powerLed').classList.toggle('lit', on);
 }
 
-// channels 1-3 are the 48K, Spectrum+ and 128K; 4-6 only show static
+// channels 1-4 are the 48K, Spectrum+, 128K and +2; 5 and 6 only show static
 function tuneTo(n) {
   channel = n;
-  tv.classList.toggle('static', n > 3);
+  tv.classList.toggle('static', n > MODEL_CHANNELS.length);
   document.querySelectorAll('.chan').forEach(b => b.classList.toggle('on', +b.dataset.ch === n));
 }
 function setChannel(n) {
-  if (n <= 3 && MODEL_CHANNELS[n - 1] !== model) { setModel(MODEL_CHANNELS[n - 1]); renderTapeBlocks(); startAudio(); }
+  if (n <= MODEL_CHANNELS.length && MODEL_CHANNELS[n - 1] !== model) { setModel(MODEL_CHANNELS[n - 1]); renderTapeBlocks(); startAudio(); }
   else tuneTo(n);
 }
 
@@ -276,11 +299,12 @@ function applyPicture() {
 function retroLoop() {
   requestAnimationFrame(retroLoop);
   syncKeyboard();
-  if (powered && channel > 3) drawNoise();
+  if (powered && channel > MODEL_CHANNELS.length) drawNoise();
 }
 
 buildKeyboard();
 buildKeyboard128();
+buildKeyboard128(true);
 showKeyboard(model);
 document.getElementById('btnPower').onclick = () => setPower(!powered);
 document.querySelectorAll('.chan').forEach(b => { b.onclick = () => setChannel(+b.dataset.ch); });

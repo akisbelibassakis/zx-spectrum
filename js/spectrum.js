@@ -1,4 +1,4 @@
-// ZX Spectrum 48K and 128K: memory paging, ULA (video, keyboard, beeper, EAR), AY sound, tape traps and snapshots.
+// ZX Spectrum 48K, 128K and +2: memory paging, ULA (video, keyboard, beeper, EAR), AY sound, tape traps and snapshots.
 'use strict';
 
 if (typeof module !== 'undefined') {
@@ -28,7 +28,7 @@ for (let i = 0; i < 16; i++) {
 class Spectrum {
   constructor(sampleRate, machine) {
     this.ram = Array.from({ length: 8 }, () => new Uint8Array(16384)); // the 48K uses banks 5, 2 and 0
-    this.roms = {};                 // 48: [rom], 128: [editor ROM 0, 48 BASIC ROM 1]
+    this.roms = {};                 // 48: [rom], 128 and plus2: [editor ROM 0, 48 BASIC ROM 1]
     this.slots = [null, this.ram[5], this.ram[2], this.ram[0]];
     this.ay = new AY();
     this.dcIn = 0; this.dcOut = 0;  // DC-blocking filter on the audio output
@@ -48,15 +48,18 @@ class Spectrum {
     this.setMachine(machine || 48);
   }
 
-  // switch model; resets the machine
+  // switch model (48, 128, or 'plus2': the +2 is a 128K with Amstrad's ROMs); resets the machine.
+  // machine is the hardware (48 or 128), romSet the ROMs it runs
   setMachine(m) {
-    this.machine = +m;
+    this.romSet = m === 'plus2' ? 'plus2' : +m;
+    this.machine = m === 'plus2' ? 128 : +m;
     this.is128 = this.machine === 128;
     Object.assign(this, MACHINES[this.machine]);
+    if (this.romSet === 'plus2') this.name = 'ZX Spectrum +2';
     this.setSampleRate(this.sampleRate);
     this.reset();
   }
-  get romLoaded() { return !!this.roms[this.machine]; }
+  get romLoaded() { return !!this.roms[this.romSet]; }
 
   setSampleRate(rate) {
     this.sampleRate = rate;
@@ -65,18 +68,22 @@ class Spectrum {
     this.nextSampleT = this.tPerSample;
   }
 
-  // 16K = 48K ROM, 32K = 128K ROM (editor ROM followed by the 48 BASIC ROM); returns the model it is for
+  // 16K = 48K ROM, 32K = 128K or +2 ROM (editor ROM followed by the 48 BASIC ROM; the +2's editor ROM says Amstrad);
+  // returns the ROM set it is for: 48, 128 or 'plus2'
   loadROM(bytes) {
-    if (bytes.length === 16384) this.roms[48] = [bytes.slice()];
-    else if (bytes.length === 32768) this.roms[128] = [bytes.slice(0, 16384), bytes.slice(16384)];
-    else throw new Error('A ROM must be 16384 bytes (48K) or 32768 bytes (128K), not ' + bytes.length);
+    let set;
+    if (bytes.length === 16384) { set = 48; this.roms[48] = [bytes.slice()]; }
+    else if (bytes.length === 32768) {
+      set = isPlus2ROM(bytes) ? 'plus2' : 128;
+      this.roms[set] = [bytes.slice(0, 16384), bytes.slice(16384)];
+    } else throw new Error('A ROM must be 16384 bytes (48K) or 32768 bytes (128K, +2), not ' + bytes.length);
     this.page();
-    return bytes.length === 16384 ? 48 : 128;
+    return set;
   }
 
   // port 0x7FFD: bits 0-2 RAM bank at 0xC000, bit 3 shadow screen (bank 7), bit 4 ROM, bit 5 locks paging until reset
   page() {
-    const p = this.port7ffd, rom = this.roms[this.machine];
+    const p = this.port7ffd, rom = this.roms[this.romSet];
     this.slots[0] = rom ? rom[this.is128 ? (p >> 4) & 1 : 0] : new Uint8Array(16384).fill(0xff);
     this.slots[3] = this.ram[this.is128 ? p & 7 : 0];
     this.screenBank = this.ram[this.is128 && (p & 8) ? 7 : 5];
@@ -397,10 +404,13 @@ class Spectrum {
 
   // ---- snapshots ----
   // Loading a snapshot switches to the model it was made on; the loaders return that model (48 or 128).
-  needMachine(m) {
-    if (!this.roms[m]) throw new Error('This snapshot is for the ' + MACHINES[m].name + '; load its ROM first.');
-    if (this.machine !== m) this.setMachine(m);
-    else this.reset();
+  // A 128K snapshot runs on the +2 as well as the 128 (the +2 stays a +2); prefer: 'plus2' for a +2 snapshot.
+  needMachine(m, prefer) {
+    if (this.machine === m && this.romLoaded) { this.reset(); return; }
+    const sets = m === 128 ? (prefer === 'plus2' ? ['plus2', 128] : [128, 'plus2']) : [48];
+    const set = sets.find(r => this.roms[r]);
+    if (set === undefined) throw new Error('This snapshot is for the ' + MACHINES[m].name + '; load its ROM first.');
+    this.setMachine(set);
   }
 
   loadSNA(d) {
@@ -497,7 +507,7 @@ class Spectrum {
     const is128 = extLen === 23 ? hw === 3 || hw === 4 : hw >= 4 && hw <= 6 || hw === 12;
     if (!is48 && !is128) throw new Error('This .Z80 snapshot is for a machine other than the 48K or 128K (hardware ' + hw + ')');
     const m = is48 ? 48 : 128;
-    this.needMachine(m);
+    this.needMachine(m, extLen !== 23 && hw === 12 ? 'plus2' : undefined);
     regs();
     this.cpu.pc = pc;
     if (m === 128) {
@@ -522,6 +532,17 @@ class Spectrum {
   }
 }
 
+// the +2's editor ROM carries Amstrad's name; the 128's says Sinclair Research
+function isPlus2ROM(bytes) {
+  const want = [65, 109, 115, 116, 114, 97, 100]; // 'Amstrad'
+  for (let i = 0; i < 16384 - want.length; i++) {
+    let k = 0;
+    while (k < want.length && (bytes[i + k] & 0x7f) === want[k]) k++;
+    if (k === want.length) return true;
+  }
+  return false;
+}
+
 function unpackZ80(d, start, end, size) {
   const out = new Uint8Array(size);
   let o = 0;
@@ -539,4 +560,4 @@ function unpackZ80(d, start, end, size) {
   return out;
 }
 
-if (typeof module !== 'undefined') module.exports = { Spectrum, MACHINES, SCREEN_W, SCREEN_H, FRAME_T, CPU_HZ };
+if (typeof module !== 'undefined') module.exports = { Spectrum, isPlus2ROM, MACHINES, SCREEN_W, SCREEN_H, FRAME_T, CPU_HZ };

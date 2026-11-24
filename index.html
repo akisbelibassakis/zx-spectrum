@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ZX Spectrum</title>
-<meta name="description" content="Play the ZX Spectrum 48K, Spectrum+ and 128 in your browser, on an 80s desk with a TV, a Datacorder, a Multiface and a catalogue of thousands of games.">
+<meta name="description" content="Play the ZX Spectrum 48K, Spectrum+, 128 and +2 in your browser, on an 80s desk with a TV, a Datacorder, a Multiface and a catalogue of thousands of games.">
 <meta name="theme-color" content="#141414">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg?v=2" type="image/svg+xml">
@@ -14,7 +14,7 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://akisbelibassakis.github.io/zx-spectrum/">
 <meta property="og:title" content="ZX Spectrum - back on the desk">
-<meta property="og:description" content="Play the ZX Spectrum 48K, Spectrum+ and 128 in your browser, on an 80s desk with a TV, a Datacorder, a Multiface and a catalogue of thousands of games.">
+<meta property="og:description" content="Play the ZX Spectrum 48K, Spectrum+, 128 and +2 in your browser, on an 80s desk with a TV, a Datacorder, a Multiface and a catalogue of thousands of games.">
 <meta property="og:image" content="https://akisbelibassakis.github.io/zx-spectrum/icons/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -88,7 +88,7 @@
         <div class="grille"></div>
         <div class="channels">
           <button class="chan" data-ch="1" data-tip="ZX Spectrum 48K">48K</button><button class="chan" data-ch="2" data-tip="ZX Spectrum+">+</button>
-          <button class="chan" data-ch="3" data-tip="ZX Spectrum 128K">128</button><button class="chan" data-ch="4">4</button>
+          <button class="chan" data-ch="3" data-tip="ZX Spectrum 128K">128</button><button class="chan" data-ch="4" data-tip="ZX Spectrum +2">+2</button>
           <button class="chan" data-ch="5">5</button><button class="chan" data-ch="6">6</button>
         </div>
         <div class="knobs">
@@ -157,6 +157,34 @@
       <div class="ribs"></div>
     </div>
 
+    <!-- the Spectrum +2 (Amstrad, 1986): the 128 in a grey case with the Datacorder built into its right-hand side.
+         On the +2 the recorder (#deck) moves into .deckslot (retro.js), so the tape is played from the computer itself. -->
+    <div id="spectrumPlus2" class="spectrumplus2" hidden>
+      <div class="p2ridge"></div>
+      <div class="p2top"></div>
+      <svg class="p2logo" viewBox="0 0 276 84" preserveAspectRatio="none" role="img" aria-label="sinclair">
+        <g fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="square" stroke-linejoin="miter">
+          <path transform="translate(4.5 0)" d="M29,30 H0 V53 H29 V76 H0"/>
+          <path transform="translate(50.5 0)" d="M0,30 V76"/>
+          <path transform="translate(67.5 0)" d="M0,76 V30 H30 V76"/>
+          <path transform="translate(114.5 0)" d="M30,30 H0 V76 H30"/>
+          <path transform="translate(161.5 0)" d="M0,6 V76"/>
+          <path transform="translate(178.5 0)" d="M0,30 H30 V76 H0 V53 H30"/>
+          <path transform="translate(225.5 0)" d="M0,30 V76"/>
+          <path transform="translate(242.5 0)" d="M0,76 V30 H25"/>
+        </g>
+        <g fill="currentColor"><rect x="44.5" y="6" width="12" height="12"/><rect x="219.5" y="6" width="12" height="12"/></g>
+      </svg>
+      <span class="p2rule l"></span><span class="p2rule r"></span>
+      <div class="p2k">128K</div><span class="p2led"></span>
+      <div class="p2name">ZX Spectrum<b>+2</b></div>
+      <div class="p2grooves"></div>
+      <div class="p2frame"></div>
+      <div id="keysPlus2" class="keysplus2"></div>
+      <div class="p2bay"><div class="p2well"></div><div class="p2label">DATACORDER</div><span class="p2hole"></span></div>
+      <div class="deckslot"></div>
+    </div>
+
   </div>
 
   <!-- ===== Datacorder cassette recorder ===== -->
@@ -200,7 +228,7 @@
   <section id="romNote" class="note" hidden>
     <h2>ROM needed</h2>
     The emulator needs the original ROM: <code>48.rom</code> (16,384 bytes) for the 48K,
-    <code>128.rom</code> (32,768 bytes) for the 128K. Drop it here, or press EJECT on the recorder to open it; it is remembered in this browser.
+    <code>128.rom</code> (32,768 bytes) for the 128K, <code>plus2.rom</code> (32,768 bytes) for the +2. Drop it here, or press EJECT on the recorder to open it; it is remembered in this browser.
   </section>
 
   <!-- ===== the manual ===== -->
@@ -216,7 +244,7 @@
       <article class="page quick" id="ch-quick">
         <h1>Quick start</h1>
         <ol>
-          <li><b>1</b><b>Choose a computer</b> with the television's buttons: <b>48K</b>, <b>+</b> or <b>128</b>.</li>
+          <li><b>1</b><b>Choose a computer</b> with the television's buttons: <b>48K</b>, <b>+</b>, <b>128</b> or <b>+2</b>.</li>
           <li><b>2</b><b>Find a game:</b> press <b>F2</b> (or click an empty place on the rack). Type a title, press ENTER, choose with the arrow keys and press ENTER again. The game loads by itself.</li>
           <li><b>3</b><b>Play</b> with the keys the game shows, or click the <b>joystick</b> to plug it in: the arrow keys move and Left Alt fires.</li>
           <li><b>4</b><b>Play it again later:</b> every game you load goes onto the <b>cassette rack</b>; click it there.</li>
@@ -247,7 +275,7 @@
         <p>This booklet is for anyone who has never used a ZX Spectrum, and for those who used one long ago and have forgotten how. Everything on the desk works: the computer, the television, the recorder and the gadgets around them.</p>
         <p>And the whole Spectrum library is a few keys away: the software catalogue searches <b>ZXDB</b>, the database of everything ever made for the Spectrum, and loads the games straight from the <b>World of Spectrum</b> archive, with nothing to download or unpack.</p>
         <ol>
-          <li><b>1</b>The computer. Choose it with the television's channel buttons: <b>48K</b>, <b>+</b> or <b>128</b>. Changing channel resets it. Switched on, the 48K and the Spectrum+ show the copyright message (figure 2); the 128 shows its menu.</li>
+          <li><b>1</b>The computer. Choose it with the television's channel buttons: <b>48K</b>, <b>+</b>, <b>128</b> or <b>+2</b>. Changing channel resets it. Switched on, the 48K and the Spectrum+ show the copyright message (figure 2); the 128 and the +2 show their menu. The grey +2 has the recorder built into its right-hand side.</li>
           <li><b>2</b>A tape. Press <b>STOP/EJ</b> on the recorder and pick a <b>.tap</b> or <b>.tzx</b> tape, a <b>.z80</b> or <b>.sna</b> snapshot, or a ROM. You can also drop files anywhere on the page, or find a game in the <b>software catalogue</b> (F2, an empty place on the rack, or the empty cassette window), or in your own libraries of games: chapter 4 shows how. Every tape you load goes onto your <b>cassette rack</b>, so you can play it again later, even offline.</li>
           <li><b>3</b>The recorder. With <b>AUTO LOAD</b> on, the tape starts by itself. Otherwise type the load command and press <b>PLAY</b>.</li>
         </ol>
@@ -256,7 +284,7 @@
         <p>On the 48K and the Spectrum+, type</p>
         <div class="fig">LOAD ""<br>(J, then SYMBOL SHIFT + P twice, then ENTER)</div>
         <figure class="tvfig"><svg viewBox="0 0 320 250" role="img" aria-label="LOAD "" typed at the bottom of the screen, followed by the cursor"><path d="M34 18 Q160 6 286 18 Q306 20 308 40 Q316 125 308 210 Q306 230 286 232 Q160 244 34 232 Q14 230 12 210 Q4 125 12 40 Q14 20 34 18 Z"/><image href="manual/fig-load.png" x="32" y="29" width="256" height="192"/></svg><figcaption>Figure 3</figcaption></figure>
-        <p>and press PLAY. The border flashes while the program loads. On the 128, choose <b>Tape Loader</b> from the menu instead.</p>
+        <p>and press PLAY. The border flashes while the program loads. On the 128 and the +2, choose <b>Tape Loader</b> from the menu instead.</p>
         <p>Click the cassette to see what is on the tape; click a line to wind the tape to it.</p>
         <h2>If something goes wrong</h2>
         <p>Press the reset button on the side of the computer (F8). The Multiface's red button stops a game so that you can save it and come back later. Chapter 4 has more help for a game that will not load.</p>
@@ -298,12 +326,12 @@
         <ol class="parts">
           <li><b>1</b><b>Multiface One.</b> The red button freezes the game and shows its menu on the screen.</li>
           <li><b>2</b><b>Television.</b> Double-click the picture for full screen.</li>
-          <li><b>3</b><b>Channel buttons</b> 48K, + and 128 choose the computer; VOLUME, COLOUR, ZOOM and POWER.</li>
+          <li><b>3</b><b>Channel buttons</b> 48K, +, 128 and +2 choose the computer; VOLUME, COLOUR, ZOOM and POWER.</li>
           <li><b>4</b><b>Joystick.</b> Click it to plug it in.</li>
           <li><b>5</b><b>This manual.</b></li>
           <li><b>6</b><b>ZX Spectrum.</b> Type on your PC keyboard or click the keys.</li>
           <li><b>7</b><b>Reset button</b> on the side of the computer.</li>
-          <li><b>8</b><b>Datacorder.</b> STOP/EJ opens a tape; click the cassette to see what is on it. With no tape in, the cassette window opens the catalogue.</li>
+          <li><b>8</b><b>Datacorder.</b> STOP/EJ opens a tape; click the cassette to see what is on it. With no tape in, the cassette window opens the catalogue. On the +2 it is built into the computer, on the right.</li>
           <li><b>9</b><b>Cassette rack.</b> Your tapes: click one to load it, an empty place to find a game, MY TAPES for the list, A to D for the other banks.</li>
         </ol>
         <p>Rest the mouse on any of them to see its name. On a phone they are arranged to fit the screen.</p>
@@ -321,7 +349,7 @@
           <tr><td><kbd>&larr;</kbd> <kbd>&uarr;</kbd> <kbd>&rarr;</kbd> <kbd>&darr;</kbd></td><td>Cursor keys, or the joystick when it is plugged in (<kbd>Left Alt</kbd> = fire)</td></tr>
           <tr><td><kbd>,</kbd> <kbd>.</kbd> <kbd>;</kbd> <kbd>'</kbd> <kbd>-</kbd> <kbd>=</kbd> <kbd>/</kbd></td><td>SYMBOL SHIFT + N M O P J L V</td></tr>
         </table>
-        <p>You can also click or tap the keys on the screen. A click on CAPS SHIFT or SYMBOL SHIFT holds it down for the next key. The Spectrum+ and 128 keys such as DELETE, EDIT, the arrows and ; " , . press the two keys they stand for.</p>
+        <p>You can also click or tap the keys on the screen. A click on CAPS SHIFT or SYMBOL SHIFT holds it down for the next key. The Spectrum+, 128 and +2 keys such as DELETE, EDIT, the arrows and ; " , . press the two keys they stand for.</p>
         <h2>Emulator shortcuts</h2>
         <p>The function keys, which the Spectrum never had, work the desk:</p>
         <table class="keys2">
@@ -386,7 +414,7 @@
           <li>Try another of its tapes in the catalogue; <b>.tzx</b> tapes are the most faithful copies.</li>
           <li>Some games work only on the 48K: change to channel 1 and load it again.</li>
           <li>Press F8 to reset, then load the tape again from the rack.</li>
-          <li>A game made for the 128 will not run on the 48K: change to channel 3.</li>
+          <li>A game made for the 128 will not run on the 48K: change to channel 3 (or 4, the +2).</li>
         </ul>
         <div class="pn">5</div>
       </article>
@@ -466,15 +494,16 @@
         <p>Press <b>REC</b> on the recorder (F5), then type</p>
         <div class="fig">SAVE "hello"</div>
         <p>(S gives SAVE) and ENTER. At <i>Start tape, then press any key</i>, press a key: your program goes onto <i>My programs</i> on the rack. To get it back another day: LOAD "" (J, then SYMBOL SHIFT + P twice) and ENTER, then pick the tape when the screen asks.</p>
-        <h2>On the 128</h2>
+        <h2>On the 128 and the +2</h2>
         <p>Choose <b>128 BASIC</b> from the menu. There you type every keyword letter by letter (P, R, I, N, T), and the cursor keys move freely around the program. <b>48 BASIC</b> on the menu works exactly like the 48K.</p>
         <div class="pn">7</div>
       </article>
       <article class="page" id="ch-settings">
         <h1>7. Settings</h1>
         <table>
+          <tr><td>The computer</td><td>Channels 1 to 4 of the TV: the 48K, the Spectrum+ (a 48K in the newer case), the 128 and the +2, Amstrad's grey 128 with its own ROMs and the Datacorder built in. A 128K snapshot or tape runs on the 128 and on the +2 alike, and the +2 stays a +2. Your choice is remembered.</td></tr>
           <tr><td>SPEED switch</td><td><b>NORMAL</b>: real tape speed, with the border stripes and the loading sound. <b>FAST</b>: the computer runs flat out while the tape plays. <b>INSTANT</b>: programs go straight into memory; games with a loader of their own (turbo, Speedlock and the like) run flat out with the picture still, so they load in seconds too.</td></tr>
-          <tr><td>AUTO LOAD</td><td>Putting in a tape resets the computer and starts loading it (LOAD "" on the 48K and Spectrum+, Tape Loader on the 128). On the 128, a game made only for the 48K loads in 48 BASIC, as many of them need. A tape with a 48K and a 128K version starts at the one for your model.</td></tr>
+          <tr><td>AUTO LOAD</td><td>Putting in a tape resets the computer and starts loading it (LOAD "" on the 48K and Spectrum+, Tape Loader on the 128 and +2). On the 128 and +2, a game made only for the 48K loads in 48 BASIC, as many of them need. A tape with a 48K and a 128K version starts at the one for your model.</td></tr>
           <tr><td>Games and saving</td><td>The catalogue, your libraries, the rack and tapes in parts: chapter 4. Saving and the Multiface: chapter 5.</td></tr>
           <tr><td>Counter</td><td>Shows how far the tape has played; the small button sets it to 000.</td></tr>
           <tr><td>Multiface</td><td>The red button (F4) freezes the game and shows its menu: SAVE, LOAD, TURBO, RESET, RETURN. Choose with the arrows and ENTER, or press S, L, T, X or R; BREAK returns to the game.</td></tr>
@@ -485,7 +514,7 @@
       </article>
       <article class="page" id="ch-about">
         <h1>8. About</h1>
-        <p>An emulator of the Sinclair ZX Spectrum 48K (1982), Spectrum+ (1984) and Spectrum 128 (1986), written in plain JavaScript. It runs in the browser, with nothing to install.</p>
+        <p>An emulator of the Sinclair ZX Spectrum 48K (1982), Spectrum+ (1984), Spectrum 128 (1986) and Amstrad's Spectrum +2 (1986), written in plain JavaScript. It runs in the browser, with nothing to install.</p>
         <p>The Spectrum ROMs are copyright Amstrad, who allow them to be distributed for use with emulators.</p>
         <p>This is a fan project. It is not made, endorsed or supported by Sky, Sinclair Research or Amstrad; ZX Spectrum and Sinclair are trademarks of their owners. Search words typed into the catalogue go to ZXInfo; nothing else leaves your computer.</p>
         <p>The software catalogue stands on the work of others: <b>ZXDB</b>, the database of Spectrum software, searched through the <b>ZXInfo</b> service (zxinfo.dk), and the <b>World of Spectrum</b> archive, whose copy is kept at archive.org. Thank you to everyone who has spent years preserving the Spectrum's software, and to the publishers and authors who allow it to be shared. Only titles whose makers allow it can be downloaded.</p>
@@ -511,6 +540,7 @@
 <script src="js/spectrum.js"></script>
 <script src="js/rom48.js"></script>
 <script src="js/rom128.js"></script>
+<script src="js/romplus2.js"></script>
 <script src="js/main.js"></script>
 <script src="js/retro.js"></script>
 <script src="js/screenmenu.js"></script>

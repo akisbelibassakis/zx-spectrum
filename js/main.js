@@ -8,10 +8,12 @@ const image = ctx2d.createImageData(SCREEN_W, SCREEN_H);
 const imageU32 = new Uint32Array(image.data.buffer);
 
 let audioCtx = null, nextAudioTime = 0, soundOn = true;
-// Models: the Spectrum+ is a 48K in the Spectrum+ case, with the 128's keyboard layout
-const MODELS = { 48: { name: 'ZX Spectrum 48K', hw: 48 }, plus: { name: 'ZX Spectrum+', hw: 48 }, 128: { name: 'ZX Spectrum 128K', hw: 128 } };
+// Models: the Spectrum+ is a 48K in the Spectrum+ case, with the 128's keyboard layout; the +2 is a 128K with
+// Amstrad's ROMs in a grey case with the Datacorder built in. rom: the ROM set it runs (spectrum.js)
+const MODELS = { 48: { name: 'ZX Spectrum 48K', hw: 48, rom: 48 }, plus: { name: 'ZX Spectrum+', hw: 48, rom: 48 },
+  128: { name: 'ZX Spectrum 128K', hw: 128, rom: 128 }, plus2: { name: 'ZX Spectrum +2', hw: 128, rom: 'plus2' } };
 let model = savedModel();
-const zx = new Spectrum(44100, MODELS[model].hw);
+const zx = new Spectrum(44100, MODELS[model].rom);
 let paused = false, turbo = false, lastTime = 0, frameDebt = 0, lastName = '';
 // recorder and joystick settings, remembered in this browser
 const settings = Object.assign({ speed: 2, autoLoad: true, joy: false, volume: 0.7, colour: 0.5, picture: 'colour' }, (() => {
@@ -19,7 +21,7 @@ const settings = Object.assign({ speed: 2, autoLoad: true, joy: false, volume: 0
 })());
 function saveSettings() { try { localStorage.setItem('zxSettings', JSON.stringify(settings)); } catch (e) { /* storage unavailable */ } }
 
-// the model from the address (?machine=48, plus or 128) or the one used last time
+// the model from the address (?machine=48, plus, 128 or plus2) or the one used last time
 function savedModel() {
   const asked = new URLSearchParams(location.search).get('machine');
   if (MODELS[asked]) return asked;
@@ -30,7 +32,7 @@ function savedModel() {
   return '48';
 }
 const modelName = () => MODELS[model].name;
-const MODEL_CHANNELS = ['48', 'plus', '128']; // TV channels 1-3
+const MODEL_CHANNELS = ['48', 'plus', '128', 'plus2']; // TV channels 1-4
 
 // ---------- keyboard ----------
 const K = {
@@ -214,7 +216,7 @@ function bootFast(in48) {
   for (let i = 0; i < (zx.is128 && !in48 ? 150 : 120); i++) zx.runFrame();
 }
 // AUTO LOAD: reset and load the tape. A tape in parts starts at the part for this model (48K or 128K version);
-// on the 128K a tape for the 48K loads in 48 BASIC, as many 48K games need. machine: what the tape is for, if known
+// on the 128K and +2 a tape for the 48K loads in 48 BASIC, as many 48K games need. machine: what the tape is for, if known
 function autoLoad(tape, machine) {
   let part = -1;
   if (tape.parts.length) {
@@ -226,25 +228,25 @@ function autoLoad(tape, machine) {
   const in48 = zx.is128 && forModel === 48;
   bootFast(in48);
   if (part > 0) tape.windTo(tape.parts[part].block);
-  // 128K: ENTER picks "Tape Loader" on the start-up menu; 48K (and 48 BASIC): LOAD "" ENTER (J, then SYMBOL SHIFT+P twice)
+  // 128K and +2: ENTER picks "Tape Loader" on the start-up menu; 48K (and 48 BASIC): LOAD "" ENTER (J, then SYMBOL SHIFT+P twice)
   if (zx.is128 && !in48) zx.typeKeys([{ keys: [K.ENTER] }]);
   else zx.typeKeys([{ keys: [K.J] }, { keys: [K.SYM, K.P] }, { keys: [K.SYM, K.P] }, { keys: [K.ENTER] }]);
   renderTapeBlocks();
-  if (!zx.is128 && forModel === 128) status('This tape is for the 128K (channel 3)', true);
+  if (!zx.is128 && forModel === 128) status('This tape is for the 128K (channel 3 or 4)', true);
   else status(part >= 0 ? 'Loading: ' + tape.parts[part].name : in48 ? 'Loading in 48 BASIC' : 'Tape inserted');
 }
 
 // switch model: resets the machine and shows its case and keyboard
 function setModel(m) {
   model = MODELS[m] ? String(m) : '48';
-  if (zx.machine !== MODELS[model].hw) zx.setMachine(MODELS[model].hw); else zx.reset();
+  if (zx.romSet !== MODELS[model].rom) zx.setMachine(MODELS[model].rom); else zx.reset();
   showMachine();
   try { localStorage.setItem('zxModel', model); } catch (e) { /* storage unavailable */ }
 }
 // after a ROM or snapshot changed the hardware: the model follows it (a Spectrum+ stays a Spectrum+ on 48K hardware)
 function followHardware() {
-  if (MODELS[model].hw === zx.machine) return;
-  model = zx.machine === 128 ? '128' : '48';
+  if (MODELS[model].rom === zx.romSet) return;
+  model = zx.romSet === 'plus2' ? 'plus2' : zx.machine === 128 ? '128' : '48';
   try { localStorage.setItem('zxModel', model); } catch (e) { /* storage unavailable */ }
 }
 function showMachine() {
@@ -262,7 +264,7 @@ function loadFile(name, bytes, opts = {}) {
     if (ext === 'rom' || ((bytes.length === 16384 || bytes.length === 32768) && !['tap', 'tzx', 'sna', 'z80'].includes(ext))) {
       const m = zx.loadROM(bytes);
       saveROM(m, bytes);
-      if (zx.machine !== m) { zx.setMachine(m); followHardware(); } else zx.reset();
+      if (zx.romSet !== m) { zx.setMachine(m); followHardware(); } else zx.reset();
       showMachine();
       status('ROM loaded: ' + name);
       return;
@@ -276,10 +278,10 @@ function loadFile(name, bytes, opts = {}) {
       if (settings.autoLoad) autoLoad(tape, opts.machine || 0);
       else status(tape.parts.length ? 'Tape inserted: ' + tape.parts.length + ' parts' : 'Tape inserted');
     } else if (ext === 'sna' || ext === 'z80') {
-      const before = zx.machine;
+      const before = zx.romSet;
       if (ext === 'sna') zx.loadSNA(bytes); else zx.loadZ80(bytes);
-      if (zx.machine !== before) { followHardware(); showMachine(); }
-      status('Snapshot loaded: ' + name + (zx.machine !== before ? ' (switched to the ' + modelName() + ')' : ''));
+      if (zx.romSet !== before) { followHardware(); showMachine(); }
+      status('Snapshot loaded: ' + name + (zx.romSet !== before ? ' (switched to the ' + modelName() + ')' : ''));
     } else {
       status('Unknown file type: ' + name, true);
       return;
@@ -313,10 +315,11 @@ document.addEventListener('drop', e => {
   for (const f of files) readFile(f);
 });
 
-// ROMs: remembered in this browser; otherwise from js/rom48.js / rom128.js (pages opened from disk can't fetch())
-// or from roms/48.rom / roms/128.rom
+// ROMs: remembered in this browser; otherwise from js/rom48.js / rom128.js / romplus2.js (pages opened from disk
+// can't fetch()) or from roms/48.rom / roms/128.rom / roms/plus2.rom
 const ROM_SOURCES = { 48: { key: 'zx48rom', script: 'ZX48_ROM', file: 'roms/48.rom' },
-  128: { key: 'zx128rom', script: 'ZX128_ROM', file: 'roms/128.rom' } };
+  128: { key: 'zx128rom', script: 'ZX128_ROM', file: 'roms/128.rom' },
+  plus2: { key: 'zxplus2rom', script: 'ZXPLUS2_ROM', file: 'roms/plus2.rom' } };
 const fromBase64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 function saveROM(m, bytes) {
   let s = '';
@@ -334,7 +337,7 @@ async function findROM(m) {
   return null;
 }
 async function initROMs() {
-  for (const m of [48, 128]) {
+  for (const m of [48, 128, 'plus2']) {
     const bytes = await findROM(m);
     if (bytes) { zx.loadROM(bytes); saveROM(m, bytes); }
   }

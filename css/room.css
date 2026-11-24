@@ -480,3 +480,17 @@ html.upscale .room { position: absolute; left: 0; top: 0; width: calc(100vw * va
   font: bold 10px Arial, sans-serif; color: #ddd; letter-spacing: .04em;
 }
 @media (orientation: landscape) { #touchJoy { --fb: 34vh; } } /* above the keyboard's ENTER and SPACE */
+
+/* ================= the +2: the Datacorder is in the computer, so the desk has no recorder =================
+   The +2's case is 23.3 pitches wide and 8.3 deep; on a PC it is as tall as the manual and takes the recorder's place. */
+html.plus2 .recwrap { display: none; }
+html.plus2 .room { grid-template-areas: "mf tv joy" "man desk desk"; }
+.desk.mplus2 { --q: min(calc(var(--P) * 7.06 / 8.3), calc((var(--vw100) - 60px - var(--P) * 6) / 23.5)); }
+@media (max-height: 520px) and (orientation: landscape) {
+  html.plus2 .room { grid-template-areas: "tv mf joy rack" "tv man man man" "tv desk desk desk"; }
+  .desk.mplus2 { --q: min(calc(var(--P) * 7.06 / 8.3), calc(var(--R) / 23.6)); }
+}
+@media (max-width: 700px) {
+  html.plus2 .room { grid-template-areas: "tv tv tv" "desk desk desk" "man mf rack" "man joy rack"; }
+  .desk.mplus2 { --q: calc(var(--W) / 23.6); }
+}

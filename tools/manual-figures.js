@@ -59,18 +59,8 @@ let zx;
 zx = machine(); save(zx, 'fig-copyright');                                            // switched on
 zx = machine(); type(zx, 'J SYM+P SYM+P'); save(zx, 'fig-load');                      // LOAD "" typed
 zx = machine(); type(zx, 'P'); save(zx, 'fig-print');                                 // the P key: PRINT
-zx = machine(); HELLO.forEach(l => type(zx, l)); save(zx, 'fig-listing');             // the program listed
-type(zx, 'R ENTER', 200); save(zx, 'fig-scroll');                                     // RUN: scroll?
 zx = machine(); HELLO.forEach(l => type(zx, l)); type(zx, 'S SYM+P H E L L O SYM+P ENTER'); save(zx, 'fig-save'); // SAVE "hello"
 zx = machine();
 type(zx, '1 0 EXT SYM+H 1 2 8 SYM+N 8 8 SYM+N 6 0 ENTER');                             // CIRCLE 128,88,60
 type(zx, '2 0 Q 0 SYM+N 0 SYM+Z W 2 5 5 SYM+N 1 7 5 ENTER');                           // PLOT 0,0: DRAW 255,175
 type(zx, 'R ENTER', 100); save(zx, 'fig-circle');
-zx = machine();                                                                       // the guessing game, played to the end
-['1 0 L X SYM+L EXT R _ SYM+8 EXT T SYM+B 1 0 SYM+9 SYM+K 1 ENTER',
-  '2 0 I SYM+P CAPS+G U E S S _ 1 _ T O _ 1 0 SYM+Z _ SYM+P SYM+O G ENTER',
-  '3 0 U G SYM+L X SYM+G P SYM+P CAPS+R I G H T SYM+1 SYM+P SYM+Z SYM+A ENTER',
-  '4 0 P SYM+P CAPS+N O SYM+N _ T R Y _ A G A I N SYM+P SYM+Z G 2 0 ENTER'].forEach(l => type(zx, l));
-type(zx, 'R ENTER', 100);
-for (const g of [5, 3, 8, 1, 9, 2, 7, 4, 6, 10]) { if (zx.read(23610) !== 255) break; type(zx, (g === 10 ? '1 0' : String(g)) + ' ENTER', 60); }
-save(zx, 'fig-guess');

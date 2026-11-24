@@ -71,7 +71,7 @@ Not yet: 128K models and AY sound, memory/IO contention (some timing-critical de
 | `sw.js`, `manifest.webmanifest`, `icons/` | Installable app: offline cache, app details and icons |
 | `serve.js` | Tiny static file server: `node serve.js [port]` |
 | `installer/` | Windows installer: `build.ps1` makes `dist\ZX-Spectrum-Setup.exe` with IExpress; `install.ps1` / `uninstall.ps1` install for the current user without admin rights |
-| `manual/` | The manual's TV-screen figures, taken from the emulator (`fig-catalogue.png` and `fig-search.png` from the catalogue in the browser) |
+| `manual/` | The manual's TV-screen figures, taken from the emulator in black and white (`fig-catalogue.png` and `fig-search.png` from the catalogue in the browser) |
 | `tools/manual-figures.js` | Makes the manual's TV-screen figures: types on a 48K as the manual says and saves each screen in black and white: `node tools/manual-figures.js` |
 | `tools/list-basic.js` | Lists the blocks of a TAP/TZX file and prints any BASIC program in it as text |
 | `test/sanity.js` | Quick CPU checks: `node test/sanity.js` |

@@ -438,10 +438,8 @@
         <h2>Your first program</h2>
         <p>A line that starts with a number is kept as part of the program. Type each line and press ENTER:</p>
         <div class="fig">10 PRINT "HELLO"<br>20 GO TO 10</div>
-        <p>After each ENTER the Spectrum lists the program; the <span class="cur">&gt;</span> marks the line you entered last (figure 8).</p>
-        <figure class="tvfig"><svg viewBox="0 0 320 250" role="img" aria-label="The program listed at the top: 10 PRINT "HELLO", 20 GO TO 10"><path d="M34 18 Q160 6 286 18 Q306 20 308 40 Q316 125 308 210 Q306 230 286 232 Q160 244 34 232 Q14 230 12 210 Q4 125 12 40 Q14 20 34 18 Z"/><image href="manual/fig-listing.png" x="32" y="29" width="256" height="192"/></svg><figcaption>Figure 8</figcaption></figure>
+        <p>After each ENTER the Spectrum lists the program; the <span class="cur">&gt;</span> marks the line you entered last.</p>
         <p>Then press <b>R</b> (RUN) and ENTER. The screen fills with HELLO; when it asks <i>scroll?</i>, any key carries on and N stops. <b>BREAK</b> (Esc, or CAPS SHIFT + SPACE) stops a program at any time. <b>K</b> (LIST) shows the program, and <b>A</b> (NEW) wipes it.</p>
-        <figure class="tvfig"><svg viewBox="0 0 320 250" role="img" aria-label="A column of HELLO filling the screen, and scroll? at the bottom"><path d="M34 18 Q160 6 286 18 Q306 20 308 40 Q316 125 308 210 Q306 230 286 232 Q160 244 34 232 Q14 230 12 210 Q4 125 12 40 Q14 20 34 18 Z"/><image href="manual/fig-scroll.png" x="32" y="29" width="256" height="192"/></svg><figcaption>Figure 9</figcaption></figure>
 
         <h2>Colours</h2>
         <div class="fig">10 BORDER 1: PAPER 6: INK 2: CLS<br>20 PRINT "Red on yellow"</div>
@@ -452,15 +450,14 @@
         <div class="fig">10 INPUT "Your name? "; a$<br>20 PRINT "Hello, "; a$</div>
         <p>IF decides, with THEN (SYMBOL SHIFT + G):</p>
         <div class="fig">10 LET x=INT (RND*10)+1<br>20 INPUT "Guess 1 to 10: "; g<br>30 IF g=x THEN PRINT "Right!": STOP<br>40 PRINT "No, try again": GO TO 20</div>
-        <p>RND gives a random number between 0 and 1, so x is a whole number from 1 to 10. When you guess it, the program ends with the report <i>9 STOP statement, 30:3</i>: not an error, just the STOP in line 30 (figure 10).</p>
-        <figure class="tvfig"><svg viewBox="0 0 320 250" role="img" aria-label="No, try again three times, then Right!, and the report 9 STOP statement, 30:3"><path d="M34 18 Q160 6 286 18 Q306 20 308 40 Q316 125 308 210 Q306 230 286 232 Q160 244 34 232 Q14 230 12 210 Q4 125 12 40 Q14 20 34 18 Z"/><image href="manual/fig-guess.png" x="32" y="29" width="256" height="192"/></svg><figcaption>Figure 10</figcaption></figure>
+        <p>RND gives a random number between 0 and 1, so x is a whole number from 1 to 10. When you guess it, the program ends with the report <i>9 STOP statement, 30:3</i>: not an error, just the STOP in line 30.</p>
 
         <h2>Sound and pictures</h2>
         <div class="fig">BEEP 0.5,0<br>BEEP 0.5,7</div>
         <p>plays middle C, then G, for half a second each (the second number is in semitones). Typed without a line number, a command runs at once.</p>
         <div class="fig">10 CIRCLE 128,88,60<br>20 PLOT 0,0: DRAW 255,175</div>
-        <p>draws a circle in the middle of the screen and a line across it (figure 11); the screen is 256 dots wide and 176 high, counted from the bottom left. The report <i>0 OK, 20:2</i> says the program ran to its end.</p>
-        <figure class="tvfig"><svg viewBox="0 0 320 250" role="img" aria-label="A circle in the middle of the screen, a line from the bottom left to the top right, and 0 OK, 20:2"><path d="M34 18 Q160 6 286 18 Q306 20 308 40 Q316 125 308 210 Q306 230 286 232 Q160 244 34 232 Q14 230 12 210 Q4 125 12 40 Q14 20 34 18 Z"/><image href="manual/fig-circle.png" x="32" y="29" width="256" height="192"/></svg><figcaption>Figure 11</figcaption></figure>
+        <p>draws a circle in the middle of the screen and a line across it (figure 8); the screen is 256 dots wide and 176 high, counted from the bottom left. The report <i>0 OK, 20:2</i> says the program ran to its end.</p>
+        <figure class="tvfig"><svg viewBox="0 0 320 250" role="img" aria-label="A circle in the middle of the screen, a line from the bottom left to the top right, and 0 OK, 20:2"><path d="M34 18 Q160 6 286 18 Q306 20 308 40 Q316 125 308 210 Q306 230 286 232 Q160 244 34 232 Q14 230 12 210 Q4 125 12 40 Q14 20 34 18 Z"/><image href="manual/fig-circle.png" x="32" y="29" width="256" height="192"/></svg><figcaption>Figure 8</figcaption></figure>
 
         <h2>Changing a program</h2>
         <p>To change a line, type it again with the same number; to delete it, type its number alone and press ENTER. Or press <b>EDIT</b> (CAPS SHIFT + 1): the line marked <span class="cur">&gt;</span> in the listing comes down to the bottom of the screen, where the arrow keys move along it and DELETE rubs out; ENTER puts it back. The up and down arrows move the <span class="cur">&gt;</span> mark between lines.</p>

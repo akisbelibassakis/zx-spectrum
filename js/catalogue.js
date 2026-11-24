@@ -143,8 +143,10 @@ const wrap = (text, n) => {
 };
 const fit = (t, n) => { t = String(t == null ? '' : t); return t.length > n ? t.slice(0, n - 1) + '~' : t.padEnd(n); };
 const HOME_TOP = 8, HOME_ROWS = 12; // the first page: your libraries and what can be added, rows 8-19
-// a game in your libraries, as a line of the list
-const libEntry = g => ({ title: g.title, year: g.year, publisher: g.publisher, genre: g.folder, machine: '', files: [], local: [g], loadable: true, why: '', own: true });
+// a game in your libraries (all its versions), as a line of the list
+const libEntry = gr => ({ title: gr.base, year: gr.best.year, publisher: gr.best.publisher, genre: gr.best.folder, machine: '', files: [], local: gr.versions, loadable: true, why: '', own: true });
+// a version of your game in the list of tapes: its TOSEC tags (or "original") and publisher
+const versionLabel = g => { const t = g.title.slice(g.base.length).trim(); return (t || 'original') + ' ' + (g.publisher || g.folder); };
 const catalogue = {
   full: true, blinks: true,
   // mode: 'search' (typing the title), 'home' (the first page's list), 'results', 'files' (a title's tapes)
@@ -164,6 +166,7 @@ const catalogue = {
     else if (!this.games.length && !this.busy && !this.scope) this.drawHome(s);
     else this.drawGames(s);
     if (this.ask) this.drawAsk(s);
+    if (!this.progress && !this.busy) s.print(0, 22, fit(this.hintLine(), 32), 1); // what the arrows and letters do here
     if (this.progress) { // the download: a bar along row 22
       s.bar(22, 7);
       s.print(0, 22, ' '.repeat(Math.max(1, Math.round(32 * this.progress))), 4 + 8, 4 + 8);
@@ -187,6 +190,15 @@ const catalogue = {
     return this.games.length ? 'ENTER find  BREAK first page' : 'ENTER find DOWN list BREAK exit';
   },
 
+  // the line above the keys: the arrows, and the letters of the first page
+  hintLine() {
+    if (this.ask) return '';
+    if (this.mode === 'home') return 'UP/DOWN move  F Z O R: as listed';
+    if (this.mode === 'results') return 'UP/DOWN move  LEFT/RIGHT a page';
+    if (this.mode === 'files') return 'UP/DOWN choose a version or tape';
+    if (this.scope || this.games.length) return 'DOWN: to the list';
+    return 'DOWN: your libraries (F Z O R)';
+  },
   // ---- the first page: your libraries, and what can be added ----
   homeItems() {
     const list = [];
@@ -217,8 +229,8 @@ const catalogue = {
       const it = items[this.hsel];
       if (it && it.lib) this.status = this.confirm === it.lib ? '!DELETE again removes it' : (it.lib.conn ? it.lib.games.length + (it.lib.games.length > 1 ? ' games' : ' game') : 'Not connected') + ' - ENTER looks in';
     }
-    s.print(1, 21, 'Data: ZXDB via ZXInfo; files:', 1);
-    s.print(1, 22, 'World of Spectrum archive', 1);
+    s.print(1, 20, 'Data: ZXDB via ZXInfo; files:', 1);
+    s.print(1, 21, 'World of Spectrum archive', 1);
   },
   homeAct(it) {
     if (!it) return;
@@ -236,7 +248,7 @@ const catalogue = {
   },
   filter() {
     const lib = this.scope;
-    this.games = (this.query.trim() ? searchLibraries(this.query.trim(), lib) : lib.games).map(libEntry);
+    this.games = groupGames(this.query.trim() ? searchLibraries(this.query.trim(), lib) : lib.games).map(libEntry);
     this.sel = 0; this.top = 0;
     this.status = this.games.length ? this.games.length + (this.games.length > 1 ? ' games' : ' game') + (lib.conn ? '' : ' (not connected)') : '!None with that name';
   },
@@ -263,7 +275,7 @@ const catalogue = {
     const own = g.local || [], n = own.length + g.files.length;
     if (own.length) {
       const lib = own[0].lib;
-      s.print(0, 21, fit((own.length > 1 || n > 1 ? n + ' tapes, yours in ' : 'Yours, in ') + lib.name + (lib.conn ? '' : ' (off)'), 32), 4);
+      s.print(0, 21, fit((own.length > 1 ? 'Yours (' + own.length + ' versions)' : 'Yours') + ', in ' + lib.name + (lib.conn ? '' : ' - off'), 32), 4);
     } else if (g.loadable) s.print(0, 21, fit(g.files.length === 1 ? '1 tape - ENTER loads it' : g.files.length + ' tapes - ENTER to choose', 32), 4);
     else s.print(0, 21, fit(g.why, 32), 2);
   },
@@ -276,12 +288,16 @@ const catalogue = {
       const name = f.local ? f.local.file : f.path.split('/').pop().replace(/\.zip$/i, ''); // archive files are all zipped
       const ext = name.split('.').pop().toUpperCase().slice(0, 3);
       s.bar(row, paper);
-      s.print(2, row, fit(name.replace(/\.(tap|tzx|z80|sna|zip)$/i, ''), 20), f.local ? 4 : 0, paper);
+      s.print(2, row, fit(f.local ? versionLabel(f.local) : name.replace(/\.(tap|tzx|z80|sna|zip)$/i, ''), 20), f.local ? 4 : 0, paper);
       if (f.local) s.print(23, row, 'MINE', 4, paper);
       s.print(31 - ext.length, row, ext, 1, paper);
     });
     const f = this.files[this.fsel];
-    if (f && f.local && !this.ask) { s.bar(17, 1); s.print(0, 18, fit('In ' + f.local.lib.name + (f.local.lib.conn ? '' : ' (not connected)'), 32), 4); s.print(0, 19, fit(f.local.path, 32), 1); }
+    if (f && f.local && !this.ask) {
+      s.bar(17, 1);
+      s.print(0, 18, fit('In ' + f.local.lib.name + (f.local.lib.conn ? '' : ' (not connected)'), 32), 4);
+      wrap(f.local.path, 32).slice(0, 3).forEach((line, k) => s.print(0, 19 + k, line, 1));
+    }
   },
   // loading from a library that is not connected: reconnect it, or take the archive's copy
   drawAsk(s) {
@@ -327,9 +343,17 @@ const catalogue = {
       return;
     }
     if (this.mode === 'search') {
-      if (ch && this.query.length < 24) { this.query += ch; if (this.scope) this.filter(); }
+      if (ch && this.query.length < 24) {
+        this.query += ch;
+        if (this.scope) this.filter();
+        else if (!this.games.length && this.query.length === 1) { // F, Z, O, R work in the list below
+          const what = { f: 'add a folder', z: 'add a zip', o: 'open a file', r: 'reconnect' }[ch.toLowerCase()];
+          if (what) this.status = '!To ' + what + ': DOWN, then ' + ch.toUpperCase();
+        } else if (this.status.startsWith('!To ')) this.status = 'Type a title, then ENTER';
+      }
       else if (k === 'DELETE') {
         this.query = this.query.slice(0, -1);
+        if (this.status.startsWith('!To ')) this.status = 'Type a title, then ENTER';
         if (this.scope) this.filter(); else if (!this.query.trim()) this.home();
       } else if (k === 'ENTER') { if (this.scope) { if (this.games.length) this.mode = 'results'; } else if (this.query.trim()) this.search(); else this.home(); }
       else if (k === 'DOWN') { if (this.games.length) this.mode = 'results'; else if (!this.scope) { this.mode = 'home'; this.hsel = 0; } }
@@ -379,22 +403,24 @@ const catalogue = {
   async search() {
     const text = this.query.trim();
     if (!text) return;
-    const mine = searchLibraries(text);
+    const mine = groupGames(searchLibraries(text)); // one line per game of yours
     this.games = mine.slice(0, 300).map(libEntry); this.sel = 0; this.top = 0;
     this.busy = true; this.status = (mine.length ? mine.length + ' yours - ' : '') + 'Searching ZXDB...'; this.ctl = new AbortController(); redrawScreen();
     try {
       const found = await searchZXDB(text, this.ctl.signal), used = new Set();
       const zxdb = found.map(g => {
         const files = g.files.filter(f => f.url), key = titleKey(g.title);
-        const local = key ? mine.filter(m => m.key === key) : [];
-        local.forEach(m => used.add(m));
+        const groups = key ? mine.filter(m => m.best.key === key) : [];
+        groups.forEach(m => used.add(m));
+        const local = groups.flatMap(m => m.versions).sort((a, b) => a.rank - b.rank);
         const why = local.length ? '' : !g.available ? g.availability : !g.files.length ? 'No tape or snapshot' : !files.length ? 'Not in the archive (after 2017)' : '';
         return { ...g, files: g.available ? files : [], local, own: local.length > 0, loadable: !why, why };
       });
       const others = mine.filter(m => !used.has(m)).slice(0, 300).map(libEntry);
       this.games = [...zxdb.filter(g => g.own), ...others, ...zxdb.filter(g => !g.own)];
       this.sel = 0; this.top = 0;
-      this.status = this.games.length ? this.games.length + ' found' + (mine.length ? ', ' + mine.length + ' yours' : '') : '!Nothing found';
+      const yours = this.games.filter(g => g.own).length;
+      this.status = this.games.length ? this.games.length + ' found' + (yours ? ', ' + yours + ' yours' : '') : '!Nothing found';
     } catch (err) {
       if (err.cancelled) this.status = this.games.length ? this.games.length + ' yours (ZXDB cancelled)' : 'Type a title, then ENTER';
       else this.status = this.games.length ? '!' + this.games.length + ' yours; ZXDB: ' + err.message : '!' + err.message;
@@ -407,8 +433,8 @@ const catalogue = {
     if (!g || !g.loadable) { if (g) this.status = '!' + g.why; return; }
     const options = [...(g.local || []).map(local => ({ local })), ...g.files];
     if (options.length === 1 || (g.local && g.local.length === 1)) { this.loadOption(options[0]); return; } // yours, when you have it
-    this.files = options.slice(0, 12); this.fsel = 0; this.mode = 'files';
-    this.status = (g.local && g.local.length ? 'Yours first. ' : '') + 'Choose a tape';
+    this.files = options.slice(0, 10); this.fsel = 0; this.mode = 'files'; // 10 fit above the panel
+    this.status = g.local && g.local.length ? 'Your versions, best first' : 'Choose a tape';
   },
   loadOption(o) { if (o.local) this.loadLocal(o.local, this.games[this.sel]); else this.load(o); },
   // a game from your library: read from your folder or zip; not connected, the screen asks first

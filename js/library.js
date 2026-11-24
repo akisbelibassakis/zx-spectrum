@@ -102,7 +102,15 @@ const fileKey = t => titleKey(String(t).toLowerCase()
   .replace(/\[[^\]]*\]|\([^)]*\)/g, ' ')
   .replace(/\b(16k|48k|128k|side \w|part \d+|tape \d+|disk \d+)\b/g, ' '));
 function prepareLibrary(lib) {
-  for (const g of lib.games) { g.lib = lib; g.key = fileKey(g.title); g.hay = (g.title + ' ' + g.file + ' ' + g.folder + ' ' + g.publisher).toLowerCase(); }
+  for (const g of lib.games) {
+    g.lib = lib; g.key = fileKey(g.title); g.hay = (g.title + ' ' + g.file + ' ' + g.folder + ' ' + g.publisher).toLowerCase();
+    g.base = g.title.replace(/\s*\[.*$/, '');
+    const tags = [...g.title.matchAll(/\[([^\]]*)\]/g)].map(m => m[1].trim().toLowerCase());
+    g.bad = tags.some(t => /^(b|o|u|v)\d*( |$)/.test(t));                                  // bad, over-, under-dump, virus
+    g.altered = /\(demo/i.test(g.file) || tags.some(t => /^(cr|h|t|p|f|m|tr)\d*( |$)/.test(t)); // cracked, hacked, trained...
+    g.rank = (tags.includes('!') ? 0 : 20) + tags.reduce((n, t) => n + (/^a(\d*)( |$)/.test(t) ? 1 + (+t.slice(1).split(' ')[0] || 1) : 0), 0)
+      + (g.altered ? 100 : 0) + ({ tzx: 0, tap: 1, z80: 2, sna: 3, zip: 4 }[g.file.split('.').pop().toLowerCase()] || 5);
+  }
   lib.games.sort((a, b) => naturally(a.title, b.title));
   return lib;
 }
@@ -261,6 +269,24 @@ function searchLibraries(text, only) {
   const words = text.toLowerCase().split(/\s+/).filter(Boolean), hits = [];
   for (const lib of only ? [only] : libraries) for (const g of lib.games) if (words.every(w => g.hay.includes(w))) hits.push(g);
   return hits;
+}
+// One entry per game: its versions together (a TOSEC set has many dumps of each), best first: verified [!], then
+// the original, then alternates [a]; TZX before TAP, Z80, SNA. Bad dumps are left out, and cracked, trained or
+// hacked versions and demos too when there is a clean one. A game with only bad dumps is not shown.
+function groupGames(games) {
+  const groups = new Map();
+  for (const g of games) {
+    if (g.bad) continue;
+    const k = g.key || g.base.toLowerCase();
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(g);
+  }
+  const out = [];
+  for (const versions of groups.values()) {
+    const clean = versions.filter(g => !g.altered), list = (clean.length ? clean : versions).sort((a, b) => a.rank - b.rank || naturally(a.file, b.file));
+    out.push({ base: list[0].base, versions: list, best: list[0], hidden: versions.length - list.length });
+  }
+  return out.sort((a, b) => naturally(a.base, b.base));
 }
 async function libraryBytes(g) {
   const lib = g.lib, c = lib.conn;

@@ -487,7 +487,7 @@ if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
   document.addEventListener('pointerdown', () => { clearTimeout(dymoTimer); dymo.hidden = true; });
 }
 
-// ?manual=<n> or ?manual=<chapter> (using, desk, keys, settings, about) opens the manual there
+// ?manual=<n> or ?manual=<chapter> (using, desk, keys, games, saving, basic, settings, about) opens the manual there
 {
   const m = new URLSearchParams(location.search).get('manual');
   if (m) {

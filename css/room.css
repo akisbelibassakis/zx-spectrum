@@ -377,14 +377,18 @@ button { font-family: Tahoma, sans-serif; }
 .book.tabtop .tabs { position: static; flex-direction: row; gap: 4px; margin-bottom: 4px; }
 .book.tabtop .tabs button { width: auto; flex: 1; transform: none; border-radius: 4px 4px 0 0; padding: 6px 3px; font-size: 11px; white-space: nowrap; overflow: hidden; opacity: .7; }
 .book.tabtop .tabs button.on { opacity: 1; }
+.book.tabtop .tabs button span { display: none; }       /* eight tabs: numbers only, */
+.book.tabtop .tabs button.on { flex: 4; }               /* and the open chapter's name */
+.book.tabtop .tabs button.on span { display: inline; }
+.book.compact .page table.basickeys td { padding: 3px 2px; font-size: 12px; }
 .book.tabtop .bclose { left: auto; right: 0; top: -44px; }
 /* short landscape screens (phones held sideways): slim tabs with only the chapter number */
 .book.tabslim .tabs button { width: 40px; padding: 7px 0 7px 8px; }
 .book.tabslim .tabs button span { display: none; }
 /* small pages: a two-column table puts each name above its text */
-.book.compact .page table:not(.keys2) tr { display: block; border-bottom: 1px solid #ccc; }
-.book.compact .page table:not(.keys2) td { display: block; width: auto; border: 0; padding: 3px 4px; }
-.book.compact .page table:not(.keys2) td:first-child { padding-bottom: 0; font-weight: bold; }
+.book.compact .page table:not(.keys2):not(.basickeys):not(.modes) tr { display: block; border-bottom: 1px solid #ccc; }
+.book.compact .page table:not(.keys2):not(.basickeys):not(.modes) td { display: block; width: auto; border: 0; padding: 3px 4px; }
+.book.compact .page table:not(.keys2):not(.basickeys):not(.modes) td:first-child { padding-bottom: 0; font-weight: bold; }
 .page p.cont { text-indent: 0; } /* the rest of a paragraph, carried over from the page before */
 
 /* menus drawn on the Spectrum's screen (screenmenu.js): over the picture, only while one is open */
@@ -404,6 +408,11 @@ button { font-family: Tahoma, sans-serif; }
 
 /* the author's note on the About page */
 .page .memoir { font-style: italic; }
+.page table.basickeys td:nth-child(odd) { font-weight: bold; white-space: nowrap; }
+.page table.basickeys td:nth-child(2) { white-space: nowrap; }
+.page table.modes td:first-child { width: 1.5em; font-size: 1.2em; } /* the cursor letters K, L, E */
+.page table.basickeys td:nth-child(3) { padding-left: 1em; }
+.page .red { color: #c0281d; font-weight: bold; } /* as the catalogue shows titles that cannot be loaded */
 .page .sign { text-align: right; font: italic bold 15px Georgia, serif; margin-top: 4px; }
 
 /* the knob labels can be clicked: VOLUME mutes, COLOUR changes the picture */

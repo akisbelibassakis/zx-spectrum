@@ -217,20 +217,19 @@
       <article class="page contents" id="ch-contents">
         <h1>Contents</h1>
         <ol class="toc">
-          <li><button data-ch="using"><span>1. Using the emulator</span><i></i><b>2</b></button></li>
-          <li><button data-ch="desk"><span>2. The desk</span><i></i><b>3</b></button></li>
-          <li><button data-ch="keys"><span>3. The keyboard</span><i></i><b>4</b></button></li>
-          <li><button data-ch="games"><span>4. Finding and loading games</span><i></i><b>5</b></button></li>
-          <li><button data-ch="saving"><span>5. Saving</span><i></i><b>6</b></button></li>
-          <li><button data-ch="basic"><span>6. Programming in BASIC</span><i></i><b>7</b></button></li>
-          <li><button data-ch="settings"><span>7. Settings</span><i></i><b>8</b></button></li>
-          <li><button data-ch="about"><span>8. About</span><i></i><b>9</b></button></li>
+          <li><button data-ch="using"><span class="cn">CHAPTER 1</span> <span class="ct">Using the emulator.</span> <i>Page <b></b></i></button></li>
+          <li><button data-ch="desk"><span class="cn">CHAPTER 2</span> <span class="ct">The desk.</span> <i>Page <b></b></i></button></li>
+          <li><button data-ch="keys"><span class="cn">CHAPTER 3</span> <span class="ct">The keyboard.</span> <i>Page <b></b></i></button></li>
+          <li><button data-ch="games"><span class="cn">CHAPTER 4</span> <span class="ct">Finding and loading games.</span> <i>Page <b></b></i></button></li>
+          <li><button data-ch="saving"><span class="cn">CHAPTER 5</span> <span class="ct">Saving.</span> <i>Page <b></b></i></button></li>
+          <li><button data-ch="basic"><span class="cn">CHAPTER 6</span> <span class="ct">Programming in BASIC.</span> <i>Page <b></b></i></button></li>
+          <li><button data-ch="settings"><span class="cn">CHAPTER 7</span> <span class="ct">Settings.</span> <i>Page <b></b></i></button></li>
+          <li><button data-ch="about"><span class="cn">CHAPTER 8</span> <span class="ct">About.</span> <i>Page <b></b></i></button></li>
         </ol>
         <p class="tocnote">Click a chapter, a coloured tab or the turned-up page corners; the arrow keys turn the pages and F1 closes the manual.</p>
         <div class="pn">1</div>
       </article>
       <article class="page" id="ch-using">
-        <div class="stripes"><i></i><i></i><i></i><i></i></div>
         <h1>1. Using the emulator</h1>
         <p>This booklet is for anyone who has never used a ZX Spectrum, and for those who used one long ago and have forgotten how. Everything on the desk works: the computer, the television, the recorder and the gadgets around them.</p>
         <ol>
@@ -279,6 +278,7 @@
             <circle cx="80" cy="34" r="9" fill="#111"/><text x="80" y="38" fill="#fff">9</text>
           </g>
         </svg>
+        <p class="figcap">Figure 1</p>
         <ol class="parts">
           <li><b>1</b><b>Multiface One.</b> The red button freezes the game and shows its menu on the screen.</li>
           <li><b>2</b><b>Television.</b> Double-click the picture for full screen.</li>
@@ -388,9 +388,9 @@
         <h2>Keywords on the keys</h2>
         <p>On the 48K and the Spectrum+ you do not spell out commands: each key types a whole <b>keyword</b>, printed on it. The flashing cursor shows what the next key will give:</p>
         <table class="modes">
-          <tr><td><b>K</b></td><td>Keyword: the word on the key. P gives PRINT, R RUN, L LET, G GO TO, F FOR, N NEXT, I INPUT, U IF, K LIST, A NEW, V CLS, B BORDER.</td></tr>
-          <tr><td><b>L</b></td><td>Letters, after a keyword. CAPS SHIFT gives capitals; CAPS SHIFT + 2 locks them (cursor <b>C</b>).</td></tr>
-          <tr><td><b>E</b></td><td>Extended: press CAPS SHIFT and SYMBOL SHIFT together (Tab on a PC), then a key for the words printed above and below it: E then T gives RND; E then SYMBOL SHIFT + X gives INK, + C gives PAPER, + Z gives BEEP.</td></tr>
+          <tr><td><span class="cur">K</span></td><td>Keyword: the word on the key. P gives PRINT, R RUN, L LET, G GO TO, F FOR, N NEXT, I INPUT, U IF, K LIST, A NEW, V CLS, B BORDER.</td></tr>
+          <tr><td><span class="cur">L</span></td><td>Letters, after a keyword. CAPS SHIFT gives capitals; CAPS SHIFT + 2 locks them (cursor <span class="cur">C</span>).</td></tr>
+          <tr><td><span class="cur">E</span></td><td>Extended: press CAPS SHIFT and SYMBOL SHIFT together (Tab on a PC), then a key for the words printed above and below it: E then T gives RND; E then SYMBOL SHIFT + X gives INK, + C gives PAPER, + Z gives BEEP.</td></tr>
         </table>
         <p><b>SYMBOL SHIFT</b> (Ctrl or Right Shift) with a key gives the red symbol or word on it: P gives ", L =, K +, J -, B *, V /, F TO, G THEN, Z :, O ;, N , (a comma). On a PC the keys <kbd>'</kbd> <kbd>,</kbd> <kbd>.</kbd> <kbd>;</kbd> <kbd>-</kbd> <kbd>=</kbd> <kbd>/</kbd> also work. Look at the keyboard on the screen: everything is printed there.</p>
         <h2>The words in this chapter</h2>
@@ -428,8 +428,8 @@
         <div class="fig">10 CIRCLE 128,88,60<br>20 PLOT 0,0: DRAW 255,175</div>
         <p>draws a circle in the middle of the screen and a line across it; the screen is 256 dots wide and 176 high, counted from the bottom left.</p>
         <h2>Changing a program</h2>
-        <p>To change a line, type it again with the same number; to delete it, type its number alone and press ENTER. Or press <b>EDIT</b> (CAPS SHIFT + 1): the line marked &gt; in the listing comes down to the bottom of the screen, where the arrow keys move along it and DELETE rubs out; ENTER puts it back. The up and down arrows move the &gt; mark between lines.</p>
-        <p>When something is wrong, the Spectrum puts a <b>?</b> where it cannot understand the line, or stops with a report such as <i>2 Variable not found, 20:1</i>: the error, then the line and the statement where it happened.</p>
+        <p>To change a line, type it again with the same number; to delete it, type its number alone and press ENTER. Or press <b>EDIT</b> (CAPS SHIFT + 1): the line marked <span class="cur">&gt;</span> in the listing comes down to the bottom of the screen, where the arrow keys move along it and DELETE rubs out; ENTER puts it back. The up and down arrows move the <span class="cur">&gt;</span> mark between lines.</p>
+        <p>When something is wrong, the Spectrum puts a flashing <span class="cur">?</span> where it cannot understand the line, or stops with a report such as <i>2 Variable not found, 20:1</i>: the error, then the line and the statement where it happened.</p>
         <h2>Keeping your program</h2>
         <p>Press <b>REC</b> on the recorder (F5), then type</p>
         <div class="fig">SAVE "hello"</div>

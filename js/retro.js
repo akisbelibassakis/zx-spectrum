@@ -298,7 +298,7 @@ const manual = document.getElementById('manual');
 const pagesBox = manual.querySelector('.pages');
 const chapters = [...manual.querySelectorAll('.page:not(.blank)')];
 const endBlank = pagesBox.lastElementChild; // the inside of the back cover
-const pageParts = n => n.matches('.pn, .stripes'); // fixed parts of a page, not part of the text
+const pageParts = n => n.matches('.pn, .rh'); // fixed parts of a page (number, running head), not part of the text
 // the text of each chapter, in order; tables and lists remember their rows so they can be split and put back
 for (const ch of chapters) {
   ch.dataset.ch = ch.id.slice(3);
@@ -360,7 +360,9 @@ function paginate() {
       const p = document.createElement('article');
       p.className = 'page cont';
       p.dataset.ch = ch.dataset.ch;
-      p.innerHTML = '<div class="pn"></div>';
+      // the running head, as in the 1982 booklet: "Chapter 6" at the top of every page after the first
+      const num = (ch.querySelector('h1') || {}).textContent.match(/^(\d+)\./);
+      p.innerHTML = (num ? '<div class="rh">Chapter ' + num[1] + '</div>' : '') + '<div class="pn"></div>';
       const last = text().pop(), keep = last && last.tagName === 'H2' && text().length > 1 ? last : null;
       page.hidden = true;
       page.after(p);

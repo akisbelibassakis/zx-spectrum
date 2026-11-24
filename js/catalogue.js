@@ -219,8 +219,8 @@ const catalogue = {
     const ch = k.startsWith('CHAR:') ? k.slice(5) : null;
     if (this.mode === 'search') {
       if (ch && this.query.length < 24) this.query += ch;
-      else if (k === 'DELETE') this.query = this.query.slice(0, -1);
-      else if (k === 'ENTER') this.search();
+      else if (k === 'DELETE') { this.query = this.query.slice(0, -1); if (!this.query.trim()) this.home(); }
+      else if (k === 'ENTER') { if (this.query.trim()) this.search(); else this.home(); }
       else if (k === 'DOWN' && this.games.length) this.mode = 'results';
     } else if (this.mode === 'results') {
       if (ch) { this.mode = 'search'; if (this.query.length < 24) this.query += ch; }
@@ -253,6 +253,11 @@ const catalogue = {
     if (this.sel >= this.top + LIST_ROWS) this.top = this.sel - LIST_ROWS + 1;
   },
 
+  // back to the first page (the instructions): the title is empty again
+  home() {
+    this.query = ''; this.games = []; this.sel = 0; this.top = 0; this.mode = 'search';
+    this.status = 'Type a title, then ENTER';
+  },
   async search() {
     const text = this.query.trim();
     if (!text) return;

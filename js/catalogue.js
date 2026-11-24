@@ -313,6 +313,9 @@ const catalogue = {
   },
 };
 
+// a reset (the button, F8, the Multiface, a channel, AUTO LOAD) is a fresh start: the catalogue opens on its
+// first page again. Not while it is on the screen or busy (a ?find= search at start-up, a download)
+zx.onReset = () => { if (screenMenu !== catalogue && !catalogue.busy) catalogue.home(); };
 function openCatalogue(text) {
   if (screenMenuOpen()) return;
   catalogue.mode = 'search'; catalogue.busy = false;

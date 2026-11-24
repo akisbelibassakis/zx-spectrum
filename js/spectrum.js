@@ -107,6 +107,7 @@ class Spectrum {
     this.audioLevel = 0;
     this.keyQueue = [];
     if (this.tape) this.tape.rewind();
+    if (this.onReset) this.onReset();
   }
 
   // ---- bus ----

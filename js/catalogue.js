@@ -246,10 +246,12 @@ const catalogue = {
     this.scope = lib; this.query = ''; this.filter();
     this.mode = 'results';
   },
-  filter() {
-    const lib = this.scope;
+  filter(keep) {
+    const lib = this.scope, title = keep && this.games[this.sel] && this.games[this.sel].title;
     this.games = groupGames(this.query.trim() ? searchLibraries(this.query.trim(), lib) : lib.games).map(libEntry);
     this.sel = 0; this.top = 0;
+    if (title) { const i = this.games.findIndex(g => g.title === title); if (i > 0) this.move(i); }
+    this.checkShown();
     this.status = this.games.length ? this.games.length + (this.games.length > 1 ? ' games' : ' game') + (lib.conn ? '' : ' (not connected)') : '!None with that name';
   },
 
@@ -392,6 +394,14 @@ const catalogue = {
     this.sel = Math.max(0, Math.min(this.games.length - 1, this.sel + d));
     if (this.sel < this.top) this.top = this.sel;
     if (this.sel >= this.top + LIST_ROWS) this.top = this.sel - LIST_ROWS + 1;
+    if (this.scope) this.checkShown();
+  },
+  // looking through a library: the zips on show (and the next page) are checked, and the list redrawn without
+  // the ones that hold no tape or snapshot
+  checkShown() {
+    const shown = this.games.slice(this.top, this.top + 2 * LIST_ROWS).flatMap(g => g.local || []), scope = this.scope;
+    if (!shown.some(needsCheck)) return;
+    checkGames(shown).then(dropped => { if (dropped && this.scope === scope && screenMenu === this) { this.filter(true); redrawScreen(); } });
   },
 
   // back to the first page (the instructions): the title is empty again
@@ -403,12 +413,15 @@ const catalogue = {
   async search() {
     const text = this.query.trim();
     if (!text) return;
-    const mine = groupGames(searchLibraries(text)); // one line per game of yours
+    this.busy = true; this.status = 'Looking in your libraries...'; this.ctl = new AbortController(); redrawScreen();
+    const found = searchLibraries(text);
+    await checkGames(found); // zips with no tape or snapshot in them are left out
+    const mine = groupGames(found); // one line per game of yours
     this.games = mine.slice(0, 300).map(libEntry); this.sel = 0; this.top = 0;
-    this.busy = true; this.status = (mine.length ? mine.length + ' yours - ' : '') + 'Searching ZXDB...'; this.ctl = new AbortController(); redrawScreen();
+    this.status = (mine.length ? mine.length + ' yours - ' : '') + 'Searching ZXDB...'; redrawScreen();
     try {
-      const found = await searchZXDB(text, this.ctl.signal), used = new Set();
-      const zxdb = found.map(g => {
+      const fromZXDB = await searchZXDB(text, this.ctl.signal), used = new Set();
+      const zxdb = fromZXDB.map(g => {
         const files = g.files.filter(f => f.url), key = titleKey(g.title);
         const groups = key ? mine.filter(m => m.best.key === key) : [];
         groups.forEach(m => used.add(m));
@@ -448,6 +461,12 @@ const catalogue = {
       if (loadFile(name, bytes, { machine })) rackOffer({ title: game && game.id ? game.title : g.title.replace(/\s*\[.*$/, ''), name, bytes, source: 'library', machine });
     } catch (err) {
       this.busy = false;
+      if (/No tape or snapshot/.test(err.message)) { // marked, and the next version of the game instead
+        g.ok = false; saveLibrary(g.lib);
+        const next = game && game.local && game.local.find(v => v !== g && v.ok !== false);
+        if (game && game.local) game.local = game.local.filter(v => v !== g);
+        if (next) { this.status = 'Not a game: trying another version'; redrawScreen(); return this.loadLocal(next, game); }
+      }
       if (err.name === 'NotAllowedError' || err.name === 'NotFoundError' || err.name === 'NotReadableError') { g.lib.conn = null; this.ask = { g, game, archive: game && game.files && game.files[0] }; }
       this.status = '!' + (err.name === 'NotFoundError' ? 'Not there any more' : err.message);
     }

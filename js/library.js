@@ -118,7 +118,7 @@ const gamesOfZip = entries => entries.filter(e => !skipEntry(e.name) && LIB_GAME
   .map(e => ({ ...describeFile(e.name), entry: { offset: e.offset, size: e.size, method: e.method } }));
 const gamesOfPaths = paths => paths.filter(p => !skipEntry(p) && LIB_GAME.test(p)).map(describeFile);
 // the stored form of a game: without the fields worked out again on loading
-const storedGames = games => games.map(({ lib, key, hay, ...g }) => g);
+const storedGames = games => games.map(({ lib, key, hay, base, bad, altered, rank, ...g }) => g);
 
 // ---------- picking files: the File System Access pickers where there are some, a file input elsewhere ----------
 // Must be called straight from a key press or a click (the browser asks for that).
@@ -276,7 +276,7 @@ function searchLibraries(text, only) {
 function groupGames(games) {
   const groups = new Map();
   for (const g of games) {
-    if (g.bad) continue;
+    if (g.bad || g.ok === false) continue; // a bad dump, or a zip with no tape or snapshot in it
     const k = g.key || g.base.toLowerCase();
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push(g);
@@ -300,6 +300,40 @@ async function libraryBytes(g) {
   let dir = c;
   for (const p of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(p);
   return new Uint8Array(await (await (await dir.getFileHandle(parts[parts.length - 1])).getFile()).arrayBuffer());
+}
+// ---------- zips inside a library: a game only if they hold a tape or snapshot ----------
+// (a TOSEC pack zips each game; some hold disk images or other files). Each is checked once, when first shown,
+// by reading only its list of contents, and the answer is kept in the index.
+const PLAYABLE = /\.(tap|tzx|z80|sna)$/i;
+const needsCheck = g => g.ok === undefined && /\.zip$/i.test(g.file) && g.lib.conn;
+async function innerZip(g) { // the zip inside, as a Blob: a slice of the library zip when it is stored (not packed)
+  const lib = g.lib, c = lib.conn, e = g.entry;
+  if (lib.kind === 'zip') {
+    if (e.method !== 0) return new Blob([await blobUnzipEntry(c, e)]);
+    const h = new DataView(await c.slice(e.offset, e.offset + 30).arrayBuffer());
+    const start = e.offset + 30 + h.getUint16(26, true) + h.getUint16(28, true);
+    return c.slice(start, start + e.size);
+  }
+  if (c instanceof Map) return c.get(g.path);
+  const parts = g.path.split('/');
+  let dir = c;
+  for (const p of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(p);
+  return (await dir.getFileHandle(parts[parts.length - 1])).getFile();
+}
+let saveTimer = 0;
+// check the zips among these games (at most limit of them, a few at a time); true if any turned out not to be games
+async function checkGames(games, limit = 400) {
+  const todo = games.filter(needsCheck).slice(0, limit);
+  let dropped = false;
+  for (let i = 0; i < todo.length; i += 16) {
+    await Promise.all(todo.slice(i, i + 16).map(async g => {
+      try { g.ok = (await blobZipIndex(await innerZip(g))).some(e => PLAYABLE.test(e.name) && !skipEntry(e.name)); } catch (e) { g.ok = false; }
+      if (!g.ok) dropped = true;
+      g.lib.dirty = true;
+    }));
+  }
+  if (todo.length) { clearTimeout(saveTimer); saveTimer = setTimeout(() => libraries.filter(l => l.dirty).forEach(l => { l.dirty = false; saveLibrary(l); }), 2000); }
+  return dropped;
 }
 // a game's tape or snapshot: as it is, or a zip in the library unpacked as one game (in parts if it holds several tapes)
 async function libraryGame(g) {

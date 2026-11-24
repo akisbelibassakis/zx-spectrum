@@ -99,8 +99,8 @@ function screenMenuSpectrumKey(name, down) {
   if (!screenMenu) return false;
   if (!down || name === 'CAPS' || name === 'SYM') return true;
   const caps = typeof latched !== 'undefined' && latched.has('CAPS');
-  const capsKeys = { 5: 'LEFT', 6: 'DOWN', 7: 'UP', 8: 'RIGHT', 0: 'DELETE', SPACE: 'BREAK' };
-  const named = { ENTER: 'ENTER', DELETE: 'DELETE', BREAK: 'BREAK', UP: 'UP', DOWN: 'DOWN', LEFT: 'LEFT', RIGHT: 'RIGHT', SPACE: 'CHAR: ' };
+  const capsKeys = { 1: 'EDIT', 5: 'LEFT', 6: 'DOWN', 7: 'UP', 8: 'RIGHT', 0: 'DELETE', SPACE: 'BREAK' };
+  const named = { ENTER: 'ENTER', DELETE: 'DELETE', BREAK: 'BREAK', EDIT: 'EDIT', UP: 'UP', DOWN: 'DOWN', LEFT: 'LEFT', RIGHT: 'RIGHT', SPACE: 'CHAR: ' };
   if (caps && capsKeys[name]) menuKey(capsKeys[name]);
   else if (named[name]) menuKey(named[name]);
   else if (/^[A-Z0-9]$/.test(name)) menuKey('CHAR:' + name.toLowerCase());

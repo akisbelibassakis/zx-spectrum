@@ -113,14 +113,17 @@ function partLabels(names) {
 }
 async function downloadGame(file, signal, onProgress) {
   const buf = (await fetchBytes(file.url, { signal, onProgress })).buffer;
-  const entries = zipEntries(buf).filter(e => /\.(tap|tzx|z80|sna)$/i.test(e.name));
-  if (!entries.length) throw new Error('No tape or snapshot in the download');
+  return gameFromZip(buf, decodeURIComponent(file.path.split('/').pop()));
+}
+// the game in a zip (a download, or a zip in your library): one tape or snapshot, or several tapes as one in parts
+async function gameFromZip(buf, zipFile) {
+  const entries = zipEntries(buf).filter(e => /\.(tap|tzx|z80|sna)$/i.test(e.name) && !/(^|\/)(__MACOSX|\.)/.test(e.name));
+  if (!entries.length) throw new Error('No tape or snapshot in the zip');
   const tapeEntries = entries.filter(e => /\.(tap|tzx)$/i.test(e.name)).sort((a, b) => naturally(baseName(a.name), baseName(b.name)));
   if (tapeEntries.length < 2) return { name: entries[0].name.split('/').pop(), bytes: await unzipEntry(buf, entries[0]) };
   const files = [];
   for (const e of tapeEntries) files.push({ name: e.name, bytes: await unzipEntry(buf, e) });
-  const zipName = baseName(decodeURIComponent(file.path.split('/').pop()).replace(/\.zip$/i, ''));
-  return { name: zipName + '.tzx', bytes: combineTapes(files, partLabels(files.map(f => f.name))) };
+  return { name: baseName(zipFile.replace(/\.zip$/i, '')) + '.tzx', bytes: combineTapes(files, partLabels(files.map(f => f.name))) };
 }
 // the model a ZXDB title is for: 48 (16K or 48K only), 128 (128K only) or 0 (both, or not said)
 const titleMachine = m => /^ZX-Spectrum (16K|48K)$/.test(m || '') ? 48 : /128/.test(m || '') && !/48/.test(m || '') ? 128 : 0;
@@ -138,59 +141,118 @@ const wrap = (text, n) => {
   if (line) lines.push(line);
   return lines;
 };
-// the first page, before any search
-const INTRO = [
-  ['Search ZXDB, the database of everything ever made for the ZX Spectrum.', 0],
-  ['', 0],
-  ['Type a title and press ENTER. Games whose makers allow it load straight into the recorder.', 0],
-  ['', 0],
-  ['Titles in red cannot be downloaded.', 2],
-  ['', 0],
-  ['Your own file: touch here.', 1],
-  ['', 0],
-  ['Data: ZXDB via ZXInfo', 1],
-  ['Files: World of Spectrum archive', 1],
-];
 const fit = (t, n) => { t = String(t == null ? '' : t); return t.length > n ? t.slice(0, n - 1) + '~' : t.padEnd(n); };
+const HOME_TOP = 8, HOME_ROWS = 12; // the first page: your libraries and what can be added, rows 8-19
+// a game in your libraries, as a line of the list
+const libEntry = g => ({ title: g.title, year: g.year, publisher: g.publisher, genre: g.folder, machine: '', files: [], local: [g], loadable: true, why: '', own: true });
 const catalogue = {
   full: true, blinks: true,
-  ownRows: [0, 0], mode: 'search', query: '', status: 'Type a title, then ENTER', games: [], sel: 0, top: 0, files: [], fsel: 0, busy: false, ctl: null, progress: 0,
+  // mode: 'search' (typing the title), 'home' (the first page's list), 'results', 'files' (a title's tapes)
+  // scope: a library being looked through; ask: loading from a library that is not connected
+  mode: 'search', query: '', status: 'Type a title, then ENTER', games: [], sel: 0, top: 0, files: [], fsel: 0,
+  hsel: 0, scope: null, ask: null, confirm: null, busy: false, ctl: null, progress: 0,
 
   draw(s, blink) {
     s.bar(0, 0); s.print(1, 0, 'Software Catalogue', 7, 0); s.stripes(27, 0);
-    s.print(0, 2, 'Title:', 1);
-    s.print(7, 2, fit(this.query, 24));
-    if (this.mode === 'search' && !this.busy) s.print(7 + this.query.length, 2, 'L', blink ? 7 : 0, blink ? 0 : 7); // the flashing cursor
+    s.print(0, 1, fit(this.where(), 32), 1); // where you are
+    s.print(0, 2, this.scope ? 'Find:' : 'Title:', 1);
+    const at = this.scope ? 6 : 7;
+    s.print(at, 2, fit(this.query, 31 - at));
+    if (this.mode === 'search' && !this.busy) s.print(at + this.query.length, 2, 'L', blink ? 7 : 0, blink ? 0 : 7); // the flashing cursor
     s.print(0, 3, fit(this.status.replace(/^!/, ''), 32), this.status.startsWith('!') ? 2 : 1);
     if (this.mode === 'files') this.drawFiles(s);
-    else if (!this.games.length && !this.busy) this.drawIntro(s);
+    else if (!this.games.length && !this.busy && !this.scope) this.drawHome(s);
     else this.drawGames(s);
+    if (this.ask) this.drawAsk(s);
     if (this.progress) { // the download: a bar along row 22
       s.bar(22, 7);
       s.print(0, 22, ' '.repeat(Math.max(1, Math.round(32 * this.progress))), 4 + 8, 4 + 8);
     }
     s.bar(23, 0);
-    s.print(0, 23, this.busy ? 'BREAK cancels' : this.mode !== 'search' ? 'ENTER pick DEL back BREAK start' : this.games.length ? 'ENTER find  BREAK first page' : 'ENTER find  BREAK exit', 7, 0);
+    s.print(0, 23, fit(this.keysLine(), 32), 7, 0);
   },
-  drawIntro(s) {
-    let row = LIST_TOP;
-    for (const [text, ink] of INTRO) {
-      if (!text) { row++; continue; }
-      const first = row;
-      for (const line of wrap(text, 30)) s.print(1, row++, line, ink);
-      if (text.startsWith('Your own file')) this.ownRows = [first, row]; // touching it opens a file
+  where() {
+    let w = 'Catalogue';
+    if (this.scope) w += ' > ' + this.scope.name;
+    else if (this.games.length) w += ' > "' + this.query.trim() + '"';
+    if (this.mode === 'files' && this.games[this.sel]) w += ' > ' + this.games[this.sel].title;
+    return w;
+  },
+  keysLine() {
+    if (this.busy) return 'BREAK cancels';
+    if (this.ask) return this.ask.archive ? 'R reconnect ENTER archive BREAK' : 'R reconnect it   BREAK back';
+    if (this.mode === 'home') return 'ENTER pick  UP title  BREAK exit';
+    if (this.mode === 'results' || this.mode === 'files') return 'ENTER pick DEL back BREAK start';
+    if (this.scope) return 'Type to narrow  BREAK start';
+    return this.games.length ? 'ENTER find  BREAK first page' : 'ENTER find DOWN list BREAK exit';
+  },
+
+  // ---- the first page: your libraries, and what can be added ----
+  homeItems() {
+    const list = [];
+    if (libraries.some(l => !l.conn)) list.push({ act: 'reconnect', label: 'R Reconnect to my library', ink: 2 });
+    for (const lib of libraries) list.push({ lib, label: '  ' + lib.name, right: (lib.kind === 'zip' ? 'zip ' : 'dir ') + lib.games.length, ink: lib.conn ? 0 : 1 });
+    if (canPickFolder) list.push({ act: 'folder', label: '+ Add a folder', key: 'F', ink: 0 });
+    list.push({ act: 'zip', label: '+ Add a zip', key: 'Z', ink: 0 });
+    list.push({ act: 'file', label: '+ Open one file', key: 'O', ink: 0 });
+    return list;
+  },
+  homeTop: 0,
+  drawHome(s) {
+    s.print(1, 5, libraries.length ? 'Search ZXDB and your libraries.' : 'Search ZXDB: everything made', 0);
+    s.print(1, 6, libraries.length ? 'Red: cannot be loaded.' : 'for the Spectrum. Red: no file.', libraries.length ? 2 : 0);
+    const items = this.homeItems(), off = libraries.filter(l => !l.conn).length;
+    s.print(1, HOME_TOP - 1, libraries.length ? 'YOUR LIBRARIES' + (off ? ' (' + (off === libraries.length ? 'not' : off + ' not') + ' connected)' : '') : 'YOUR LIBRARIES (none yet)', 1);
+    this.hsel = Math.min(this.hsel, items.length - 1);
+    if (this.hsel < this.homeTop) this.homeTop = this.hsel;
+    if (this.hsel >= this.homeTop + HOME_ROWS) this.homeTop = this.hsel - HOME_ROWS + 1;
+    items.slice(this.homeTop, this.homeTop + HOME_ROWS).forEach((it, i) => {
+      const n = this.homeTop + i, on = this.mode === 'home' && n === this.hsel, paper = on ? 5 + 8 : 7, row = HOME_TOP + i;
+      s.bar(row, paper);
+      s.print(1, row, fit(it.label, it.right ? 30 - it.right.length : 26), it.ink, paper);
+      if (it.right) s.print(31 - it.right.length, row, it.right, 1, paper);
+      if (it.key) s.print(30, row, it.key, 1, paper);
+    });
+    if (this.mode === 'home') { // what the chosen line is
+      const it = items[this.hsel];
+      if (it && it.lib) this.status = this.confirm === it.lib ? '!DELETE again removes it' : (it.lib.conn ? it.lib.games.length + (it.lib.games.length > 1 ? ' games' : ' game') : 'Not connected') + ' - ENTER looks in';
     }
+    s.print(1, 21, 'Data: ZXDB via ZXInfo; files:', 1);
+    s.print(1, 22, 'World of Spectrum archive', 1);
   },
+  homeAct(it) {
+    if (!it) return;
+    this.confirm = null;
+    if (it.act === 'reconnect') reconnectAll().then(() => redrawScreen());
+    else if (it.act === 'folder') addFolderLibrary().then(() => redrawScreen());
+    else if (it.act === 'zip') addZipLibrary().then(() => redrawScreen());
+    else if (it.act === 'file') { closeCatalogue(); openFile(); }
+    else if (it.lib) this.openLibrary(it.lib);
+  },
+  // look through one library: all its games, narrowed as you type
+  openLibrary(lib) {
+    this.scope = lib; this.query = ''; this.filter();
+    this.mode = 'results';
+  },
+  filter() {
+    const lib = this.scope;
+    this.games = (this.query.trim() ? searchLibraries(this.query.trim(), lib) : lib.games).map(libEntry);
+    this.sel = 0; this.top = 0;
+    this.status = this.games.length ? this.games.length + (this.games.length > 1 ? ' games' : ' game') + (lib.conn ? '' : ' (not connected)') : '!None with that name';
+  },
+
   drawGames(s) {
     this.games.slice(this.top, this.top + LIST_ROWS).forEach((g, i) => {
       const n = this.top + i, on = this.mode === 'results' && n === this.sel, paper = on ? 5 + 8 : 7;
       s.bar(LIST_TOP + i, paper);
-      s.print(1, LIST_TOP + i, fit(g.title, 25), g.loadable ? 0 : 2, paper);
+      // yours from ZXDB: black; only in your library: green; cannot be loaded: red
+      s.print(1, LIST_TOP + i, fit(g.title, 24), !g.loadable ? 2 : g.own && !g.id ? 4 : 0, paper);
       s.print(27, LIST_TOP + i, g.year || '', 1, paper);
+      if (g.id && g.own) s.print(26, LIST_TOP + i, '*', 4, paper); // a ZXDB title you have
     });
     if (this.games.length > LIST_ROWS) s.print(0, LIST_TOP + LIST_ROWS - 1, this.top + LIST_ROWS < this.games.length ? '+' : ' ', 1); // more below
     const g = this.games[this.sel];
-    if (g) this.drawDetails(s, g);
+    if (g && !this.ask) this.drawDetails(s, g);
   },
   // the panel under the list: what the chosen title is, and whether it can be loaded
   drawDetails(s, g) {
@@ -198,53 +260,105 @@ const catalogue = {
     s.print(0, 18, fit(g.title, 32), 0);
     s.print(0, 19, fit([g.publisher, g.year].filter(Boolean).join(', '), 32), 1);
     s.print(0, 20, fit([g.genre, (g.machine || '').replace('ZX-Spectrum ', 'Spectrum ')].filter(Boolean).join(' - '), 32), 1);
-    if (g.loadable) s.print(0, 21, fit(g.files.length === 1 ? '1 tape - ENTER loads it' : g.files.length + ' tapes - ENTER to choose', 32), 4);
+    const own = g.local || [], n = own.length + g.files.length;
+    if (own.length) {
+      const lib = own[0].lib;
+      s.print(0, 21, fit((own.length > 1 || n > 1 ? n + ' tapes, yours in ' : 'Yours, in ') + lib.name + (lib.conn ? '' : ' (off)'), 32), 4);
+    } else if (g.loadable) s.print(0, 21, fit(g.files.length === 1 ? '1 tape - ENTER loads it' : g.files.length + ' tapes - ENTER to choose', 32), 4);
     else s.print(0, 21, fit(g.why, 32), 2);
   },
+  // a title's tapes: yours first (marked MINE), then the archive's
   drawFiles(s) {
     const g = this.games[this.sel];
     s.print(1, LIST_TOP, fit(g.title, 30), 0);
     this.files.forEach((f, i) => {
       const on = i === this.fsel, paper = on ? 5 + 8 : 7, row = LIST_TOP + 2 + i;
-      const name = f.path.split('/').pop().replace(/\.zip$/i, '');
+      const name = f.local ? f.local.file : f.path.split('/').pop().replace(/\.zip$/i, ''); // archive files are all zipped
+      const ext = name.split('.').pop().toUpperCase().slice(0, 3);
       s.bar(row, paper);
-      s.print(2, row, fit(name.replace(/\.(tap|tzx|z80|sna)$/i, ''), 24), 0, paper);
-      s.print(27, row, name.split('.').pop().toUpperCase(), 1, paper);
+      s.print(2, row, fit(name.replace(/\.(tap|tzx|z80|sna|zip)$/i, ''), 20), f.local ? 4 : 0, paper);
+      if (f.local) s.print(23, row, 'MINE', 4, paper);
+      s.print(31 - ext.length, row, ext, 1, paper);
     });
+    const f = this.files[this.fsel];
+    if (f && f.local && !this.ask) { s.bar(17, 1); s.print(0, 18, fit('In ' + f.local.lib.name + (f.local.lib.conn ? '' : ' (not connected)'), 32), 4); s.print(0, 19, fit(f.local.path, 32), 1); }
+  },
+  // loading from a library that is not connected: reconnect it, or take the archive's copy
+  drawAsk(s) {
+    const a = this.ask;
+    for (let r = 17; r <= 21; r++) s.bar(r, 7);
+    s.bar(17, 2);
+    s.print(0, 18, fit(a.g.lib.name + ' is not connected.', 32), 2);
+    s.print(0, 19, 'R      reconnect it, then load', 0);
+    if (a.archive) s.print(0, 20, 'ENTER  load the archive copy', 0);
+    s.print(0, 21, 'BREAK  never mind', 0);
   },
 
   key(k) {
     if (this.busy) { if (k === 'BREAK' && this.ctl) this.ctl.abort(); return; } // a search or download: BREAK cancels it
-    if (k === 'BREAK') { // from a list: back to the first page; from the first page: back to the Spectrum
-      if (this.games.length || this.mode !== 'search') this.home(); else closeCatalogue();
+    const ch = k.startsWith('CHAR:') ? k.slice(5) : null;
+    if (this.ask) { // not connected: R, ENTER (the archive's copy) or BREAK
+      const a = this.ask;
+      if (ch === 'r' || ch === 'R') { this.ask = null; reconnectLibrary(a.g.lib).then(ok => { if (ok) this.loadLocal(a.g, a.game); else redrawScreen(); }); }
+      else if (k === 'ENTER' && a.archive) { this.ask = null; this.load(a.archive); }
+      else if (k === 'BREAK' || k === 'DELETE') { this.ask = null; this.status = 'Not loaded'; }
       return;
     }
-    const ch = k.startsWith('CHAR:') ? k.slice(5) : null;
+    if (k === 'BREAK') { // from a list or a library: back to the first page; from the first page: back to the Spectrum
+      if (this.games.length || this.scope || this.mode === 'results' || this.mode === 'files') this.home(); else closeCatalogue();
+      return;
+    }
+    if (k === 'EDIT' && !this.scope) { this.home(); this.mode = 'home'; this.hsel = this.homeItems().findIndex(it => it.act); return; }
+    if (this.mode === 'home') {
+      const items = this.homeItems(), it = items[this.hsel];
+      if (k !== 'DELETE') this.confirm = null;
+      if (k === 'UP') { if (this.hsel > 0) this.hsel--; else { this.mode = 'search'; this.status = 'Type a title, then ENTER'; } }
+      else if (k === 'DOWN') this.hsel = Math.min(items.length - 1, this.hsel + 1);
+      else if (k === 'ENTER') this.homeAct(it);
+      else if (k === 'DELETE' && it && it.lib) {
+        if (this.confirm === it.lib) { removeLibrary(it.lib).then(() => redrawScreen()); this.status = 'Removed ' + it.lib.name; this.confirm = null; }
+        else this.confirm = it.lib;
+      } else if (ch) {
+        const act = { r: 'reconnect', f: 'folder', z: 'zip', o: 'file' }[ch.toLowerCase()];
+        const hit = act && items.find(x => x.act === act);
+        if (hit) { this.hsel = items.indexOf(hit); this.homeAct(hit); }
+        else { this.mode = 'search'; this.status = 'Type a title, then ENTER'; if (this.query.length < 24) this.query += ch; }
+      }
+      return;
+    }
     if (this.mode === 'search') {
-      if (ch && this.query.length < 24) this.query += ch;
-      else if (k === 'DELETE') { this.query = this.query.slice(0, -1); if (!this.query.trim()) this.home(); }
-      else if (k === 'ENTER') { if (this.query.trim()) this.search(); else this.home(); }
-      else if (k === 'DOWN' && this.games.length) this.mode = 'results';
+      if (ch && this.query.length < 24) { this.query += ch; if (this.scope) this.filter(); }
+      else if (k === 'DELETE') {
+        this.query = this.query.slice(0, -1);
+        if (this.scope) this.filter(); else if (!this.query.trim()) this.home();
+      } else if (k === 'ENTER') { if (this.scope) { if (this.games.length) this.mode = 'results'; } else if (this.query.trim()) this.search(); else this.home(); }
+      else if (k === 'DOWN') { if (this.games.length) this.mode = 'results'; else if (!this.scope) { this.mode = 'home'; this.hsel = 0; } }
     } else if (this.mode === 'results') {
-      if (ch) { this.mode = 'search'; if (this.query.length < 24) this.query += ch; }
+      if (ch) { this.mode = 'search'; if (this.query.length < 24) this.query += ch; if (this.scope) this.filter(); }
       else if (k === 'DELETE' || (k === 'UP' && this.sel === 0)) this.mode = 'search';
-      else if (k === 'UP' || k === 'DOWN' || k === 'PGUP' || k === 'PGDN') this.move({ UP: -1, DOWN: 1, PGUP: -LIST_ROWS, PGDN: LIST_ROWS }[k]);
+      else if (['UP', 'DOWN', 'PGUP', 'PGDN', 'LEFT', 'RIGHT'].includes(k)) this.move({ UP: -1, DOWN: 1, PGUP: -LIST_ROWS, PGDN: LIST_ROWS, LEFT: -LIST_ROWS, RIGHT: LIST_ROWS }[k]);
       else if (k === 'ENTER') this.choose();
     } else if (this.mode === 'files') {
       if (k === 'UP') this.fsel = Math.max(0, this.fsel - 1);
       else if (k === 'DOWN') this.fsel = Math.min(this.files.length - 1, this.fsel + 1);
-      else if (k === 'DELETE' || k === 'LEFT') this.mode = 'results';
-      else if (k === 'ENTER') this.load(this.files[this.fsel]);
+      else if (k === 'DELETE' || k === 'LEFT') { this.mode = 'results'; this.status = ''; }
+      else if (k === 'ENTER') this.loadOption(this.files[this.fsel]);
     }
   },
   click(col, row) {
-    if (this.busy) { if ((row === 0 && col >= 31) || row === 23) this.ctl.abort(); return; }
+    if (this.busy) { if ((row === 0 && col >= 31) || row === 23) this.ctl && this.ctl.abort(); return; }
     if (row === 0 && col >= 31) { closeCatalogue(); return; }
+    if (this.ask) { if (row === 19) this.key('CHAR:r'); else if (row === 20 && this.ask.archive) this.key('ENTER'); else if (row === 21) this.key('BREAK'); return; }
+    if (row === 1) { this.home(); return; } // "Catalogue >": back to the start
     if (row === 2) { this.mode = 'search'; return; }
-    if (this.mode === 'search' && !this.games.length && row >= this.ownRows[0] && row < this.ownRows[1]) { closeCatalogue(); openFile(); return; }
     if (this.mode === 'files') {
       const i = row - LIST_TOP - 2;
-      if (i >= 0 && i < this.files.length) { this.fsel = i; this.load(this.files[i]); } else if (row === LIST_TOP) this.mode = 'results';
+      if (i >= 0 && i < this.files.length) { this.fsel = i; this.loadOption(this.files[i]); } else if (row === LIST_TOP) this.mode = 'results';
+      return;
+    }
+    if (!this.games.length && !this.scope) { // the first page
+      const i = this.homeTop + row - HOME_TOP, items = this.homeItems();
+      if (row >= HOME_TOP && row < HOME_TOP + HOME_ROWS && i < items.length) { this.mode = 'home'; this.hsel = i; this.homeAct(items[i]); }
       return;
     }
     const n = this.top + row - LIST_TOP;
@@ -258,33 +372,60 @@ const catalogue = {
 
   // back to the first page (the instructions): the title is empty again
   home() {
-    this.query = ''; this.games = []; this.sel = 0; this.top = 0; this.mode = 'search';
+    this.query = ''; this.games = []; this.sel = 0; this.top = 0; this.mode = 'search'; this.scope = null; this.ask = null; this.confirm = null;
     this.status = 'Type a title, then ENTER';
   },
+  // your libraries at once, then ZXDB: a ZXDB title you have is loadable (and loads your file); yours come first
   async search() {
     const text = this.query.trim();
     if (!text) return;
-    this.busy = true; this.status = 'Searching ZXDB...'; this.games = []; this.ctl = new AbortController(); redrawScreen();
+    const mine = searchLibraries(text);
+    this.games = mine.slice(0, 300).map(libEntry); this.sel = 0; this.top = 0;
+    this.busy = true; this.status = (mine.length ? mine.length + ' yours - ' : '') + 'Searching ZXDB...'; this.ctl = new AbortController(); redrawScreen();
     try {
-      this.games = (await searchZXDB(text, this.ctl.signal)).map(g => {
-        const files = g.files.filter(f => f.url);
-        const why = !g.available ? g.availability : !g.files.length ? 'No tape or snapshot' : !files.length ? 'Not in the archive (after 2017)' : '';
-        return { ...g, files, loadable: !why, why };
+      const found = await searchZXDB(text, this.ctl.signal), used = new Set();
+      const zxdb = found.map(g => {
+        const files = g.files.filter(f => f.url), key = titleKey(g.title);
+        const local = key ? mine.filter(m => m.key === key) : [];
+        local.forEach(m => used.add(m));
+        const why = local.length ? '' : !g.available ? g.availability : !g.files.length ? 'No tape or snapshot' : !files.length ? 'Not in the archive (after 2017)' : '';
+        return { ...g, files: g.available ? files : [], local, own: local.length > 0, loadable: !why, why };
       });
+      const others = mine.filter(m => !used.has(m)).slice(0, 300).map(libEntry);
+      this.games = [...zxdb.filter(g => g.own), ...others, ...zxdb.filter(g => !g.own)];
       this.sel = 0; this.top = 0;
-      this.status = this.games.length ? this.games.length + ' found - choose one' : '!Nothing found';
-      if (this.games.length) this.mode = 'results';
+      this.status = this.games.length ? this.games.length + ' found' + (mine.length ? ', ' + mine.length + ' yours' : '') : '!Nothing found';
     } catch (err) {
-      this.status = err.cancelled ? 'Type a title, then ENTER' : '!' + err.message;
+      if (err.cancelled) this.status = this.games.length ? this.games.length + ' yours (ZXDB cancelled)' : 'Type a title, then ENTER';
+      else this.status = this.games.length ? '!' + this.games.length + ' yours; ZXDB: ' + err.message : '!' + err.message;
     }
+    if (this.games.length) this.mode = 'results';
     this.busy = false; this.ctl = null; redrawScreen();
   },
   choose() {
     const g = this.games[this.sel];
     if (!g || !g.loadable) { if (g) this.status = '!' + g.why; return; }
-    if (g.files.length === 1) { this.load(g.files[0]); return; }
-    this.files = g.files.slice(0, 12); this.fsel = 0; this.mode = 'files';
-    this.status = 'Choose a tape';
+    const options = [...(g.local || []).map(local => ({ local })), ...g.files];
+    if (options.length === 1 || (g.local && g.local.length === 1)) { this.loadOption(options[0]); return; } // yours, when you have it
+    this.files = options.slice(0, 12); this.fsel = 0; this.mode = 'files';
+    this.status = (g.local && g.local.length ? 'Yours first. ' : '') + 'Choose a tape';
+  },
+  loadOption(o) { if (o.local) this.loadLocal(o.local, this.games[this.sel]); else this.load(o); },
+  // a game from your library: read from your folder or zip; not connected, the screen asks first
+  async loadLocal(g, game) {
+    if (!g.lib.conn) { this.ask = { g, game, archive: game && game.files && game.files[0] }; this.status = '!Not connected'; redrawScreen(); return; }
+    this.busy = true; this.status = 'Reading ' + g.file + '...'; redrawScreen();
+    try {
+      const { name, bytes } = await libraryGame(g), machine = titleMachine(game && game.machine) || 0;
+      this.busy = false;
+      closeCatalogue();
+      if (loadFile(name, bytes, { machine })) rackOffer({ title: game && game.id ? game.title : g.title.replace(/\s*\[.*$/, ''), name, bytes, source: 'library', machine });
+    } catch (err) {
+      this.busy = false;
+      if (err.name === 'NotAllowedError' || err.name === 'NotFoundError' || err.name === 'NotReadableError') { g.lib.conn = null; this.ask = { g, game, archive: game && game.files && game.files[0] }; }
+      this.status = '!' + (err.name === 'NotFoundError' ? 'Not there any more' : err.message);
+    }
+    redrawScreen();
   },
   // download a tape: the status line counts the seconds until the archive answers, then the kilobytes, with a bar
   async load(f) {

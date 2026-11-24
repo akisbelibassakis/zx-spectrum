@@ -16,7 +16,7 @@ function showBank(b) {
   renderRack();
 }
 const SPINE_COLOURS = ['#d70000', '#1f5fbf', '#e8b100', '#2c8a3a', '#7b2fa8', '#d45a00', '#0096a8', '#c2185b'];
-const SOURCES = { archive: 'downloaded', file: 'your file', multiface: 'Multiface save', backup: 'from a backup', recorded: 'recorded here' };
+const SOURCES = { archive: 'downloaded', file: 'your file', multiface: 'Multiface save', library: 'from your library', backup: 'from a backup', recorded: 'recorded here' };
 let tapes = new Array(ALL_SLOTS).fill(null); // { slot, title, name, bytes, source, added, played, machine }
 let lastTitle = '';                           // what is playing: Multiface saves are named after it
 

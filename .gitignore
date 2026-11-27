@@ -3,3 +3,6 @@ test/zex/*.log
 games/
 installer/build/
 installer/dist/
+# written by test/tape-test.js
+/hello.tap
+/tape-*.bmp

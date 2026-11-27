@@ -57,6 +57,7 @@ Not yet: the +2A and +3, memory/IO contention (some timing-critical demos and mu
 | `index.html` | The page: the desk, the TV, the gadgets, the recorder and the manual's text |
 | `js/z80.js` | Z80 CPU: all documented and undocumented opcodes and flags |
 | `js/spectrum.js` | The 48K, 128K and +2 machines (the +2 is the 128K hardware with its own ROM set): memory paging, ULA (video, keyboard, beeper, EAR), tape trap, loader detection and edge-loop skipping, snapshots |
+| `js/inflate.js` | Loaded first: shows any error in a strip at the bottom of the screen (an installed app has no console), and unpacks zips (the browser's own `deflate-raw` where it has one, else a small decoder for older browsers such as Chrome before 103) |
 | `js/ay.js` | AY-3-8912 sound chip of the 128K: three tones, noise and envelopes |
 | `js/tape.js` | TAP/TZX parsing into an EAR pulse stream, the standard blocks for instant loading, tape parts, and joining several tape files into one tape in parts |
 | `js/main.js` | Browser front end: picture, PC keyboard, audio output, joysticks and gamepads, file loading, tape controls, function keys |

@@ -66,7 +66,7 @@ async function searchZXDB(text, signal) {
   });
 }
 
-// ---------- zip: read the central directory, inflate with the browser's own DecompressionStream ----------
+// ---------- zip: read the central directory, inflate (js/inflate.js) ----------
 function zipEntries(buf) {
   const d = new DataView(buf);
   let eocd = -1;
@@ -88,8 +88,7 @@ async function unzipEntry(buf, e) {
   const data = new Uint8Array(buf, start, e.size);
   if (e.method === 0) return data.slice();
   if (e.method !== 8) throw new Error('Unsupported zip compression');
-  const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-  return new Uint8Array(await new Response(stream).arrayBuffer());
+  return inflateRaw(data); // js/inflate.js
 }
 
 // A download can hold several tapes: two sides, a levels tape, or the 48K and 128K versions. They become one tape

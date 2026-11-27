@@ -78,8 +78,7 @@ async function blobUnzipEntry(blob, e) {
   const data = new Uint8Array(await blob.slice(start, start + e.size).arrayBuffer());
   if (e.method === 0) return data;
   if (e.method !== 8) throw new Error('Unsupported zip compression');
-  const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-  return new Uint8Array(await new Response(stream).arrayBuffer());
+  return inflateRaw(data); // js/inflate.js
 }
 
 // ---------- what a game is, from its file name ----------

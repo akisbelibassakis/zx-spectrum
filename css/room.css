@@ -24,18 +24,18 @@ button { font-family: Tahoma, sans-serif; }
 
 /* ----- TV: ZOOM beside POWER, channel names, on-screen messages ----- */
 #btnZoom {
-  font-size: 1.1cqw; letter-spacing: .1cqw; color: #ccc; padding: .9cqw 1cqw; border: 0; border-radius: .5cqw;
-  background: linear-gradient(#55524d, #33312e); box-shadow: 0 .35cqw 0 #111;
+  font-size: calc(1.1 * var(--cq)); letter-spacing: calc(.1 * var(--cq)); color: #ccc; padding: calc(.9 * var(--cq)) var(--cq); border: 0; border-radius: calc(.5 * var(--cq));
+  background: linear-gradient(#55524d, #33312e); box-shadow: 0 calc(.35 * var(--cq)) 0 #111;
 }
-#btnZoom:active { transform: translateY(.25cqw); box-shadow: 0 1px 0 #111; }
-.power { gap: .8cqw; }
-.chan { font-size: 1.15cqw; font-weight: bold; }
+#btnZoom:active { transform: translateY(calc(.25 * var(--cq))); box-shadow: 0 1px 0 #111; }
+.power { gap: calc(.8 * var(--cq)); }
+.chan { font-size: calc(1.15 * var(--cq)); font-weight: bold; }
 .osd {
   position: absolute; left: 7%; top: 7%; z-index: 2; pointer-events: none; opacity: 0; transition: opacity .3s;
-  font: bold 3.4cqw 'Courier New', monospace; color: #3dff6a; text-shadow: 0 0 .6cqw #0f0, .2cqw .2cqw 0 #000;
+  font: bold calc(3.4 * var(--cq)) 'Courier New', monospace; color: #3dff6a; text-shadow: 0 0 calc(.6 * var(--cq)) #0f0, calc(.2 * var(--cq)) calc(.2 * var(--cq)) 0 #000;
 }
 .osd.show { opacity: 1; }
-.osd.error { color: #ff6a50; text-shadow: 0 0 .6cqw #f30, .2cqw .2cqw 0 #000; }
+.osd.error { color: #ff6a50; text-shadow: 0 0 calc(.6 * var(--cq)) #f30, calc(.2 * var(--cq)) calc(.2 * var(--cq)) 0 #000; }
 
 
 /* ----- reset button on the side of the computer ----- */
@@ -390,7 +390,7 @@ button { font-family: Tahoma, sans-serif; }
 .book.compact .page .rh { top: 12px; } .book.compact .page:nth-child(odd) .rh { left: 30px; } .book.compact .page:nth-child(even) .rh, .book.compact.single .page .rh { right: 30px !important; }
 .book.compact .page .fig { margin-left: 8%; }
 /* narrow screens (phones held upright): the chapter tabs in a row above the page, the close button above them */
-.book.tabtop { margin-top: 56px; translate: 6px; } /* a little right of centre: the binding sticks out on the left */
+.book.tabtop { margin-top: 56px; transform: translateX(6px); } /* a little right of centre: the binding sticks out on the left */
 .book.tabtop .tabs { position: static; flex-direction: row; gap: 4px; margin-bottom: 4px; }
 .book.tabtop .tabs button { width: auto; flex: 1; transform: none; border-radius: 4px 4px 0 0; padding: 6px 3px; font-size: 11px; white-space: nowrap; overflow: hidden; opacity: .7; }
 .book.tabtop .tabs button.on { opacity: 1; }

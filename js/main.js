@@ -2,6 +2,13 @@
 'use strict';
 
 const $ = id => document.getElementById(id);
+// The TV's control panel is sized in --cq, a hundredth of the TV's width (css/retro.css). Browsers without container
+// units (Chrome before 105, Safari before 16) get it in pixels from here, kept up to date as the TV changes size.
+if (!(window.CSS && CSS.supports('width', '1cqw'))) {
+  const tv = $('tv'), setCq = () => tv.style.setProperty('--cq', tv.clientWidth / 100 + 'px');
+  setCq();
+  if (window.ResizeObserver) new ResizeObserver(setCq).observe(tv); else addEventListener('resize', setCq);
+}
 const canvas = $('screen'), ctx2d = canvas.getContext('2d');
 canvas.width = SCREEN_W; canvas.height = SCREEN_H;
 const image = ctx2d.createImageData(SCREEN_W, SCREEN_H);

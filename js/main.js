@@ -5,9 +5,14 @@ const $ = id => document.getElementById(id);
 // The TV's control panel is sized in --cq, a hundredth of the TV's width (css/retro.css). Browsers without container
 // units (Chrome before 105, Safari before 16) get it in pixels from here, kept up to date as the TV changes size.
 if (!(window.CSS && CSS.supports('width', '1cqw'))) {
-  const tv = $('tv'), setCq = () => tv.style.setProperty('--cq', tv.clientWidth / 100 + 'px');
+  // set after the layout, in the next frame, and only on a real change: setting it inside the observer's callback
+  // makes Chrome report "ResizeObserver loop limit exceeded" while the tablet turns
+  const tv = $('tv');
+  let cq = '', queued = false;
+  const setCq = () => { queued = false; const v = tv.clientWidth / 100 + 'px'; if (v !== cq) tv.style.setProperty('--cq', cq = v); };
+  const later = () => { if (!queued) { queued = true; requestAnimationFrame(setCq); } };
   setCq();
-  if (window.ResizeObserver) new ResizeObserver(setCq).observe(tv); else addEventListener('resize', setCq);
+  if (window.ResizeObserver) new ResizeObserver(later).observe(tv); else addEventListener('resize', later);
 }
 const canvas = $('screen'), ctx2d = canvas.getContext('2d');
 canvas.width = SCREEN_W; canvas.height = SCREEN_H;

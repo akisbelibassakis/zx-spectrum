@@ -17,6 +17,8 @@
     strip.textContent += '\n' + msg;
   }
   addEventListener('error', e => {
+    // a browser's note that it put off some resize work to the next frame, not a fault (older Chrome reports it)
+    if (/ResizeObserver loop/.test(e.message || '')) return;
     if (e.message) show(e.message + (e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')' : ''));
   });
   addEventListener('unhandledrejection', e => {

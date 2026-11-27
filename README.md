@@ -91,7 +91,7 @@ Not yet: the +2A and +3, memory/IO contention (some timing-critical demos and mu
 
 ## Install it
 
-On https://akisbelibassakis.github.io/zx-spectrum/ Edge and Chrome offer **Install** (the icon at the end of the address bar, or the menu); phones offer **Add to Home screen**. The installed app has its own window and icon, works offline (except the catalogue), and updates itself.
+On https://akisbelibassakis.github.io/zx-spectrum/ Edge and Chrome offer **Install** (the icon at the end of the address bar, or the menu); phones offer **Add to Home screen**. The installed app has its own window and icon (on phones and tablets it opens full screen, without the status and navigation bars), works offline (except the catalogue), and updates itself.
 
 ## Disclaimer
 

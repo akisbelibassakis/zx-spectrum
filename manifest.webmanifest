@@ -4,7 +4,8 @@
   "description": "The ZX Spectrum 48K, Spectrum+ and 128 on an 80s desk: TV, Datacorder, Multiface and thousands of games.",
   "start_url": "./",
   "scope": "./",
-  "display": "standalone",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
   "background_color": "#5a4434",
   "theme_color": "#141414",
   "icons": [
